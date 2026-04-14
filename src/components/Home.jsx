@@ -10,7 +10,17 @@ const Home = () => {
     const [error, setError] = useState(null)
     const navigate = useNavigate();
 
-    useEffect(() => {
+    // Estado del buscador
+    const [filters, setFilters] = useState({
+        destination: '',
+        maxPrice: '',
+        startDate: '',
+        endDate: '',
+        travelTypeId: ''
+    });
+
+    const fetchPackages = () => {
+        setLoading(true);
         tourPackageService.getAll()
             .then(response => {
                 const data = response.data?.data || response.data || [];
@@ -22,7 +32,56 @@ const Home = () => {
                 setError("Lo sentimos, no pudimos cargar los paquetes de viaje.");
                 setLoading(false);
             });
+    };
+
+    useEffect(() => {
+        fetchPackages();
     }, [])
+
+    const handleSearch = (e) => {
+        if (e) e.preventDefault();
+
+        // Limpiamos filtros nulos o vacíos para enviar solo los solicitados
+        const cleanParams = {};
+        Object.keys(filters).forEach(key => {
+            if (filters[key]) {
+                cleanParams[key] = filters[key];
+            }
+        });
+
+        if (Object.keys(cleanParams).length === 0) {
+            fetchPackages();
+            return;
+        }
+
+        setLoading(true);
+        tourPackageService.searchFilter(cleanParams)
+            .then(response => {
+                const data = response.data?.data || response.data || [];
+                setPackages(Array.isArray(data) ? data : []);
+                setLoading(false);
+            })
+            .catch(err => {
+                console.error("Error filtrando paquetes:", err);
+                setError("Ocurrió un error al usar el buscador.");
+                setLoading(false);
+            });
+    }
+
+    const handleChange = (e) => {
+        setFilters({ ...filters, [e.target.name]: e.target.value });
+    }
+
+    const clearFilters = () => {
+        setFilters({
+            destination: '',
+            maxPrice: '',
+            startDate: '',
+            endDate: '',
+            travelTypeId: ''
+        });
+        fetchPackages();
+    }
 
     return (
         <div className="app-container">
@@ -31,6 +90,73 @@ const Home = () => {
                 <div className="hero-banner">
                     <h1>Encuentra tu próximo viaje</h1>
                     <p>Descubre paquetes exclusivos, vive experiencias inolvidables.</p>
+
+                    {/* Search Bar */}
+                    <div className="search-container">
+                        <form className="search-form" onSubmit={handleSearch}>
+                            <div className="search-group">
+                                <label>Destino</label>
+                                <input
+                                    type="text"
+                                    name="destination"
+                                    placeholder="¿A dónde vas?"
+                                    value={filters.destination}
+                                    onChange={handleChange}
+                                />
+                            </div>
+
+                            <div className="search-group">
+                                <label>Precio Máximo</label>
+                                <input
+                                    type="number"
+                                    name="maxPrice"
+                                    placeholder="$ Máximo"
+                                    value={filters.maxPrice}
+                                    onChange={handleChange}
+                                />
+                            </div>
+
+                            <div className="search-group">
+                                <label>Fechas</label>
+                                <div className="date-inputs">
+                                    <input
+                                        type="date"
+                                        name="startDate"
+                                        value={filters.startDate}
+                                        onChange={handleChange}
+                                    />
+                                    <span>-</span>
+                                    <input
+                                        type="date"
+                                        name="endDate"
+                                        value={filters.endDate}
+                                        onChange={handleChange}
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="search-group">
+                                <label>Experiencia</label>
+                                <select name="travelTypeId" value={filters.travelTypeId} onChange={handleChange}>
+                                    <option value="">Cualquiera</option>
+                                    <option value="1">1 - Aventura</option>
+                                    <option value="2">2 - Relax</option>
+                                    <option value="3">3 - Cultural</option>
+                                    <option value="4">4 - Familiar</option>
+                                </select>
+                            </div>
+
+                            <div className="search-btn-group">
+                                <button type="submit" className="search-btn">
+                                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                                    Buscar
+                                </button>
+                                {(filters.destination || filters.maxPrice || filters.startDate || filters.travelTypeId) && (
+                                    <button type="button" className="clear-btn" onClick={clearFilters}>Limpiar</button>
+                                )}
+                            </div>
+                        </form>
+                    </div>
                 </div>
 
                 {/* Packages Section */}
@@ -42,7 +168,8 @@ const Home = () => {
 
                     {loading && (
                         <div style={{ textAlign: 'center', padding: '50px' }}>
-                            <p>Cargando paquetes...</p>
+                            <div className="spinner" style={{ margin: '0 auto', marginBottom: '15px' }}></div>
+                            <p>Buscando paquetes turísticos...</p>
                         </div>
                     )}
 
@@ -54,7 +181,10 @@ const Home = () => {
 
                     {!loading && !error && packages.length === 0 && (
                         <div style={{ textAlign: 'center', padding: '50px' }}>
-                            <p>No se encontraron paquetes.</p>
+                            <svg style={{ margin: '0 auto', display: 'block', marginBottom: '20px', color: 'var(--text-light)' }} width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                            <h3>No se encontraron paquetes</h3>
+                            <p style={{ color: 'var(--text-light)', marginTop: '10px' }}>Intenta ajustar tus filtros de búsqueda para encontrar más opciones.</p>
+                            <button className="book-btn" style={{ marginTop: '20px' }} onClick={clearFilters}>Limpiar Filtros</button>
                         </div>
                     )}
 
@@ -68,7 +198,7 @@ const Home = () => {
 
                                 if (pkg.startDate && pkg.endDate) {
                                     const start = new Date(pkg.startDate + "T00:00:00");
-                                    const end = new Date(pkg.endDate + "T00:00:00");
+                                    const end = new Date(pkg.endDate + "T23:59:59");
 
                                     const diffTime = end - start;
                                     days = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
@@ -109,7 +239,7 @@ const Home = () => {
 
                                             <div className="card-pricing">
                                                 <div className="price-info">
-                                                    <span className="price-label">Precio por persona desde</span>
+                                                    <span className="home-price-label">Precio por persona desde</span>
                                                     <div className="price-row">
                                                         <span className="current-price">${currentPrice.toLocaleString()}</span>
                                                     </div>

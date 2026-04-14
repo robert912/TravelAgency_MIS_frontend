@@ -1,154 +1,210 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import tourPackageService from "../services/tourPackage";
+import '../css/TourPackageDetails.css';
 
-const PackageDetail = () => {
-  const { id } = useParams();
-  const navigate = useNavigate();
+const TourPackageDetails = () => {
+    const { id } = useParams();
+    const navigate = useNavigate();
 
-  const [pkg, setPkg] = useState(null);
-  const [loading, setLoading] = useState(true);
+    const [pkg, setPkg] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
 
-  useEffect(() => {
-    tourPackageService.get(id)
-      .then(res => {
-        const data = res.data?.data || res.data;
-        setPkg(data);
-        setLoading(false);
-      })
-      .catch(err => {
-        console.error(err);
-        setLoading(false);
-      });
-  }, [id]);
+    useEffect(() => {
+        // Scroll to top when component mounts
+        window.scrollTo(0, 0);
 
-  // ✅ calcular días y noches
-  let days = null;
-  let nights = null;
+        tourPackageService.get(id)
+            .then(res => {
+                const data = res.data?.data || res.data;
+                if (data) {
+                    setPkg(data);
+                } else {
+                    setError("No se encontraron detalles para este paquete.");
+                }
+                setLoading(false);
+            })
+            .catch(err => {
+                console.error(err);
+                setError("Ocurrió un error al cargar la información del paquete.");
+                setLoading(false);
+            });
+    }, [id]);
 
-  if (pkg?.startDate && pkg?.endDate) {
-    const start = new Date(pkg.startDate + "T00:00:00");
-    const end = new Date(pkg.endDate + "T00:00:00");
-    const diff = end - start;
+    if (loading) {
+        return (
+            <div className="package-detail-container loading-container">
+                <div className="spinner"></div>
+                <p>Preparando tu próxima aventura...</p>
+            </div>
+        );
+    }
 
-    days = Math.ceil(diff / (1000 * 60 * 60 * 24));
-    nights = days > 0 ? days - 1 : 0;
-  }
+    if (error || !pkg) {
+        return (
+            <div className="package-detail-container error-container">
+                <h2>Upps... ¡Paquete no encontrado!</h2>
+                <p>{error || "El paquete que buscas no está disponible en este momento."}</p>
+                <button className="back-btn" onClick={() => navigate("/")}>
+                    Volver al Inicio
+                </button>
+            </div>
+        );
+    }
 
-  if (loading) return <p style={{ textAlign: "center" }}>Cargando...</p>;
-  if (!pkg) return <p>No se encontró el paquete</p>;
+    // ✅ Calcular días y noches
+    let days = null;
+    let nights = null;
 
-  return (
-    <div style={styles.container}>
+    if (pkg?.startDate && pkg?.endDate) {
+        const start = new Date(pkg.startDate + "T00:00:00");
+        const end = new Date(pkg.endDate + "T23:59:59");
+        const diff = end - start;
 
-      {/* Imagen */}
-      <div style={styles.imageWrapper}>
-        <img
-          src={pkg.imageUrl || "https://images.unsplash.com/photo-1507525428034-b723cf961d3e"}
-          alt={pkg.name}
-          style={styles.image}
-        />
-      </div>
+        days = Math.ceil(diff / (1000 * 60 * 60 * 24));
+        nights = days > 0 ? days - 1 : 0;
+    }
 
-      {/* Contenido */}
-      <div style={styles.content}>
+    const currentPrice = pkg.price ? Number(pkg.price) : 0;
+    const stars = pkg.stars || 0;
 
-        <h1>{pkg.name}</h1>
+    return (
+        <div className="package-detail-container">
 
-        {/* Estrellas */}
-        <div>
-          {[1,2,3,4,5].map((s,i)=>(
-            <span key={i} style={{color: i < pkg.stars ? "#ffc107" : "#ccc"}}>★</span>
-          ))}
+            {/* Hero Header Section */}
+            <header className="hero-header">
+                <button className="floating-back-btn" onClick={() => navigate("/")}>
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <line x1="19" y1="12" x2="5" y2="12"></line>
+                        <polyline points="12 19 5 12 12 5"></polyline>
+                    </svg>
+                    Volver
+                </button>
+
+                <div className="hero-background">
+                    <img
+                        src={pkg.imageUrl || "https://images.unsplash.com/photo-1507525428034-b723cf961d3e"}
+                        alt={pkg.name}
+                        className="hero-image"
+                        onError={(e) => { e.target.src = 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e' }}
+                    />
+                </div>
+                <div className="hero-overlay"></div>
+
+                <div className="hero-content">
+                    <div className="breadcrumb">
+                        <button onClick={() => navigate("/")}>Inicio</button>
+                        <span>/</span>
+                        <span>Paquetes Turísticos</span>
+                        <span>/</span>
+                        <span>{pkg.destination || 'Detalle'}</span>
+                    </div>
+
+                    <div className="hero-badges">
+                        {pkg.category?.name && (
+                            <span className="badge">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg>
+                                {pkg.category.name}
+                            </span>
+                        )}
+                        {pkg.travelType?.name && (
+                            <span className="badge">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon></svg>
+                                {pkg.travelType.name}
+                            </span>
+                        )}
+                        {pkg.season?.name && (
+                            <span className="badge">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+                                {pkg.season.name}
+                            </span>
+                        )}
+                    </div>
+
+                    <h1 className="hero-title">{pkg.name}</h1>
+
+                    <div className="hero-stars">
+                        {[1, 2, 3, 4, 5].map((s, i) => (
+                            <span key={i} style={{ color: i < stars ? "#ffc107" : "rgba(255,255,255,0.4)" }}>★</span>
+                        ))}
+                    </div>
+                </div>
+            </header>
+
+            {/* Main Layout Grid */}
+            <main className="detail-main">
+
+                {/* Left Column: Descriptions and Details */}
+                <div className="detail-content">
+                    <h2 className="section-title">Acerca de este paquete</h2>
+                    <p className="description-text">
+                        {pkg.description || "Descubre los maravillosos paisajes e increíbles experiencias que este paquete tiene para ofrecerte. Disfruta de un viaje único diseñado para que tú solo tengas que preocuparte por disfrutar."}
+                    </p>
+
+                    <div className="divider" style={{ marginTop: '40px' }}></div>
+
+                    <h2 className="section-title">Lo que debes saber</h2>
+                    <div className="summary-item" style={{ marginBottom: '20px' }}>
+                        <div className="summary-label">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                            Destino Principal
+                        </div>
+                        <div className="summary-value" style={{ fontSize: '18px' }}>{pkg.destination || "Múltiples destinos"}</div>
+                    </div>
+
+                </div>
+
+                {/* Right Column: Pricing & Booking */}
+                <aside className="booking-sidebar">
+                    <div className="pricing-card">
+
+                        <div className="price-header">
+                            <span className="price-label">Precio por persona desde</span>
+                            <div className="price-value">
+                                <span className="price-currency">$</span>
+                                {currentPrice.toLocaleString()}
+                            </div>
+                        </div>
+
+                        <div className="divider"></div>
+
+                        <div className="summary-item">
+                            <span className="summary-label">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                                Duración
+                            </span>
+                            <span className="summary-value">
+                                {days ? `${days} Días / ${nights} Noches` : "No disponible"}
+                            </span>
+                        </div>
+
+                        <div className="summary-item">
+                            <span className="summary-label">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                                Fecha Ida
+                            </span>
+                            <span className="summary-value">{pkg.startDate || "Por definir"}</span>
+                        </div>
+
+                        <div className="summary-item">
+                            <span className="summary-label">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                                Fecha Vuelta
+                            </span>
+                            <span className="summary-value">{pkg.endDate || "Por definir"}</span>
+                        </div>
+
+                        <button className="book-action-btn">
+                            Reservar Ahora
+                        </button>
+                        <p className="support-text">Reserva segura garantizada. Pago 100% encriptado.</p>
+                    </div>
+                </aside>
+
+            </main>
         </div>
-
-        <p><strong>Destino:</strong> {pkg.destination}</p>
-
-        {/* Fechas */}
-        <p>
-          <strong>Duración:</strong>{" "}
-          {days ? `${days} días / ${nights} noches` : "No disponible"}
-        </p>
-
-        <p><strong>Fecha:</strong> {pkg.startDate} → {pkg.endDate}</p>
-
-        {/* Tags */}
-        <div style={styles.tags}>
-          <span>{pkg.category?.name}</span>
-          <span>{pkg.travelType?.name}</span>
-          <span>{pkg.season?.name}</span>
-        </div>
-
-        {/* Descripción */}
-        <p style={styles.description}>{pkg.description}</p>
-
-        {/* Precio */}
-        <h2 style={{ color: "#8bc34a" }}>
-          ${Number(pkg.price).toLocaleString()}
-        </h2>
-
-        {/* Botones */}
-        <div style={styles.actions}>
-          <button style={styles.primary}>Reservar</button>
-          <button style={styles.secondary} onClick={() => navigate("/")}>
-            Volver
-          </button>
-        </div>
-
-      </div>
-    </div>
-  );
+    );
 };
 
-const styles = {
-  container: {
-    maxWidth: "1000px",
-    margin: "40px auto",
-    padding: "20px",
-  },
-  imageWrapper: {
-    width: "100%",
-    height: "400px",
-    overflow: "hidden",
-    borderRadius: "12px",
-  },
-  image: {
-    width: "100%",
-    height: "100%",
-    objectFit: "cover",
-  },
-  content: {
-    marginTop: "20px",
-  },
-  tags: {
-    display: "flex",
-    gap: "10px",
-    margin: "10px 0",
-  },
-  description: {
-    marginTop: "15px",
-    color: "#555",
-  },
-  actions: {
-    marginTop: "20px",
-    display: "flex",
-    gap: "10px",
-  },
-  primary: {
-    background: "#8bc34a",
-    color: "#fff",
-    padding: "10px 20px",
-    border: "none",
-    borderRadius: "8px",
-    cursor: "pointer",
-  },
-  secondary: {
-    background: "transparent",
-    border: "1px solid #ccc",
-    padding: "10px 20px",
-    borderRadius: "8px",
-    cursor: "pointer",
-  },
-};
-
-export default PackageDetail;
+export default TourPackageDetails;

@@ -47,4 +47,5 @@ npm install axios #comunicar tu frontend con tu API
 npm install react-router-dom #crear rutas dentro de tu app
 npm install @mui/material @emotion/react @emotion/styled #Material UI
 npm install @mui/icons-material #íconos de Material UI
+npm install react-datepicker #para fechas
 ```

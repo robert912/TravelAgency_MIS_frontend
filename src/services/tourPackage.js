@@ -4,6 +4,12 @@ const getAll = () => {
     return httpClient.get('/api/tour-packages/');
 }
 
+const searchFilter = (filters) => {
+    return httpClient.get('/api/tour-packages/search', {
+        params: filters
+    });
+}
+
 const create = data => {
     return httpClient.post('/api/tour-packages/', data);
 }
@@ -20,4 +26,4 @@ const remove = id => {
     return httpClient.delete(`/api/tour-packages/${id}`);
 }
 
-export default { getAll, create, get, update, remove };
+export default { getAll, searchFilter, create, get, update, remove };

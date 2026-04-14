@@ -24,7 +24,7 @@ const styles = {
   container: {
     height: "100vh",
     backgroundImage:
-      "url('/notfound.avif')",
+      "url('/images/notfound.avif')",
     backgroundSize: "cover",
     backgroundPosition: "center",
     display: "flex",
