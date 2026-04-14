@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import tourPackageService from "../services/tourPackage";
+import tourPackageService from "../services/tourPackage.service";
 import '../css/TourPackageDetails.css';
 
 const TourPackageDetails = () => {

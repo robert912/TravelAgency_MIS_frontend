@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from "react-router-dom";
 import '../App.css'
-import tourPackageService from '../services/tourPackage'
+import tourPackageService from '../services/tourPackage.service'
 
 const Home = () => {
 

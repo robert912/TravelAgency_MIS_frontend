@@ -4,6 +4,10 @@ const getAll = () => {
     return httpClient.get('/api/travel-types/');
 }
 
+const getAllActive = () => {
+    return httpClient.get('/api/travel-types/active');
+}
+
 const create = data => {
     return httpClient.post("/api/travel-types/", data);
 }
