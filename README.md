@@ -1,16 +1,50 @@
-# React + Vite
+# React + Vite 🚀 Proyecto Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Este proyecto está construido con Node.js y utiliza Vite para el entorno de desarrollo.
 
-Currently, two official plugins are available:
+## 📦 Requisitos
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+Antes de comenzar, asegúrate de tener instalado:
 
-## React Compiler
+- Node.js (recomendado: >= 16)
+- npm (incluido con Node.js)
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+Puedes verificarlo con:
 
-## Expanding the ESLint configuration
+```bash
+node -v
+npm -v
+```
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## ⚙️ Instalación
+
+Clona el repositorio e instala las dependencias:
+
+```bash
+git clone <URL_DEL_REPOSITORIO>
+cd <NOMBRE_DEL_PROYECTO>
+npm install
+```
+
+## ▶️ Ejecutar en modo desarrollo
+
+Para iniciar el servidor de desarrollo, ejecuta:
+
+```bash
+npm run dev
+```
+
+Luego abre tu navegador en:
+
+👉 http://localhost:5173
+
+
+
+## ▶️ Librerias
+
+```bash
+npm install axios #comunicar tu frontend con tu API
+npm install react-router-dom #crear rutas dentro de tu app
+npm install @mui/material @emotion/react @emotion/styled #Material UI
+npm install @mui/icons-material #íconos de Material UI
+```
