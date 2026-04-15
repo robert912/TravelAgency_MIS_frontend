@@ -15,6 +15,12 @@ import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import AddIcon from "@mui/icons-material/Add";
 import Card from "@mui/material/Card";
+import Chip from "@mui/material/Chip";
+import Tooltip from "@mui/material/Tooltip";
+import IconButton from "@mui/material/IconButton";
+import ActiveIcon from "@mui/icons-material/CheckCircle";
+import InactiveIcon from "@mui/icons-material/Cancel";
+import Stack from "@mui/material/Stack";
 import Swal from 'sweetalert2';
 
 const TravelTypeList = () => {
@@ -110,28 +116,37 @@ const TravelTypeList = () => {
                                         {row.id}
                                     </TableCell>
                                     <TableCell>{row.name}</TableCell>
-                                    <TableCell>{row.active ? "Activo" : "Inactivo"}</TableCell>
                                     <TableCell>{row.description}</TableCell>
-                                    <TableCell align="right">
-                                        <Button
-                                            variant="outlined"
-                                            color="info"
+                                    <TableCell>
+                                        <Chip
+                                            icon={row.active ? <ActiveIcon /> : <InactiveIcon />}
+                                            label={row.active ? "Activo" : "Inactivo"}
+                                            color={row.active ? "success" : "default"}
                                             size="small"
-                                            startIcon={<EditIcon />}
-                                            onClick={() => navigate(`/admin/travel-types/edit/${row.id}`)}
-                                            sx={{ mr: 1 }}
-                                        >
-                                            Editar
-                                        </Button>
-                                        <Button
                                             variant="outlined"
-                                            color="error"
-                                            size="small"
-                                            startIcon={<DeleteIcon />}
-                                            onClick={() => handleDelete(row.id)}
-                                        >
-                                            Eliminar
-                                        </Button>
+                                        />
+                                    </TableCell>
+                                    <TableCell align="center">
+                                        <Stack direction="row" spacing={1} justifyContent="center">
+                                            <Tooltip title="Editar">
+                                                <IconButton
+                                                    size="small"
+                                                    color="primary"
+                                                    onClick={() => navigate(`/admin/travel-types/edit/${row.id}`)}
+                                                >
+                                                    <EditIcon fontSize="small" />
+                                                </IconButton>
+                                            </Tooltip>
+                                            <Tooltip title={row.active ? "Desactivar" : "Activar"}>
+                                                <IconButton
+                                                    size="small"
+                                                    color={row.active ? "error" : "success"}
+                                                    onClick={() => handleDelete(row.id)}
+                                                >
+                                                    <DeleteIcon fontSize="small" />
+                                                </IconButton>
+                                            </Tooltip>
+                                        </Stack>
                                     </TableCell>
                                 </TableRow>
                             ))}

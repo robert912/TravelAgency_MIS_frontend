@@ -4,6 +4,10 @@ const getAll = () => {
     return httpClient.get('/api/tour-packages/');
 }
 
+const getAllActive = () => {
+    return httpClient.get('/api/tour-packages/active');
+}
+
 const searchFilter = (filters) => {
     return httpClient.get('/api/tour-packages/search', {
         params: filters
@@ -22,8 +26,8 @@ const update = data => {
     return httpClient.put('/api/tour-packages/', data);
 }
 
-const remove = id => {
-    return httpClient.delete(`/api/tour-packages/${id}`);
+const toggleActive = data => {
+    return httpClient.put('/api/tour-packages/', data);
 }
 
-export default { getAll, searchFilter, create, get, update, remove };
+export default { getAll, getAllActive, searchFilter, create, get, update, toggleActive };

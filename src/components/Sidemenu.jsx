@@ -45,6 +45,13 @@ export default function Sidemenu({ open, toggleDrawer }) {
                     <ListItemText primary="Empleados" />
                 </ListItemButton>
 
+                <ListItemButton onClick={() => navigate("/admin/packages")}>
+                    <ListItemIcon>
+                        <PaidIcon />
+                    </ListItemIcon>
+                    <ListItemText primary="Paquetes Turísticos" />
+                </ListItemButton>
+
                 <ListItemButton onClick={() => navigate("/admin/travel-types")}>
                     <ListItemIcon>
                         <TourIcon />
@@ -64,13 +71,6 @@ export default function Sidemenu({ open, toggleDrawer }) {
                         <CategoryIcon />
                     </ListItemIcon>
                     <ListItemText primary="Categorías" />
-                </ListItemButton>
-
-                <ListItemButton onClick={() => navigate("/paycheck/list")}>
-                    <ListItemIcon>
-                        <PaidIcon />
-                    </ListItemIcon>
-                    <ListItemText primary="Planilla Sueldos" />
                 </ListItemButton>
 
                 <ListItemButton onClick={() => navigate("/paycheck/calculate")}>

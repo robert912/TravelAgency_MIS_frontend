@@ -9,6 +9,8 @@ import SeasonList from './components/SeasonList';
 import SeasonAddEdit from './components/SeasonAddEdit';
 import CategoryList from './components/CategoryList';
 import CategoryAddEdit from './components/CategoryAddEdit';
+import TourPackageList from './components/TourPackageList';
+import TourPackageAddEdit from './components/TourPackageAddEdit';
 
 
 function App() {
@@ -29,7 +31,10 @@ function App() {
                 <Route path="/admin/categories" element={<CategoryList />} />
                 <Route path="/admin/categories/add" element={<CategoryAddEdit />} />
                 <Route path="/admin/categories/edit/:id" element={<CategoryAddEdit />} />
-                
+                <Route path="/admin/packages" element={<TourPackageList />} />
+                <Route path="/admin/packages/add" element={<TourPackageAddEdit />} />
+                <Route path="/admin/packages/edit/:id" element={<TourPackageAddEdit />} />
+
 
                 <Route path="*" element={<NotFound />} />
             </Routes>
