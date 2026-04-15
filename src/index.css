@@ -33,7 +33,7 @@ body {
     line-height: 1.5;
     -webkit-font-smoothing: antialiased;
 
-    background-image: url('/public/images/notfound.avif');
+    background-image: url('/images/notfound.avif');
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;

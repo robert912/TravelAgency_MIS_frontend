@@ -23,4 +23,4 @@ const update = data => {
 const remove = id => {
     return httpClient.delete(`/api/travel-types/${id}`);
 }
-export default { getAll, create, get, update, remove };
+export default { getAll, getAllActive, create, get, update, remove };

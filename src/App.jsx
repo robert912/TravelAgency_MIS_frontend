@@ -5,6 +5,10 @@ import Navbar from './components/Navbar';
 import NotFound from './components/NotFound';
 import TravelTypeList from './components/TravelTypeList';
 import TravelTypeAddEdit from './components/TravelTypeAddEdit';
+import SeasonList from './components/SeasonList';
+import SeasonAddEdit from './components/SeasonAddEdit';
+import CategoryList from './components/CategoryList';
+import CategoryAddEdit from './components/CategoryAddEdit';
 
 
 function App() {
@@ -19,6 +23,13 @@ function App() {
                 <Route path="/admin/travel-types" element={<TravelTypeList />} />
                 <Route path="/admin/travel-types/add" element={<TravelTypeAddEdit />} />
                 <Route path="/admin/travel-types/edit/:id" element={<TravelTypeAddEdit />} />
+                <Route path="/admin/seasons" element={<SeasonList />} />
+                <Route path="/admin/seasons/add" element={<SeasonAddEdit />} />
+                <Route path="/admin/seasons/edit/:id" element={<SeasonAddEdit />} />
+                <Route path="/admin/categories" element={<CategoryList />} />
+                <Route path="/admin/categories/add" element={<CategoryAddEdit />} />
+                <Route path="/admin/categories/edit/:id" element={<CategoryAddEdit />} />
+                
 
                 <Route path="*" element={<NotFound />} />
             </Routes>

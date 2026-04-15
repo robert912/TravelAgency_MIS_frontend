@@ -16,6 +16,8 @@ import MedicationLiquidIcon from "@mui/icons-material/MedicationLiquid";
 import MoreTimeIcon from "@mui/icons-material/MoreTime";
 import HomeIcon from "@mui/icons-material/Home";
 import TourIcon from '@mui/icons-material/Tour';
+import FreeCancellationIcon from '@mui/icons-material/FreeCancellation';
+import CategoryIcon from '@mui/icons-material/Category';
 import { useNavigate } from "react-router-dom";
 
 export default function Sidemenu({ open, toggleDrawer }) {
@@ -50,11 +52,18 @@ export default function Sidemenu({ open, toggleDrawer }) {
                     <ListItemText primary="Tipos de Viajes" />
                 </ListItemButton>
 
-                <ListItemButton onClick={() => navigate("/extraHours/list")}>
+                <ListItemButton onClick={() => navigate("/admin/seasons")}>
                     <ListItemIcon>
-                        <MoreTimeIcon />
+                        <FreeCancellationIcon />
                     </ListItemIcon>
-                    <ListItemText primary="Horas Extra" />
+                    <ListItemText primary="Temporadas" />
+                </ListItemButton>
+
+                <ListItemButton onClick={() => navigate("/admin/categories")}>
+                    <ListItemIcon>
+                        <CategoryIcon />
+                    </ListItemIcon>
+                    <ListItemText primary="Categorías" />
                 </ListItemButton>
 
                 <ListItemButton onClick={() => navigate("/paycheck/list")}>
