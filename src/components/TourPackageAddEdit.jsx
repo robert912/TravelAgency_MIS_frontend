@@ -6,14 +6,13 @@ import {
     Box, Paper, Typography, TextField, Button, Grid,
     FormControl, InputLabel, Select, MenuItem,
     Divider, CircularProgress, Stack, Chip,
-    InputAdornment, Alert, Skeleton
+    InputAdornment, Skeleton
 } from "@mui/material";
 import {
     Save as SaveIcon,
     Cancel as CancelIcon,
     Delete as DeleteIcon,
     AttachMoney as MoneyIcon,
-    CalendarToday as CalendarIcon,
     People as PeopleIcon,
     Star as StarIcon,
     LocationOn as LocationIcon,
@@ -29,9 +28,10 @@ import seasonService from "../services/season.service";
 import categoryService from "../services/category.service";
 import travelTypeService from "../services/travelType.service";
 
-const TourPackageAddEdit = ({ isEditMode = false }) => {
+const TourPackageAddEdit = () => {
     const navigate = useNavigate();
     const { id } = useParams();
+    const isEditMode = !!id;
 
     // Estados del formulario
     const [loading, setLoading] = useState(false);
@@ -44,30 +44,21 @@ const TourPackageAddEdit = ({ isEditMode = false }) => {
     const [travelTypes, setTravelTypes] = useState([]);
     const [loadingSelects, setLoadingSelects] = useState(true);
 
-    // Estado inicial del formulario (ordenado lógicamente)
+    // Estado inicial del formulario
     const [formData, setFormData] = useState({
-        // === SECCIÓN 1: INFORMACIÓN BÁSICA ===
         name: "",
         destination: "",
         description: "",
-
-        // === SECCIÓN 2: CLASIFICACIÓN ===
         seasonId: "",
         categoryId: "",
         travelTypeId: "",
-
-        // === SECCIÓN 3: PRECIOS Y FECHAS ===
         price: "",
         startDate: "",
         endDate: "",
         totalSlots: "",
-
-        // === SECCIÓN 4: ESTADO Y CALIFICACIÓN ===
         status: "DISPONIBLE",
         stars: 0,
         active: true,
-
-        // === SECCIÓN 5: CONTENIDO ADICIONAL ===
         imageUrl: "",
         included: "",
         notIncluded: "",
@@ -114,28 +105,19 @@ const TourPackageAddEdit = ({ isEditMode = false }) => {
 
             if (packageData) {
                 setFormData({
-                    // Sección 1
                     name: packageData.name || "",
                     destination: packageData.destination || "",
                     description: packageData.description || "",
-
-                    // Sección 2 - Relaciones
                     seasonId: packageData.season?.id || "",
                     categoryId: packageData.category?.id || "",
                     travelTypeId: packageData.travelType?.id || "",
-
-                    // Sección 3
                     price: packageData.price || "",
                     startDate: packageData.startDate || "",
                     endDate: packageData.endDate || "",
                     totalSlots: packageData.totalSlots || "",
-
-                    // Sección 4
                     status: packageData.status || "DISPONIBLE",
                     stars: packageData.stars || 0,
                     active: packageData.active === 1 || packageData.active === true,
-
-                    // Sección 5
                     imageUrl: packageData.imageUrl || "",
                     included: packageData.included || "",
                     notIncluded: packageData.notIncluded || "",
@@ -162,23 +144,17 @@ const TourPackageAddEdit = ({ isEditMode = false }) => {
     const validateForm = () => {
         const newErrors = {};
 
-        // Sección 1
         if (!formData.name.trim()) newErrors.name = "El nombre es requerido";
         if (!formData.destination.trim()) newErrors.destination = "El destino es requerido";
         if (!formData.description.trim()) newErrors.description = "La descripción es requerida";
-
-        // Sección 2
         if (!formData.seasonId) newErrors.seasonId = "Seleccione una temporada";
         if (!formData.categoryId) newErrors.categoryId = "Seleccione una categoría";
         if (!formData.travelTypeId) newErrors.travelTypeId = "Seleccione un tipo de viaje";
-
-        // Sección 3
         if (!formData.price || formData.price <= 0) newErrors.price = "El precio debe ser mayor a 0";
         if (!formData.startDate) newErrors.startDate = "La fecha de inicio es requerida";
         if (!formData.endDate) newErrors.endDate = "La fecha de fin es requerida";
         if (!formData.totalSlots || formData.totalSlots <= 0) newErrors.totalSlots = "Debe haber al menos 1 cupo";
 
-        // Validar fechas
         if (formData.startDate && formData.endDate) {
             if (new Date(formData.startDate) > new Date(formData.endDate)) {
                 newErrors.endDate = "La fecha de fin debe ser posterior a la fecha de inicio";
@@ -188,6 +164,11 @@ const TourPackageAddEdit = ({ isEditMode = false }) => {
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
     };
+
+    // Obtener objeto completo por ID
+    const getFullSeason = () => seasons.find(s => s.id === Number(formData.seasonId));
+    const getFullCategory = () => categories.find(c => c.id === Number(formData.categoryId));
+    const getFullTravelType = () => travelTypes.find(t => t.id === Number(formData.travelTypeId));
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -200,8 +181,8 @@ const TourPackageAddEdit = ({ isEditMode = false }) => {
         setSaving(true);
 
         try {
-            const submitData = {
-                // Campos simples
+            // Construir objeto base (sin id)
+            const baseData = {
                 name: formData.name,
                 destination: formData.destination,
                 description: formData.description,
@@ -213,19 +194,26 @@ const TourPackageAddEdit = ({ isEditMode = false }) => {
                 stars: Number(formData.stars),
                 imageUrl: formData.imageUrl || null,
                 active: formData.active ? 1 : 0,
-
-                // Relaciones: Enviar como objetos con solo el ID
-                season: formData.seasonId ? { id: Number(formData.seasonId) } : null,
-                category: formData.categoryId ? { id: Number(formData.categoryId) } : null,
-                travelType: formData.travelTypeId ? { id: Number(formData.travelTypeId) } : null,
-
-                // Campos opcionales que el backend podría esperar
-                createdByUserId: formData.createdByUserId || 1,  // Usuario actual
-                modifiedByUserId: formData.modifiedByUserId || 1 // Usuario actual
+                createdByUserId: 1,
+                modifiedByUserId: 1,
+                season: getFullSeason(),
+                category: getFullCategory(),
+                travelType: getFullTravelType(),
+                included: formData.included || null,
+                notIncluded: formData.notIncluded || null,
+                itinerary: formData.itinerary || null
             };
 
+            // ✅ Solo agregar id si es modo edición
+            const submitData = isEditMode
+                ? { ...baseData, id: Number(id) }
+                : baseData;
+
+            console.log("Enviando al backend:", JSON.stringify(submitData, null, 2));
+
             if (isEditMode) {
-                await tourPackageService.update(id, submitData);
+                // ✅ UPDATE: solo pasa el objeto completo (el id va dentro)
+                await tourPackageService.update(submitData);
                 Swal.fire('¡Actualizado!', 'El paquete ha sido actualizado correctamente', 'success');
             } else {
                 await tourPackageService.create(submitData);
@@ -235,6 +223,7 @@ const TourPackageAddEdit = ({ isEditMode = false }) => {
             navigate('/admin/packages');
         } catch (error) {
             console.error("Error al guardar", error);
+            console.error("Detalle:", error.response?.data);
             Swal.fire('Error', error.response?.data?.message || 'Hubo un problema al guardar el paquete', 'error');
         } finally {
             setSaving(false);
@@ -254,12 +243,42 @@ const TourPackageAddEdit = ({ isEditMode = false }) => {
         });
 
         if (result.isConfirmed) {
+            setSaving(true);
             try {
-                await tourPackageService.toggleActive(id, !formData.active);
+                // Construir objeto completo con el active cambiado
+                const updatedData = {
+                    id: Number(id),
+                    name: formData.name,
+                    destination: formData.destination,
+                    description: formData.description,
+                    price: Number(formData.price),
+                    startDate: formData.startDate,
+                    endDate: formData.endDate,
+                    totalSlots: Number(formData.totalSlots),
+                    status: formData.status,
+                    stars: Number(formData.stars),
+                    imageUrl: formData.imageUrl || null,
+                    active: formData.active ? 0 : 1,  // Cambiar estado
+                    createdByUserId: 1,
+                    modifiedByUserId: 1,
+                    createdAt: null,
+                    updatedAt: new Date().toISOString(),
+                    season: getFullSeason(),
+                    category: getFullCategory(),
+                    travelType: getFullTravelType(),
+                    included: formData.included || null,
+                    notIncluded: formData.notIncluded || null,
+                    itinerary: formData.itinerary || null
+                };
+
+                await tourPackageService.update(updatedData);
                 setFormData(prev => ({ ...prev, active: !prev.active }));
                 Swal.fire('¡Completado!', `Paquete ${formData.active ? 'desactivado' : 'activado'} correctamente`, 'success');
             } catch (error) {
+                console.error("Error:", error);
                 Swal.fire('Error', 'No se pudo cambiar el estado del paquete', 'error');
+            } finally {
+                setSaving(false);
             }
         }
     };
@@ -280,7 +299,7 @@ const TourPackageAddEdit = ({ isEditMode = false }) => {
     return (
         <Box sx={{ p: 3, bgcolor: '#f5f5f5', minHeight: '100vh' }}>
             <Paper elevation={0} sx={{ borderRadius: 2, maxWidth: 1200, mx: 'auto', overflow: 'hidden' }}>
-                {/* Header con gradiente */}
+                {/* Header */}
                 <Box sx={{
                     bgcolor: 'var(--primary)',
                     color: 'white',
@@ -318,8 +337,7 @@ const TourPackageAddEdit = ({ isEditMode = false }) => {
                 <form onSubmit={handleSubmit}>
                     <Box sx={{ p: 4 }}>
                         <Grid container spacing={4}>
-
-                            {/* ========== SECCIÓN 1: INFORMACIÓN BÁSICA ========== */}
+                            {/* SECCIÓN 1: INFORMACIÓN BÁSICA */}
                             <Grid item xs={12}>
                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
                                     <DescriptionIcon color="primary" />
@@ -375,7 +393,7 @@ const TourPackageAddEdit = ({ isEditMode = false }) => {
                                 />
                             </Grid>
 
-                            {/* ========== SECCIÓN 2: CLASIFICACIÓN ========== */}
+                            {/* SECCIÓN 2: CLASIFICACIÓN */}
                             <Grid item xs={12}>
                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2, mt: 2 }}>
                                     <CategoryIcon color="primary" />
@@ -392,7 +410,6 @@ const TourPackageAddEdit = ({ isEditMode = false }) => {
                                         value={formData.seasonId}
                                         onChange={handleChange}
                                         label="Temporada"
-                                        startAdornment={<InputAdornment position="start"><SeasonIcon fontSize="small" /></InputAdornment>}
                                     >
                                         <MenuItem value=""><em>Seleccione una temporada</em></MenuItem>
                                         {seasons.map(season => (
@@ -401,7 +418,6 @@ const TourPackageAddEdit = ({ isEditMode = false }) => {
                                             </MenuItem>
                                         ))}
                                     </Select>
-                                    {errors.seasonId && <FormHelperText>{errors.seasonId}</FormHelperText>}
                                 </FormControl>
                             </Grid>
 
@@ -421,7 +437,6 @@ const TourPackageAddEdit = ({ isEditMode = false }) => {
                                             </MenuItem>
                                         ))}
                                     </Select>
-                                    {errors.categoryId && <FormHelperText>{errors.categoryId}</FormHelperText>}
                                 </FormControl>
                             </Grid>
 
@@ -441,11 +456,10 @@ const TourPackageAddEdit = ({ isEditMode = false }) => {
                                             </MenuItem>
                                         ))}
                                     </Select>
-                                    {errors.travelTypeId && <FormHelperText>{errors.travelTypeId}</FormHelperText>}
                                 </FormControl>
                             </Grid>
 
-                            {/* ========== SECCIÓN 3: PRECIOS Y FECHAS ========== */}
+                            {/* SECCIÓN 3: PRECIOS Y FECHAS */}
                             <Grid item xs={12}>
                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2, mt: 2 }}>
                                     <MoneyIcon color="primary" />
@@ -522,7 +536,7 @@ const TourPackageAddEdit = ({ isEditMode = false }) => {
                                 />
                             </Grid>
 
-                            {/* ========== SECCIÓN 4: ESTADO Y CALIFICACIÓN ========== */}
+                            {/* SECCIÓN 4: ESTADO Y CALIFICACIÓN */}
                             <Grid item xs={12}>
                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2, mt: 2 }}>
                                     <StarIcon color="primary" />
@@ -564,7 +578,7 @@ const TourPackageAddEdit = ({ isEditMode = false }) => {
                                 />
                             </Grid>
 
-                            {/* ========== SECCIÓN 5: CONTENIDO ADICIONAL ========== */}
+                            {/* SECCIÓN 5: CONTENIDO ADICIONAL */}
                             <Grid item xs={12}>
                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2, mt: 2 }}>
                                     <DescriptionIcon color="primary" />
@@ -646,6 +660,7 @@ const TourPackageAddEdit = ({ isEditMode = false }) => {
                                     color="error"
                                     onClick={handleToggleActive}
                                     startIcon={<DeleteIcon />}
+                                    disabled={saving}
                                 >
                                     {formData.active ? 'Desactivar' : 'Activar'}
                                 </Button>
