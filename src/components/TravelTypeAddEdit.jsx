@@ -12,7 +12,7 @@ import CardContent from "@mui/material/CardContent";
 import Alert from "@mui/material/Alert";
 import { FormControlLabel, Switch } from "@mui/material";
 
-const AddEditTravelType = () => {
+const TravelTypeAddEdit = () => {
     const [name, setName] = useState("");
     const [description, setDescription] = useState("");
     const [active, setActive] = useState(false);
@@ -160,18 +160,21 @@ const AddEditTravelType = () => {
                             <Button
                                 component={Link}
                                 to="/admin/travel-types"
-                                color="inherit"
-                                variant="text"
+                                variant="contained"
+                                color="error"
+                                size="small"
                             >
                                 Cancelar
                             </Button>
                             <Button
                                 type="submit"
                                 variant="contained"
-                                sx={{ backgroundColor: "var(--primary)", "&:hover": { backgroundColor: "var(--primary-hover)" } }}
+                                color="info"
+                                size="small"
                                 startIcon={<SaveIcon />}
+                                sx={{ mr: 1 }}
                             >
-                                Gravar
+                                Guardar
                             </Button>
                         </Box>
                     </Box>
@@ -181,4 +184,4 @@ const AddEditTravelType = () => {
     );
 };
 
-export default AddEditTravelType;
+export default TravelTypeAddEdit;

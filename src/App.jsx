@@ -4,7 +4,7 @@ import TourPackageDetail from './components/TourPackageDetails';
 import Navbar from './components/Navbar';
 import NotFound from './components/NotFound';
 import TravelTypeList from './components/TravelTypeList';
-import AddEditTravelType from './components/AddEditTravelType';
+import TravelTypeAddEdit from './components/TravelTypeAddEdit';
 
 
 function App() {
@@ -14,13 +14,13 @@ function App() {
             <Routes>
                 <Route path="/" element={<Home />} />
                 <Route path="/package/:id" element={<TourPackageDetail />} />
-                
+
                 {/* Rutas de Administrador */}
                 <Route path="/admin/travel-types" element={<TravelTypeList />} />
-                <Route path="/admin/travel-types/add" element={<AddEditTravelType />} />
-                <Route path="/admin/travel-types/edit/:id" element={<AddEditTravelType />} />
+                <Route path="/admin/travel-types/add" element={<TravelTypeAddEdit />} />
+                <Route path="/admin/travel-types/edit/:id" element={<TravelTypeAddEdit />} />
 
-                <Route path="*" element={<NotFound/>} />
+                <Route path="*" element={<NotFound />} />
             </Routes>
         </BrowserRouter>
     );

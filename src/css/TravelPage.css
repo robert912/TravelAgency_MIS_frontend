@@ -1,0 +1,10 @@
+/* TravelPage.css */
+.web-background {
+    height: calc(100vh - 64px);
+    background-image: url('/images/notfound.avif');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    width: 100%;
+}

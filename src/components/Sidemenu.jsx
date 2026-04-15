@@ -15,98 +15,99 @@ import HailIcon from "@mui/icons-material/Hail";
 import MedicationLiquidIcon from "@mui/icons-material/MedicationLiquid";
 import MoreTimeIcon from "@mui/icons-material/MoreTime";
 import HomeIcon from "@mui/icons-material/Home";
+import TourIcon from '@mui/icons-material/Tour';
 import { useNavigate } from "react-router-dom";
 
 export default function Sidemenu({ open, toggleDrawer }) {
-  const navigate = useNavigate();
+    const navigate = useNavigate();
 
-  const listOptions = () => (
-    <Box
-      role="presentation"
-      onClick={toggleDrawer(false)}
-    >
-      <List>
-        <ListItemButton onClick={() => navigate("/")}>
-          <ListItemIcon>
-            <HomeIcon />
-          </ListItemIcon>
-          <ListItemText primary="Home" />
-        </ListItemButton>
+    const listOptions = () => (
+        <Box
+            role="presentation"
+            onClick={toggleDrawer(false)}
+        >
+            <List>
+                <ListItemButton onClick={() => navigate("/")}>
+                    <ListItemIcon>
+                        <HomeIcon />
+                    </ListItemIcon>
+                    <ListItemText primary="Home" />
+                </ListItemButton>
 
-        <Divider />
+                <Divider />
 
-        <ListItemButton onClick={() => navigate("/employee/list")}>
-          <ListItemIcon>
-            <PeopleAltIcon />
-          </ListItemIcon>
-          <ListItemText primary="Empleados" />
-        </ListItemButton>
+                <ListItemButton onClick={() => navigate("/employee/list")}>
+                    <ListItemIcon>
+                        <PeopleAltIcon />
+                    </ListItemIcon>
+                    <ListItemText primary="Empleados" />
+                </ListItemButton>
 
-        <ListItemButton onClick={() => navigate("/admin/travel-types")}>
-          <ListItemIcon>
-            <PeopleAltIcon />
-          </ListItemIcon>
-          <ListItemText primary="Tipos de Viajes" />
-        </ListItemButton>
+                <ListItemButton onClick={() => navigate("/admin/travel-types")}>
+                    <ListItemIcon>
+                        <TourIcon />
+                    </ListItemIcon>
+                    <ListItemText primary="Tipos de Viajes" />
+                </ListItemButton>
 
-        <ListItemButton onClick={() => navigate("/extraHours/list")}>
-          <ListItemIcon>
-            <MoreTimeIcon />
-          </ListItemIcon>
-          <ListItemText primary="Horas Extra" />
-        </ListItemButton>
+                <ListItemButton onClick={() => navigate("/extraHours/list")}>
+                    <ListItemIcon>
+                        <MoreTimeIcon />
+                    </ListItemIcon>
+                    <ListItemText primary="Horas Extra" />
+                </ListItemButton>
 
-        <ListItemButton onClick={() => navigate("/paycheck/list")}>
-          <ListItemIcon>
-            <PaidIcon />
-          </ListItemIcon>
-          <ListItemText primary="Planilla Sueldos" />
-        </ListItemButton>
+                <ListItemButton onClick={() => navigate("/paycheck/list")}>
+                    <ListItemIcon>
+                        <PaidIcon />
+                    </ListItemIcon>
+                    <ListItemText primary="Planilla Sueldos" />
+                </ListItemButton>
 
-        <ListItemButton onClick={() => navigate("/paycheck/calculate")}>
-          <ListItemIcon>
-            <CalculateIcon />
-          </ListItemIcon>
-          <ListItemText primary="Calcular Planilla" />
-        </ListItemButton>
-        <ListItemButton onClick={() => navigate("/reports/AnualReport")}>
-          <ListItemIcon>
-            <AnalyticsIcon />
-          </ListItemIcon>
-          <ListItemText primary="Gráficos Planillas" />
-        </ListItemButton>
-      </List>
+                <ListItemButton onClick={() => navigate("/paycheck/calculate")}>
+                    <ListItemIcon>
+                        <CalculateIcon />
+                    </ListItemIcon>
+                    <ListItemText primary="Calcular Planilla" />
+                </ListItemButton>
+                <ListItemButton onClick={() => navigate("/reports/AnualReport")}>
+                    <ListItemIcon>
+                        <AnalyticsIcon />
+                    </ListItemIcon>
+                    <ListItemText primary="Gráficos Planillas" />
+                </ListItemButton>
+            </List>
 
-      <Divider />
+            <Divider />
 
-      <List>
-        <ListItemButton onClick={() => navigate("/employee/discounts")}>
-          <ListItemIcon>
-            <DiscountIcon />
-          </ListItemIcon>
-          <ListItemText primary="Descuentos" />
-        </ListItemButton>
-        <ListItemButton onClick={() => navigate("/paycheck/vacations")}>
-          <ListItemIcon>
-            <HailIcon />
-          </ListItemIcon>
-          <ListItemText primary="Vacaciones" />
-        </ListItemButton>
-        <ListItemButton onClick={() => navigate("/paycheck/medicalleave")}>
-          <ListItemIcon>
-            <MedicationLiquidIcon />
-          </ListItemIcon>
-          <ListItemText primary="Licencias Medicas" />
-        </ListItemButton>
-      </List>
-    </Box>
-  );
+            <List>
+                <ListItemButton onClick={() => navigate("/employee/discounts")}>
+                    <ListItemIcon>
+                        <DiscountIcon />
+                    </ListItemIcon>
+                    <ListItemText primary="Descuentos" />
+                </ListItemButton>
+                <ListItemButton onClick={() => navigate("/paycheck/vacations")}>
+                    <ListItemIcon>
+                        <HailIcon />
+                    </ListItemIcon>
+                    <ListItemText primary="Vacaciones" />
+                </ListItemButton>
+                <ListItemButton onClick={() => navigate("/paycheck/medicalleave")}>
+                    <ListItemIcon>
+                        <MedicationLiquidIcon />
+                    </ListItemIcon>
+                    <ListItemText primary="Licencias Medicas" />
+                </ListItemButton>
+            </List>
+        </Box>
+    );
 
-  return (
-    <div>
-      <Drawer anchor={"left"} open={open} onClose={toggleDrawer(false)}>
-        {listOptions()}
-      </Drawer>
-    </div>
-  );
+    return (
+        <div>
+            <Drawer anchor={"left"} open={open} onClose={toggleDrawer(false)}>
+                {listOptions()}
+            </Drawer>
+        </div>
+    );
 }
