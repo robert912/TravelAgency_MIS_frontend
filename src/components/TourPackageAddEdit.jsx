@@ -152,7 +152,7 @@ const TourPackageAddEdit = () => {
         if (!formData.endDate) newErrors.endDate = "La fecha de fin es requerida";
         if (!formData.totalSlots || formData.totalSlots <= 0) newErrors.totalSlots = "Debe haber al menos 1 cupo";
 
-        if (formData.startDate && formData.endDate && 
+        if (formData.startDate && formData.endDate &&
             new Date(formData.startDate) > new Date(formData.endDate)) {
             newErrors.endDate = "La fecha de fin debe ser posterior a la fecha de inicio";
         }
@@ -196,7 +196,7 @@ const TourPackageAddEdit = () => {
         setSaving(true);
         try {
             const submitData = buildSubmitData();
-            
+
             if (isEditMode) {
                 await tourPackageService.update(submitData);
                 Swal.fire('¡Actualizado!', 'El paquete ha sido actualizado correctamente', 'success');
@@ -465,8 +465,8 @@ const TourPackageAddEdit = () => {
                                         <Select name="status" value={formData.status} onChange={handleChange} label="Estado del paquete">
                                             <MenuItem value="DISPONIBLE">Disponible</MenuItem>
                                             <MenuItem value="AGOTADO">Agotado</MenuItem>
-                                            <MenuItem value="PROXIMO">Próximo</MenuItem>
-                                            <MenuItem value="FINALIZADO">Finalizado</MenuItem>
+                                            <MenuItem value="NO_VIGENTE">No Vigente</MenuItem>
+                                            <MenuItem value="CANCELADO">Cancelado</MenuItem>
                                         </Select>
                                     </FormControl>
                                 </Grid>

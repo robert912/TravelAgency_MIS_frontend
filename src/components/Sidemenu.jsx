@@ -73,12 +73,27 @@ export default function Sidemenu({ open, toggleDrawer }) {
                     <ListItemText primary="Categorías" />
                 </ListItemButton>
 
-                <ListItemButton onClick={() => navigate("/paycheck/calculate")}>
+                <ListItemButton onClick={() => navigate("/admin/conditions")}>
                     <ListItemIcon>
                         <CalculateIcon />
                     </ListItemIcon>
-                    <ListItemText primary="Calcular Planilla" />
+                    <ListItemText primary="Condiciones" />
                 </ListItemButton>
+
+                <ListItemButton onClick={() => navigate("/admin/restrictions")}>
+                    <ListItemIcon>
+                        <CalculateIcon />
+                    </ListItemIcon>
+                    <ListItemText primary="Restricciones" />
+                </ListItemButton>
+
+                <ListItemButton onClick={() => navigate("/admin/services")}>
+                    <ListItemIcon>
+                        <CalculateIcon />
+                    </ListItemIcon>
+                    <ListItemText primary="Servicios" />
+                </ListItemButton>
+
                 <ListItemButton onClick={() => navigate("/reports/AnualReport")}>
                     <ListItemIcon>
                         <AnalyticsIcon />

@@ -8,7 +8,7 @@ import {
     Pagination, Stack, FormControl, InputLabel, Select,
     Tooltip, TableSortLabel, Badge, Dialog, DialogTitle,
     DialogContent, DialogActions, Grid, Divider, Rating,
-    Avatar, LinearProgress, CircularProgress
+    Avatar, LinearProgress, CircularProgress, Tab, Tabs
 } from "@mui/material";
 import {
     Edit as EditIcon,
@@ -25,7 +25,11 @@ import {
     Cancel as CancelIcon,
     Refresh as RefreshIcon,
     NoLuggage as NoLuggageIcon,
-    Luggage as LuggageIcon
+    Luggage as LuggageIcon,
+    Inventory as ServiceIcon,
+    Description as ConditionIcon,
+    Warning as RestrictionIcon,
+    Info as InfoIcon
 } from "@mui/icons-material";
 import Swal from 'sweetalert2';
 
@@ -45,6 +49,7 @@ const TourPackageList = () => {
     const [modalOpen, setModalOpen] = useState(false);
     const [selectedPackage, setSelectedPackage] = useState(null);
     const [modalLoading, setModalLoading] = useState(false);
+    const [modalTab, setModalTab] = useState(0);
 
     const navigate = useNavigate();
 
@@ -68,7 +73,7 @@ const TourPackageList = () => {
         fetchPackages();
     }, []);
 
-    // Filtrar y ordenar (mismo código que antes)
+    // Filtrar y ordenar
     useEffect(() => {
         let result = [...packages];
 
@@ -116,15 +121,14 @@ const TourPackageList = () => {
         setSelectedPackage(pkg);
         setModalOpen(true);
         setModalLoading(true);
+        setModalTab(0); // Resetear a la primera pestaña
 
-        // Opcional: Si quieres cargar datos más detallados desde el servidor
         try {
             const response = await tourPackageService.get(pkg.id);
             const detailedData = response.data?.data || response.data;
             setSelectedPackage(detailedData);
         } catch (error) {
             console.error("Error al cargar detalles completos", error);
-            // Si falla, al menos mostramos los datos que ya teníamos
         } finally {
             setModalLoading(false);
         }
@@ -133,6 +137,7 @@ const TourPackageList = () => {
     const handleCloseModal = () => {
         setModalOpen(false);
         setSelectedPackage(null);
+        setModalTab(0);
     };
 
     const handleDelete = (pkg) => {
@@ -182,9 +187,9 @@ const TourPackageList = () => {
     const getStatusColor = (status) => {
         const colors = {
             'disponible': 'success',
-            'agotado': 'error',
-            'proximo': 'info',
-            'finalizado': 'default'
+            'agotado': 'warning',
+            'no_vigente': 'info',
+            'cancelado': 'error'
         };
         return colors[status?.toLowerCase()] || 'default';
     };
@@ -193,8 +198,8 @@ const TourPackageList = () => {
         const labels = {
             'disponible': 'Disponible',
             'agotado': 'Agotado',
-            'proximo': 'Próximo',
-            'finalizado': 'Finalizado'
+            'no_vigente': 'No vigente',
+            'cancelado': 'Cancelado'
         };
         return labels[status?.toLowerCase()] || status;
     };
@@ -220,9 +225,51 @@ const TourPackageList = () => {
         { id: 'actions', label: 'Acciones', width: 150, align: 'center' }
     ];
 
+    // Función para obtener el ícono del servicio
+    const getServiceIcon = (serviceName) => {
+        const icons = {
+            'Vuelo ida y vuelta': '✈️',
+            'Alojamiento': '🏨',
+            'Todo incluido': '🍽️',
+            'Desayuno incluido': '🍳',
+            'Traslados': '🚐',
+            'Seguro de viaje': '🛡️',
+            'Tours guiados': '🗺️',
+            'Entradas a atracciones': '🎫',
+            'Actividades incluidas': '🏄',
+            'Asistencia 24/7': '📞'
+        };
+        return icons[serviceName] || '✅';
+    };
+
+    // Función para obtener el ícono de la condición
+    const getConditionIcon = (conditionName) => {
+        if (conditionName?.includes('Cancelación')) return '🔄';
+        if (conditionName?.includes('equipaje')) return '🧳';
+        if (conditionName?.includes('desayuno')) return '🍳';
+        if (conditionName?.includes('público')) return '👨‍👩‍👧‍👦';
+        if (conditionName?.includes('Itinerario')) return '📅';
+        return '✓';
+    };
+
+    // Función para obtener el ícono de la restricción
+    const getRestrictionIcon = (restrictionName) => {
+        if (restrictionName?.includes('Edad')) return '🔞';
+        if (restrictionName?.includes('Cancelación')) return '🔄';
+        if (restrictionName?.includes('Menores')) return '👶';
+        if (restrictionName?.includes('Máximo')) return '👥';
+        if (restrictionName?.includes('Pasaporte')) return '🛂';
+        if (restrictionName?.includes('Seguro')) return '🛡️';
+        if (restrictionName?.includes('equipaje')) return '🧳';
+        if (restrictionName?.includes('Mascotas')) return '🐾';
+        if (restrictionName?.includes('Visa')) return '📄';
+        if (restrictionName?.includes('Vacuna')) return '💉';
+        return '⚠️';
+    };
+
     return (
         <Box sx={{ p: 3, bgcolor: '#f5f5f5', minHeight: '100vh' }}>
-            {/* Header y filtros - mismo código que antes */}
+            {/* Header y filtros */}
             <Paper elevation={0} sx={{ p: 3, mb: 3, borderRadius: 2 }}>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
                     <Box>
@@ -415,10 +462,8 @@ const TourPackageList = () => {
                                                         size="small"
                                                         color={pkg.active ? "error" : "success"}
                                                         onClick={() => handleDelete(pkg)}
-
                                                     >
                                                         {pkg.active ? <NoLuggageIcon fontSize="small" /> : <LuggageIcon fontSize="small" />}
-
                                                     </IconButton>
                                                 </Tooltip>
                                             </Stack>
@@ -444,7 +489,7 @@ const TourPackageList = () => {
                 )}
             </Paper>
 
-            {/* MODAL DE DETALLES */}
+            {/* MODAL DE DETALLES CON TABS */}
             <Dialog
                 open={modalOpen}
                 onClose={handleCloseModal}
@@ -464,7 +509,7 @@ const TourPackageList = () => {
                     </Box>
                 ) : selectedPackage && (
                     <>
-                        {/* Header simplificado */}
+                        {/* Header */}
                         <DialogTitle sx={{
                             borderBottom: '1px solid',
                             borderColor: 'divider',
@@ -488,195 +533,246 @@ const TourPackageList = () => {
                             </IconButton>
                         </DialogTitle>
 
+                        {/* Tabs */}
+                        <Box sx={{ borderBottom: 1, borderColor: 'divider', px: 3 }}>
+                            <Tabs value={modalTab} onChange={(e, newValue) => setModalTab(newValue)}>
+                                <Tab label="Información General" icon={<InfoIcon />} iconPosition="start" />
+                                <Tab label="Servicios" icon={<ServiceIcon />} iconPosition="start" />
+                                <Tab label="Condiciones" icon={<ConditionIcon />} iconPosition="start" />
+                                <Tab label="Restricciones" icon={<RestrictionIcon />} iconPosition="start" />
+                            </Tabs>
+                        </Box>
+
                         <DialogContent sx={{ p: 0 }}>
-                            {/* Tabla de información principal */}
-                            <Box sx={{ p: 3 }}>
-                                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                                    <tbody>
-                                        {/* Destino */}
-                                        <tr>
-                                            <td style={{
-                                                padding: '8px 0',
-                                                width: '35%',
-                                                verticalAlign: 'top',
-                                                color: '#666',
-                                                fontWeight: 500
-                                            }}>
-                                                Destino:
-                                            </td>
-                                            <td style={{ padding: '8px 0', verticalAlign: 'top' }}>
-                                                {selectedPackage.destination}
-                                            </td>
-                                        </tr>
+                            {/* Tab 0: Información General */}
+                            {modalTab === 0 && (
+                                <Box sx={{ p: 3 }}>
+                                    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                                        <tbody>
+                                            <tr>
+                                                <td style={{ padding: '8px 0', width: '35%', verticalAlign: 'top', color: '#666', fontWeight: 500 }}>
+                                                    Destino:
+                                                </td>
+                                                <td style={{ padding: '8px 0', verticalAlign: 'top' }}>
+                                                    {selectedPackage.destination}
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td style={{ padding: '8px 0', verticalAlign: 'top', color: '#666', fontWeight: 500 }}>
+                                                    Descripción:
+                                                </td>
+                                                <td style={{ padding: '8px 0', verticalAlign: 'top' }}>
+                                                    <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
+                                                        {selectedPackage.description || 'Sin descripción'}
+                                                    </Typography>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td style={{ padding: '8px 0', color: '#666', fontWeight: 500 }}>
+                                                    Precio:
+                                                </td>
+                                                <td style={{ padding: '8px 0' }}>
+                                                    <Typography fontWeight="bold" color="primary.main">
+                                                        ${selectedPackage.price?.toLocaleString()}
+                                                    </Typography>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td style={{ padding: '8px 0', color: '#666', fontWeight: 500 }}>
+                                                    Fechas:
+                                                </td>
+                                                <td style={{ padding: '8px 0' }}>
+                                                    {selectedPackage.startDate} → {selectedPackage.endDate}
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td style={{ padding: '8px 0', color: '#666', fontWeight: 500 }}>
+                                                    Cupos totales:
+                                                </td>
+                                                <td style={{ padding: '8px 0' }}>
+                                                    {selectedPackage.totalSlots}
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td style={{ padding: '8px 0', color: '#666', fontWeight: 500 }}>
+                                                    Estado paquete:
+                                                </td>
+                                                <td style={{ padding: '8px 0' }}>
+                                                    <Chip
+                                                        label={getStatusLabel(selectedPackage.status)}
+                                                        color={getStatusColor(selectedPackage.status)}
+                                                        size="small"
+                                                    />
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td style={{ padding: '8px 0', color: '#666', fontWeight: 500 }}>
+                                                    Calificación:
+                                                </td>
+                                                <td className="stars">
+                                                    {[1, 2, 3, 4, 5].map((star, i) => (
+                                                        <span key={i} className="star" style={{ color: i < (selectedPackage.stars || 0) ? "#ffc107" : "#e0e0e0", fontSize: '20px' }}> ★ </span>
+                                                    ))}
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td style={{ padding: '8px 0', color: '#666', fontWeight: 500 }}>
+                                                    Estado sistema:
+                                                </td>
+                                                <td style={{ padding: '8px 0' }}>
+                                                    <Chip
+                                                        label={selectedPackage.active ? "Activo" : "Inactivo"}
+                                                        color={selectedPackage.active ? "success" : "default"}
+                                                        size="small"
+                                                        variant="outlined"
+                                                    />
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td style={{ padding: '8px 0', verticalAlign: 'top', color: '#666', fontWeight: 500 }}>
+                                                    Temporada:
+                                                </td>
+                                                <td style={{ padding: '8px 0', verticalAlign: 'top' }}>
+                                                    {selectedPackage.season?.name || 'No especificada'}
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td style={{ padding: '8px 0', verticalAlign: 'top', color: '#666', fontWeight: 500 }}>
+                                                    Categoría:
+                                                </td>
+                                                <td style={{ padding: '8px 0', verticalAlign: 'top' }}>
+                                                    {selectedPackage.category?.name || 'No especificada'}
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td style={{ padding: '8px 0', verticalAlign: 'top', color: '#666', fontWeight: 500 }}>
+                                                    Tipo de Viaje:
+                                                </td>
+                                                <td style={{ padding: '8px 0', verticalAlign: 'top' }}>
+                                                    {selectedPackage.travelType?.name || 'No especificado'}
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </Box>
+                            )}
 
-                                        {/* Descripción */}
-                                        <tr>
-                                            <td style={{
-                                                padding: '8px 0',
-                                                verticalAlign: 'top',
-                                                color: '#666',
-                                                fontWeight: 500
-                                            }}>
-                                                Descripción:
-                                            </td>
-                                            <td style={{ padding: '8px 0', verticalAlign: 'top' }}>
-                                                <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
-                                                    {selectedPackage.description || 'Sin descripción'}
-                                                </Typography>
-                                            </td>
-                                        </tr>
+                            {/* Tab 1: Servicios - Versión Compacta */}
+                            {modalTab === 1 && (
+                                <Box sx={{ p: 2 }}>
+                                    <Typography variant="subtitle1" fontWeight="bold" sx={{ mb: 1.5 }}>
+                                        Servicios Incluidos
+                                    </Typography>
 
-                                        {/* Precio */}
-                                        <tr>
-                                            <td style={{
-                                                padding: '8px 0',
-                                                color: '#666',
-                                                fontWeight: 500
-                                            }}>
-                                                Precio:
-                                            </td>
-                                            <td style={{ padding: '8px 0' }}>
-                                                <Typography fontWeight="bold" color="primary.main">
-                                                    ${selectedPackage.price?.toLocaleString()}
-                                                </Typography>
-                                            </td>
-                                        </tr>
+                                    {selectedPackage.services && selectedPackage.services.length > 0 ? (
+                                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                                            {selectedPackage.services.map((item, index) => (
+                                                <Box
+                                                    key={item.id || index}
+                                                    sx={{
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: 1.5,
+                                                        p: 1,
+                                                        bgcolor: '#f9fafb',
+                                                        borderRadius: 1,
+                                                        fontSize: '14px'
+                                                    }}
+                                                >
+                                                    <Box sx={{ width: 4, height: 4, bgcolor: '#3b82f6', borderRadius: '50%' }} />
+                                                    <Typography variant="body2">
+                                                        <strong>{item.service?.name || 'Servicio'}</strong>
+                                                        {item.service?.description && `: ${item.service.description}`}
+                                                    </Typography>
+                                                </Box>
+                                            ))}
+                                        </Box>
+                                    ) : (
+                                        <Typography variant="body2" color="text.secondary" sx={{ py: 2, textAlign: 'center' }}>
+                                            No hay servicios disponibles
+                                        </Typography>
+                                    )}
+                                </Box>
+                            )}
 
-                                        {/* Fechas */}
-                                        <tr>
-                                            <td style={{
-                                                padding: '8px 0',
-                                                color: '#666',
-                                                fontWeight: 500
-                                            }}>
-                                                Fechas:
-                                            </td>
-                                            <td style={{ padding: '8px 0' }}>
-                                                {selectedPackage.startDate} → {selectedPackage.endDate}
-                                            </td>
-                                        </tr>
+                            {/* Tab 2: Condiciones - Versión Compacta */}
+                            {modalTab === 2 && (
+                                <Box sx={{ p: 2 }}>
+                                    <Typography variant="subtitle1" fontWeight="bold" sx={{ mb: 1.5 }}>
+                                        Condiciones Generales
+                                    </Typography>
 
-                                        {/* Cupos */}
-                                        <tr>
-                                            <td style={{
-                                                padding: '8px 0',
-                                                color: '#666',
-                                                fontWeight: 500
-                                            }}>
-                                                Cupos totales:
-                                            </td>
-                                            <td style={{ padding: '8px 0' }}>
-                                                {selectedPackage.totalSlots}
-                                            </td>
-                                        </tr>
+                                    {selectedPackage.conditions && selectedPackage.conditions.length > 0 ? (
+                                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                                            {selectedPackage.conditions.map((item, index) => (
+                                                <Box
+                                                    key={item.id || index}
+                                                    sx={{
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: 1.5,
+                                                        p: 1,
+                                                        bgcolor: '#f0fdf4',
+                                                        borderLeft: '3px solid #22c55e',
+                                                        borderRadius: 0.5,
+                                                        fontSize: '14px'
+                                                    }}
+                                                >
+                                                    <Typography variant="body2">
+                                                        <strong>✓ {item.condition?.name || 'Condición'}</strong>
+                                                        {item.condition?.description && `: ${item.condition.description}`}
+                                                    </Typography>
+                                                </Box>
+                                            ))}
+                                        </Box>
+                                    ) : (
+                                        <Typography variant="body2" color="text.secondary" sx={{ py: 2, textAlign: 'center' }}>
+                                            No hay condiciones disponibles
+                                        </Typography>
+                                    )}
+                                </Box>
+                            )}
 
-                                        {/* Estado del paquete */}
-                                        <tr>
-                                            <td style={{
-                                                padding: '8px 0',
-                                                color: '#666',
-                                                fontWeight: 500
-                                            }}>
-                                                Estado paquete:
-                                            </td>
-                                            <td style={{ padding: '8px 0' }}>
-                                                <Chip
-                                                    label={getStatusLabel(selectedPackage.status)}
-                                                    color={getStatusColor(selectedPackage.status)}
-                                                    size="small"
-                                                />
-                                            </td>
-                                        </tr>
+                            {/* Tab 3: Restricciones - Versión Compacta */}
+                            {modalTab === 3 && (
+                                <Box sx={{ p: 2 }}>
+                                    <Typography variant="subtitle1" fontWeight="bold" sx={{ mb: 1.5 }}>
+                                        Restricciones
+                                    </Typography>
 
-                                        {/* Calificación */}
-                                        <tr>
-                                            <td style={{
-                                                padding: '8px 0',
-                                                color: '#666',
-                                                fontWeight: 500
-                                            }}>
-                                                Calificación:
-                                            </td>
-                                            <td className="stars">
-                                                {[1, 2, 3, 4, 5].map((star, i) => (
-                                                    <span key={i} className="star" style={{ color: i < (selectedPackage.stars || 0) ? "#ffc107" : "#e0e0e0" }} > ★ </span>
-                                                ))}
-                                            </td>
-                                        </tr>
+                                    {selectedPackage.restrictions && selectedPackage.restrictions.length > 0 ? (
+                                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                                            {selectedPackage.restrictions.map((item, index) => (
+                                                <Box
+                                                    key={item.id || index}
+                                                    sx={{
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: 1.5,
+                                                        p: 1,
+                                                        bgcolor: '#fef2f2',
+                                                        borderLeft: '3px solid #ef4444',
+                                                        borderRadius: 0.5,
+                                                        fontSize: '14px'
+                                                    }}
+                                                >
+                                                    <Typography variant="body2">
+                                                        <strong>⚠️ {item.restriction?.name || 'Restricción'}</strong>
+                                                        {item.restriction?.description && `: ${item.restriction.description}`}
+                                                    </Typography>
+                                                </Box>
+                                            ))}
+                                        </Box>
+                                    ) : (
+                                        <Typography variant="body2" color="text.secondary" sx={{ py: 2, textAlign: 'center' }}>
+                                            No hay restricciones disponibles
+                                        </Typography>
+                                    )}
+                                </Box>
+                            )}
 
-                                        {/* Estado activo */}
-                                        <tr>
-                                            <td style={{
-                                                padding: '8px 0',
-                                                color: '#666',
-                                                fontWeight: 500
-                                            }}>
-                                                Estado sistema:
-                                            </td>
-                                            <td style={{ padding: '8px 0' }}>
-                                                <Chip
-                                                    label={selectedPackage.active ? "Activo" : "Inactivo"}
-                                                    color={selectedPackage.active ? "success" : "default"}
-                                                    size="small"
-                                                    variant="outlined"
-                                                />
-                                            </td>
-                                        </tr>
-
-                                        {/* Temporada */}
-                                        <tr>
-                                            <td style={{
-                                                padding: '8px 0',
-                                                width: '35%',
-                                                verticalAlign: 'top',
-                                                color: '#666',
-                                                fontWeight: 500
-                                            }}>
-                                                Temporada:
-                                            </td>
-                                            <td style={{ padding: '8px 0', verticalAlign: 'top' }}>
-                                                {selectedPackage.season.name}
-                                            </td>
-                                        </tr>
-
-                                        {/* Categoria */}
-                                        <tr>
-                                            <td style={{
-                                                padding: '8px 0',
-                                                width: '35%',
-                                                verticalAlign: 'top',
-                                                color: '#666',
-                                                fontWeight: 500
-                                            }}>
-                                                Categoria:
-                                            </td>
-                                            <td style={{ padding: '8px 0', verticalAlign: 'top' }}>
-                                                {selectedPackage.category.name}
-                                            </td>
-                                        </tr>
-
-                                        {/* Tipo de Viaje */}
-                                        <tr>
-                                            <td style={{
-                                                padding: '8px 0',
-                                                width: '35%',
-                                                verticalAlign: 'top',
-                                                color: '#666',
-                                                fontWeight: 500
-                                            }}>
-                                                Tipo de Viaje:
-                                            </td>
-                                            <td style={{ padding: '8px 0', verticalAlign: 'top' }}>
-                                                {selectedPackage.travelType.name}
-                                            </td>
-                                        </tr>
-
-                                    </tbody>
-                                </table>
-                            </Box>
-
-                            {/* Metadatos (si existen) */}
-                            {(selectedPackage.createdAt || selectedPackage.updatedAt) && (
+                            {/* Metadatos (solo en información general) */}
+                            {modalTab === 0 && (selectedPackage.createdAt || selectedPackage.updatedAt) && (
                                 <>
                                     <Divider />
                                     <Box sx={{ p: 3, bgcolor: '#f9f9f9' }}>
@@ -709,12 +805,9 @@ const TourPackageList = () => {
                             )}
                         </DialogContent>
 
-                        {/* Acciones - limpias y directas */}
+                        {/* Acciones */}
                         <DialogActions sx={{ p: 2, gap: 1, borderTop: '1px solid', borderColor: 'divider' }}>
-                            <Button
-                                variant="text"
-                                onClick={handleCloseModal}
-                            >
+                            <Button variant="text" onClick={handleCloseModal}>
                                 Cerrar
                             </Button>
                             <Button
