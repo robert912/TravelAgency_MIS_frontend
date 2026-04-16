@@ -21,7 +21,7 @@ const Home = () => {
 
     const fetchPackages = () => {
         setLoading(true);
-        tourPackageService.getAll()
+        tourPackageService.getAllActive()
             .then(response => {
                 const data = response.data?.data || response.data || [];
                 setPackages(Array.isArray(data) ? data : []);
