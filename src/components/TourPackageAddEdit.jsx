@@ -2,11 +2,13 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import tourPackageService from "../services/tourPackage.service";
+import SearchIcon from "@mui/icons-material/Search";
 import {
     Box, Paper, Typography, TextField, Button, Grid,
     FormControl, InputLabel, Select, MenuItem,
     Divider, CircularProgress, Stack, Chip,
-    InputAdornment, Skeleton, Alert, IconButton, Tooltip
+    InputAdornment, Skeleton, Alert, IconButton, Tooltip,
+    Autocomplete, Card, CardContent, Collapse
 } from "@mui/material";
 import {
     Save as SaveIcon,
@@ -22,12 +24,22 @@ import {
     Flight as TravelTypeIcon,
     Image as ImageIcon,
     CalendarToday as CalendarIcon,
-    Info as InfoIcon
+    Info as InfoIcon,
+    Inventory as ServiceIcon,
+    Description as ConditionIcon,
+    Warning as RestrictionIcon,
+    Add as AddIcon,
+    Remove as RemoveIcon,
+    ExpandMore as ExpandMoreIcon,
+    ExpandLess as ExpandLessIcon
 } from "@mui/icons-material";
 import Swal from 'sweetalert2';
 import seasonService from "../services/season.service";
 import categoryService from "../services/category.service";
 import travelTypeService from "../services/travelType.service";
+import serviceService from "../services/service.service";
+import conditionService from "../services/condition.service";
+import restrictionService from "../services/restriction.service";
 
 // Secciones del formulario
 const FormSection = ({ icon: Icon, title, children }) => (
@@ -45,6 +57,151 @@ const FormSection = ({ icon: Icon, title, children }) => (
     </Grid>
 );
 
+// Componente SelectorProfesional reutilizable
+const ProfessionalSelector = ({ 
+    title, 
+    items, 
+    selectedIds, 
+    onAdd, 
+    onRemove,
+    icon: Icon,
+    placeholder,
+    emptyText,
+    chipColor = 'primary'
+}) => {
+    const [open, setOpen] = useState(false);
+    const [searchTerm, setSearchTerm] = useState("");
+    
+    const availableItems = items.filter(item => 
+        !selectedIds.includes(item.id) && 
+        (item.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+         item.description?.toLowerCase().includes(searchTerm.toLowerCase()))
+    );
+
+    const selectedItems = items.filter(item => selectedIds.includes(item.id));
+
+    return (
+        <Box sx={{ mb: 2 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                <Icon sx={{ color: 'var(--primary)', fontSize: 20 }} />
+                <Typography variant="subtitle2" fontWeight="500">
+                    {title}
+                </Typography>
+                <Typography variant="caption" color="text.secondary" sx={{ ml: 'auto' }}>
+                    {selectedIds.length} seleccionado{selectedIds.length !== 1 ? 's' : ''}
+                </Typography>
+            </Box>
+
+            {/* Chips de elementos seleccionados */}
+            <Box sx={{ 
+                minHeight: 56, 
+                p: 1.5, 
+                bgcolor: '#f8fafc', 
+                borderRadius: 2,
+                border: '1px solid',
+                borderColor: '#e2e8f0',
+                mb: 1.5
+            }}>
+                {selectedItems.length > 0 ? (
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                        {selectedItems.map(item => (
+                            <Chip
+                                key={item.id}
+                                label={item.name}
+                                onDelete={() => onRemove(item.id)}
+                                color={chipColor}
+                                variant="outlined"
+                                size="small"
+                                sx={{ 
+                                    '&:hover': { bgcolor: chipColor === 'error' ? '#fee2e2' : '#e3f2fd' }
+                                }}
+                            />
+                        ))}
+                    </Box>
+                ) : (
+                    <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 1 }}>
+                        {emptyText || `No hay ${title.toLowerCase()} seleccionados`}
+                    </Typography>
+                )}
+            </Box>
+
+            {/* Botón para agregar */}
+            <Button
+                size="small"
+                startIcon={<AddIcon />}
+                onClick={() => setOpen(!open)}
+                sx={{ textTransform: 'none', mb: open ? 1 : 0 }}
+            >
+                {open ? 'Ocultar opciones' : `Agregar ${title.toLowerCase()}`}
+            </Button>
+
+            {/* Panel de opciones disponibles */}
+            <Collapse in={open}>
+                <Card variant="outlined" sx={{ mt: 1, borderRadius: 2 }}>
+                    <CardContent sx={{ p: 2 }}>
+                        <TextField
+                            fullWidth
+                            size="small"
+                            placeholder={`Buscar ${title.toLowerCase()}...`}
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            sx={{ mb: 2 }}
+                            InputProps={{
+                                startAdornment: (
+                                    <InputAdornment position="start">
+                                        <SearchIcon fontSize="small" />
+                                    </InputAdornment>
+                                ),
+                            }}
+                        />
+                        
+                        <Box sx={{ maxHeight: 240, overflow: 'auto' }}>
+                            {availableItems.length > 0 ? (
+                                availableItems.map(item => (
+                                    <Box
+                                        key={item.id}
+                                        sx={{
+                                            display: 'flex',
+                                            justifyContent: 'space-between',
+                                            alignItems: 'center',
+                                            p: 1.5,
+                                            borderRadius: 1,
+                                            cursor: 'pointer',
+                                            '&:hover': { bgcolor: '#f1f5f9' },
+                                            transition: 'background-color 0.2s'
+                                        }}
+                                        onClick={() => onAdd(item.id)}
+                                    >
+                                        <Box>
+                                            <Typography variant="body2" fontWeight="500">
+                                                {item.name}
+                                            </Typography>
+                                            {item.description && (
+                                                <Typography variant="caption" color="text.secondary">
+                                                    {item.description.length > 80 
+                                                        ? `${item.description.substring(0, 80)}...` 
+                                                        : item.description}
+                                                </Typography>
+                                            )}
+                                        </Box>
+                                        <IconButton size="small" sx={{ color: 'var(--primary)' }}>
+                                            <AddIcon fontSize="small" />
+                                        </IconButton>
+                                    </Box>
+                                ))
+                            ) : (
+                                <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 3 }}>
+                                    No hay más {title.toLowerCase()} disponibles
+                                </Typography>
+                            )}
+                        </Box>
+                    </CardContent>
+                </Card>
+            </Collapse>
+        </Box>
+    );
+};
+
 const TourPackageAddEdit = () => {
     const navigate = useNavigate();
     const { id } = useParams();
@@ -57,13 +214,17 @@ const TourPackageAddEdit = () => {
     const [seasons, setSeasons] = useState([]);
     const [categories, setCategories] = useState([]);
     const [travelTypes, setTravelTypes] = useState([]);
+    const [services, setServices] = useState([]);
+    const [conditions, setConditions] = useState([]);
+    const [restrictions, setRestrictions] = useState([]);
     const [loadingSelects, setLoadingSelects] = useState(true);
 
     const [formData, setFormData] = useState({
         name: "", destination: "", description: "", seasonId: "",
         categoryId: "", travelTypeId: "", price: "", startDate: "",
         endDate: "", totalSlots: "", status: "DISPONIBLE", stars: 0,
-        active: true, imageUrl: "", included: "", notIncluded: "", itinerary: ""
+        active: true, imageUrl: "", included: "", notIncluded: "", itinerary: "",
+        serviceIds: [], conditionIds: [], restrictionIds: []
     });
 
     // Cargar datos iniciales
@@ -71,15 +232,21 @@ const TourPackageAddEdit = () => {
         const fetchSelectData = async () => {
             setLoadingSelects(true);
             try {
-                const [seasonsRes, categoriesRes, travelTypesRes] = await Promise.all([
+                const [seasonsRes, categoriesRes, travelTypesRes, servicesRes, conditionsRes, restrictionsRes] = await Promise.all([
                     seasonService.getAllActive(),
                     categoryService.getAllActive(),
-                    travelTypeService.getAllActive()
+                    travelTypeService.getAllActive(),
+                    serviceService.getAllActive().catch(() => ({ data: { data: [] } })),
+                    conditionService.getAllActive().catch(() => ({ data: { data: [] } })),
+                    restrictionService.getAllActive().catch(() => ({ data: { data: [] } }))
                 ]);
 
                 setSeasons(seasonsRes.data?.data || seasonsRes.data || []);
                 setCategories(categoriesRes.data?.data || categoriesRes.data || []);
                 setTravelTypes(travelTypesRes.data?.data || travelTypesRes.data || []);
+                setServices(servicesRes.data?.data || servicesRes.data || []);
+                setConditions(conditionsRes.data?.data || conditionsRes.data || []);
+                setRestrictions(restrictionsRes.data?.data || restrictionsRes.data || []);
             } catch (error) {
                 console.error("Error cargando listas", error);
                 Swal.fire('Error', 'No se pudieron cargar las opciones del formulario', 'error');
@@ -120,7 +287,10 @@ const TourPackageAddEdit = () => {
                     imageUrl: packageData.imageUrl || "",
                     included: packageData.included || "",
                     notIncluded: packageData.notIncluded || "",
-                    itinerary: packageData.itinerary || ""
+                    itinerary: packageData.itinerary || "",
+                    serviceIds: packageData.services?.map(s => s.service?.id || s.id) || [],
+                    conditionIds: packageData.conditions?.map(c => c.condition?.id || c.id) || [],
+                    restrictionIds: packageData.restrictions?.map(r => r.restriction?.id || r.id) || []
                 });
             }
         } catch (error) {
@@ -136,6 +306,49 @@ const TourPackageAddEdit = () => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
         if (errors[name]) setErrors(prev => ({ ...prev, [name]: "" }));
+    };
+
+    // Funciones para manejar servicios, condiciones y restricciones
+    const handleAddService = (serviceId) => {
+        setFormData(prev => ({
+            ...prev,
+            serviceIds: [...prev.serviceIds, serviceId]
+        }));
+    };
+
+    const handleRemoveService = (serviceId) => {
+        setFormData(prev => ({
+            ...prev,
+            serviceIds: prev.serviceIds.filter(id => id !== serviceId)
+        }));
+    };
+
+    const handleAddCondition = (conditionId) => {
+        setFormData(prev => ({
+            ...prev,
+            conditionIds: [...prev.conditionIds, conditionId]
+        }));
+    };
+
+    const handleRemoveCondition = (conditionId) => {
+        setFormData(prev => ({
+            ...prev,
+            conditionIds: prev.conditionIds.filter(id => id !== conditionId)
+        }));
+    };
+
+    const handleAddRestriction = (restrictionId) => {
+        setFormData(prev => ({
+            ...prev,
+            restrictionIds: [...prev.restrictionIds, restrictionId]
+        }));
+    };
+
+    const handleRemoveRestriction = (restrictionId) => {
+        setFormData(prev => ({
+            ...prev,
+            restrictionIds: prev.restrictionIds.filter(id => id !== restrictionId)
+        }));
     };
 
     const validateForm = () => {
@@ -180,9 +393,9 @@ const TourPackageAddEdit = () => {
         season: getFullItem(seasons, formData.seasonId),
         category: getFullItem(categories, formData.categoryId),
         travelType: getFullItem(travelTypes, formData.travelTypeId),
-        included: formData.included || null,
-        notIncluded: formData.notIncluded || null,
-        itinerary: formData.itinerary || null,
+        serviceIds: formData.serviceIds,
+        conditionIds: formData.conditionIds,
+        restrictionIds: formData.restrictionIds,
         ...(isEditMode && { id: Number(id) })
     });
 
@@ -256,7 +469,7 @@ const TourPackageAddEdit = () => {
     return (
         <Box sx={{ p: 3, bgcolor: '#f5f7fa', minHeight: '100vh' }}>
             <Paper elevation={0} sx={{ borderRadius: 3, maxWidth: 1200, mx: 'auto', overflow: 'hidden' }}>
-                {/* Header mejorado */}
+                {/* Header */}
                 <Box sx={{
                     background: 'linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%)',
                     color: 'white',
@@ -311,7 +524,6 @@ const TourPackageAddEdit = () => {
                                         error={!!errors.name}
                                         helperText={errors.name}
                                         required
-                                        variant="outlined"
                                     />
                                 </Grid>
 
@@ -358,7 +570,6 @@ const TourPackageAddEdit = () => {
                                                 <MenuItem key={season.id} value={season.id}>{season.name}</MenuItem>
                                             ))}
                                         </Select>
-                                        {errors.seasonId && <Typography variant="caption" color="error">{errors.seasonId}</Typography>}
                                     </FormControl>
                                 </Grid>
 
@@ -434,11 +645,17 @@ const TourPackageAddEdit = () => {
                                         error={!!errors.startDate}
                                         helperText={errors.startDate}
                                         required
-                                        InputLabelProps={{ shrink: true }}
-                                        InputProps={{
-                                            startAdornment: <InputAdornment position="start"><CalendarIcon color="action" /></InputAdornment>
+                                        slotProps={{
+                                            inputLabel: { shrink: true },
+                                            input: {
+                                                startAdornment: (
+                                                    <InputAdornment position="start">
+                                                        <CalendarIcon color="action" />
+                                                    </InputAdornment>
+                                                )
+                                            }
                                         }}
-                                    />
+                                />
                                 </Grid>
 
                                 <Grid item xs={12} md={3}>
@@ -479,14 +696,69 @@ const TourPackageAddEdit = () => {
                                         type="number"
                                         value={formData.stars}
                                         onChange={handleChange}
-                                        inputProps={{ min: 0, max: 5, step: 0.5 }}
+                                        slotProps={{
+                                            htmlInput: { min: 0, max: 5, step: 1 }
+                                        }}
                                         InputProps={{
                                             startAdornment: <InputAdornment position="start"><StarIcon color="action" /></InputAdornment>
                                         }}
-                                        helperText="Valor entre 0 y 5, puede usar medios puntos"
+                                        helperText="Valor entre 0 y 5"
                                     />
                                 </Grid>
                             </FormSection>
+
+                            {/* Servicios - Selector Profesional */}
+                            <Grid item xs={12}>
+                                <Box sx={{ mt: 3, mb: 2 }}>
+                                    <Typography variant="h6" fontWeight="600" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                        <ServiceIcon sx={{ color: 'var(--primary)' }} />
+                                        Servicios y Beneficios
+                                    </Typography>
+                                    <Divider sx={{ mt: 1, mb: 2 }} />
+                                </Box>
+                                
+                                <ProfessionalSelector
+                                    title="Servicios Incluidos"
+                                    items={services}
+                                    selectedIds={formData.serviceIds}
+                                    onAdd={handleAddService}
+                                    onRemove={handleRemoveService}
+                                    icon={ServiceIcon}
+                                    placeholder="Buscar servicios..."
+                                    emptyText="No hay servicios seleccionados"
+                                    chipColor="primary"
+                                />
+                            </Grid>
+
+                            {/* Condiciones - Selector Profesional */}
+                            <Grid item xs={12}>
+                                <ProfessionalSelector
+                                    title="Condiciones"
+                                    items={conditions}
+                                    selectedIds={formData.conditionIds}
+                                    onAdd={handleAddCondition}
+                                    onRemove={handleRemoveCondition}
+                                    icon={ConditionIcon}
+                                    placeholder="Buscar condiciones..."
+                                    emptyText="No hay condiciones seleccionadas"
+                                    chipColor="success"
+                                />
+                            </Grid>
+
+                            {/* Restricciones - Selector Profesional */}
+                            <Grid item xs={12}>
+                                <ProfessionalSelector
+                                    title="Restricciones"
+                                    items={restrictions}
+                                    selectedIds={formData.restrictionIds}
+                                    onAdd={handleAddRestriction}
+                                    onRemove={handleRemoveRestriction}
+                                    icon={RestrictionIcon}
+                                    placeholder="Buscar restricciones..."
+                                    emptyText="No hay restricciones seleccionadas"
+                                    chipColor="error"
+                                />
+                            </Grid>
 
                             {/* Contenido Adicional */}
                             <FormSection icon={ImageIcon} title="Contenido Adicional">
@@ -509,7 +781,7 @@ const TourPackageAddEdit = () => {
 
                         <Divider sx={{ my: 4 }} />
 
-                        {/* Botones de acción mejorados */}
+                        {/* Botones de acción */}
                         <Stack direction="row" spacing={2} justifyContent="flex-end">
                             <Button
                                 variant="outlined"
