@@ -40,6 +40,10 @@ import travelTypeService from "../services/travelType.service";
 import serviceService from "../services/service.service";
 import conditionService from "../services/condition.service";
 import restrictionService from "../services/restriction.service";
+// Importar servicios de sincronización
+import tourPackageConditionService from "../services/tourPackageCondition.service";
+import tourPackageRestrictionService from "../services/tourPackageRestriction.service";
+import tourPackageServiceService from "../services/tourPackageService.service";
 
 // Secciones del formulario
 const FormSection = ({ icon: Icon, title, children }) => (
@@ -58,11 +62,11 @@ const FormSection = ({ icon: Icon, title, children }) => (
 );
 
 // Componente SelectorProfesional reutilizable
-const ProfessionalSelector = ({ 
-    title, 
-    items, 
-    selectedIds, 
-    onAdd, 
+const ProfessionalSelector = ({
+    title,
+    items,
+    selectedIds,
+    onAdd,
     onRemove,
     icon: Icon,
     placeholder,
@@ -71,11 +75,11 @@ const ProfessionalSelector = ({
 }) => {
     const [open, setOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState("");
-    
-    const availableItems = items.filter(item => 
-        !selectedIds.includes(item.id) && 
+
+    const availableItems = items.filter(item =>
+        !selectedIds.includes(item.id) &&
         (item.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-         item.description?.toLowerCase().includes(searchTerm.toLowerCase()))
+            item.description?.toLowerCase().includes(searchTerm.toLowerCase()))
     );
 
     const selectedItems = items.filter(item => selectedIds.includes(item.id));
@@ -93,10 +97,10 @@ const ProfessionalSelector = ({
             </Box>
 
             {/* Chips de elementos seleccionados */}
-            <Box sx={{ 
-                minHeight: 56, 
-                p: 1.5, 
-                bgcolor: '#f8fafc', 
+            <Box sx={{
+                minHeight: 56,
+                p: 1.5,
+                bgcolor: '#f8fafc',
                 borderRadius: 2,
                 border: '1px solid',
                 borderColor: '#e2e8f0',
@@ -112,7 +116,7 @@ const ProfessionalSelector = ({
                                 color={chipColor}
                                 variant="outlined"
                                 size="small"
-                                sx={{ 
+                                sx={{
                                     '&:hover': { bgcolor: chipColor === 'error' ? '#fee2e2' : '#e3f2fd' }
                                 }}
                             />
@@ -154,7 +158,7 @@ const ProfessionalSelector = ({
                                 ),
                             }}
                         />
-                        
+
                         <Box sx={{ maxHeight: 240, overflow: 'auto' }}>
                             {availableItems.length > 0 ? (
                                 availableItems.map(item => (
@@ -178,8 +182,8 @@ const ProfessionalSelector = ({
                                             </Typography>
                                             {item.description && (
                                                 <Typography variant="caption" color="text.secondary">
-                                                    {item.description.length > 80 
-                                                        ? `${item.description.substring(0, 80)}...` 
+                                                    {item.description.length > 80
+                                                        ? `${item.description.substring(0, 80)}...`
                                                         : item.description}
                                                 </Typography>
                                             )}
@@ -374,9 +378,8 @@ const TourPackageAddEdit = () => {
         return Object.keys(newErrors).length === 0;
     };
 
-    const getFullItem = (list, id) => list.find(item => item.id === Number(id));
-
-    const buildSubmitData = () => ({
+    // Construir datos del paquete sin incluir las relaciones
+    const buildPackageData = () => ({
         name: formData.name,
         destination: formData.destination,
         description: formData.description,
@@ -390,37 +393,109 @@ const TourPackageAddEdit = () => {
         active: formData.active ? 1 : 0,
         createdByUserId: 1,
         modifiedByUserId: 1,
-        season: getFullItem(seasons, formData.seasonId),
-        category: getFullItem(categories, formData.categoryId),
-        travelType: getFullItem(travelTypes, formData.travelTypeId),
-        serviceIds: formData.serviceIds,
-        conditionIds: formData.conditionIds,
-        restrictionIds: formData.restrictionIds,
+        season: { id: Number(formData.seasonId) },
+        category: { id: Number(formData.categoryId) },
+        travelType: { id: Number(formData.travelTypeId) },
         ...(isEditMode && { id: Number(id) })
     });
 
+    // Sincronizar todas las relaciones del paquete
+    const syncPackageRelations = async (packageId) => {
+        const userId = 1;
+        const results = [];
+
+        // Sincronizar condiciones
+        if (formData.conditionIds !== undefined) {
+            try {
+                await tourPackageConditionService.syncConditions(packageId, formData.conditionIds, userId);
+                results.push({ type: 'conditions', success: true });
+            } catch (error) {
+                console.error('Error sincronizando condiciones:', error);
+                results.push({ type: 'conditions', success: false, error: error.response?.data?.message || error.message });
+            }
+        }
+
+        // Sincronizar restricciones
+        if (formData.restrictionIds !== undefined) {
+            try {
+                await tourPackageRestrictionService.syncRestrictions(packageId, formData.restrictionIds, userId);
+                results.push({ type: 'restrictions', success: true });
+            } catch (error) {
+                console.error('Error sincronizando restricciones:', error);
+                results.push({ type: 'restrictions', success: false, error: error.response?.data?.message || error.message });
+            }
+        }
+
+        // Sincronizar servicios
+        if (formData.serviceIds !== undefined) {
+            try {
+                await tourPackageServiceService.syncServices(packageId, formData.serviceIds, userId);
+                results.push({ type: 'services', success: true });
+            } catch (error) {
+                console.error('Error sincronizando servicios:', error);
+                results.push({ type: 'services', success: false, error: error.response?.data?.message || error.message });
+            }
+        }
+
+        // Verificar si hubo errores
+        const failed = results.filter(r => !r.success);
+        if (failed.length > 0) {
+            throw new Error(`Error sincronizando: ${failed.map(f => f.type).join(', ')}`);
+        }
+
+        return results;
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
+
         if (!validateForm()) {
             Swal.fire('Error de validación', 'Por favor revisa los campos marcados', 'error');
             return;
         }
 
         setSaving(true);
+
         try {
-            const submitData = buildSubmitData();
+            const packageData = buildPackageData();
+            let packageId;
 
             if (isEditMode) {
-                await tourPackageService.update(submitData);
+                // 1. Actualizar paquete existente
+                await tourPackageService.update(packageData);
+                packageId = Number(id);
+
+                // 2. Sincronizar relaciones
+                await syncPackageRelations(packageId);
+
                 Swal.fire('¡Actualizado!', 'El paquete ha sido actualizado correctamente', 'success');
             } else {
-                await tourPackageService.create(submitData);
+                // 1. Crear nuevo paquete
+                const response = await tourPackageService.create(packageData);
+                packageId = response.data?.data?.id || response.data?.id;
+
+                if (!packageId) {
+                    throw new Error('No se pudo obtener el ID del paquete creado');
+                }
+
+                // 2. Sincronizar relaciones
+                await syncPackageRelations(packageId);
+
                 Swal.fire('¡Creado!', 'El paquete ha sido creado correctamente', 'success');
             }
+
             navigate('/admin/packages');
         } catch (error) {
             console.error("Error al guardar", error);
-            Swal.fire('Error', error.response?.data?.message || 'Hubo un problema al guardar el paquete', 'error');
+
+            let errorMessage = 'Hubo un problema al guardar el paquete';
+            if (error.response?.data?.message) {
+                errorMessage = error.response.data.message;
+            } else if (error.message) {
+                errorMessage = error.message;
+            }
+
+            Swal.fire('Error', errorMessage, 'error');
         } finally {
             setSaving(false);
         }
@@ -441,9 +516,12 @@ const TourPackageAddEdit = () => {
         if (result.isConfirmed) {
             setSaving(true);
             try {
-                const updatedData = { ...buildSubmitData(), active: formData.active ? 0 : 1 };
-                await tourPackageService.update(updatedData);
+                const packageData = buildPackageData();
+                packageData.active = formData.active ? 0 : 1;
+
+                await tourPackageService.update(packageData);
                 setFormData(prev => ({ ...prev, active: !prev.active }));
+
                 Swal.fire('¡Completado!', `Paquete ${formData.active ? 'desactivado' : 'activado'} correctamente`, 'success');
             } catch (error) {
                 Swal.fire('Error', 'No se pudo cambiar el estado del paquete', 'error');
@@ -655,7 +733,7 @@ const TourPackageAddEdit = () => {
                                                 )
                                             }
                                         }}
-                                />
+                                    />
                                 </Grid>
 
                                 <Grid item xs={12} md={3}>
@@ -716,7 +794,7 @@ const TourPackageAddEdit = () => {
                                     </Typography>
                                     <Divider sx={{ mt: 1, mb: 2 }} />
                                 </Box>
-                                
+
                                 <ProfessionalSelector
                                     title="Servicios Incluidos"
                                     items={services}
