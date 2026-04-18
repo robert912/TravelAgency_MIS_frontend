@@ -16,6 +16,7 @@ import {
     Visibility as ViewIcon,
     Search as SearchIcon,
     Close as CloseIcon,
+    ArrowBack as ArrowBackIcon,
     LocationOn as LocationIcon,
     CalendarToday as CalendarIcon,
     AttachMoney as MoneyIcon,
@@ -280,7 +281,10 @@ const TourPackageList = () => {
                             Gestiona todos los paquetes turísticos: {filteredPackages.length} registros encontrados
                         </Typography>
                     </Box>
-                    <Box sx={{ display: 'flex', gap: 2 }}>
+                    <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+                        <Button variant="outlined" startIcon={<ArrowBackIcon />} onClick={() => navigate(-1)} size="small">
+                            Volver
+                        </Button>
                         <Button variant="outlined" startIcon={<RefreshIcon />} onClick={fetchPackages} size="small">
                             Actualizar
                         </Button>
@@ -836,15 +840,6 @@ const TourPackageList = () => {
                     </>
                 )}
             </Dialog>
-
-            {/* Botón volver flotante */}
-            <button className="floating-back-btn" style={{ top: "90px" }} onClick={() => navigate("/")}>
-                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
-                    <line x1="19" y1="12" x2="5" y2="12"></line>
-                    <polyline points="12 19 5 12 12 5"></polyline>
-                </svg>
-                Volver
-            </button>
         </Box>
     );
 };

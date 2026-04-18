@@ -17,6 +17,8 @@ import RestrictionList from './components/RestrictionList';
 import RestrictionAddEdit from './components/RestrictionAddEdit';
 import ServiceList from './components/ServiceList';
 import ServiceAddEdit from './components/ServiceAddEdit';
+import PersonList from './components/PersonList';
+import PersonForm from './components/PersonForm';
 
 
 function App() {
@@ -49,6 +51,10 @@ function App() {
                 <Route path="/admin/services" element={<ServiceList />} />
                 <Route path="/admin/services/add" element={<ServiceAddEdit />} />
                 <Route path="/admin/services/edit/:id" element={<ServiceAddEdit />} />
+                <Route path="/admin/persons" element={<PersonList />} />
+                <Route path="/admin/persons/new" element={<PersonForm />} />
+                <Route path="/admin/persons/edit/:id" element={<PersonForm />} />
+                <Route path="/admin/persons/view/:id" element={<PersonForm />} />
 
 
                 <Route path="*" element={<NotFound />} />

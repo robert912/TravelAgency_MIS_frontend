@@ -470,7 +470,7 @@
     display: flex;
     align-items: flex-start;
     gap: 16px;
-    padding: 16px;
+    padding: 6px 16px;
     background: #f9fafb;
     border-radius: 12px;
     transition: all 0.3s ease;
@@ -511,7 +511,7 @@
     display: flex;
     align-items: flex-start;
     gap: 16px;
-    padding: 14px 16px;
+    padding: 6px 16px;
     background: #f0fdf4;
     border-left: 4px solid #22c55e;
     border-radius: 8px;
@@ -547,7 +547,7 @@
     display: flex;
     align-items: flex-start;
     gap: 16px;
-    padding: 14px 16px;
+    padding: 6px 16px;
     background: #fef2f2;
     border-left: 4px solid #ef4444;
     border-radius: 8px;
