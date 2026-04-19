@@ -18,6 +18,7 @@ import HomeIcon from "@mui/icons-material/Home";
 import TourIcon from '@mui/icons-material/Tour';
 import FreeCancellationIcon from '@mui/icons-material/FreeCancellation';
 import CategoryIcon from '@mui/icons-material/Category';
+import ReservationIcon from '@mui/icons-material/AssignmentTurnedIn';
 import { useNavigate } from "react-router-dom";
 
 export default function Sidemenu({ open, toggleDrawer }) {
@@ -45,18 +46,18 @@ export default function Sidemenu({ open, toggleDrawer }) {
                     <ListItemText primary="Personas" />
                 </ListItemButton>
 
-                <ListItemButton onClick={() => navigate("/employee/list")}>
-                    <ListItemIcon>
-                        <PeopleAltIcon />
-                    </ListItemIcon>
-                    <ListItemText primary="Empleados" />
-                </ListItemButton>
-
                 <ListItemButton onClick={() => navigate("/admin/packages")}>
                     <ListItemIcon>
                         <PaidIcon />
                     </ListItemIcon>
                     <ListItemText primary="Paquetes Turísticos" />
+                </ListItemButton>
+
+                <ListItemButton onClick={() => navigate("/admin/reservations")}>
+                    <ListItemIcon>
+                        <ReservationIcon />
+                    </ListItemIcon>
+                    <ListItemText primary="Reservas" />
                 </ListItemButton>
 
                 <ListItemButton onClick={() => navigate("/admin/travel-types")}>

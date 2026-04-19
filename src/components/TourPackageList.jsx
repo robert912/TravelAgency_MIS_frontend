@@ -282,7 +282,7 @@ const TourPackageList = () => {
                         </Typography>
                     </Box>
                     <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-                        <Button variant="outlined" startIcon={<ArrowBackIcon />} onClick={() => navigate(-1)} size="small">
+                        <Button variant="outlined" startIcon={<ArrowBackIcon />} onClick={() => navigate("/")} size="small">
                             Volver
                         </Button>
                         <Button variant="outlined" startIcon={<RefreshIcon />} onClick={fetchPackages} size="small">

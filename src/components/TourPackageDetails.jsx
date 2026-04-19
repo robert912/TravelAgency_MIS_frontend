@@ -274,11 +274,15 @@ const TourPackageDetails = () => {
                                         <div className="condition-item" key={item.id || index}>
                                             <div className="condition-icon">
                                                 {item.condition?.name?.includes("Cancelación") && "🔄"}
+                                                {item.condition?.name?.includes("reembolsable") && "❌"}
                                                 {item.condition?.name?.includes("equipaje") && "🧳"}
+                                                {item.condition?.name?.includes("bodega") && "🚫"}
                                                 {item.condition?.name?.includes("desayuno") && "🍳"}
+                                                {item.condition?.name?.includes("alimentación") && "🚫"}
                                                 {item.condition?.name?.includes("público") && "👨‍👩‍👧‍👦"}
+                                                {item.condition?.name?.includes("mayores") && "🔞"}
                                                 {item.condition?.name?.includes("Itinerario") && "📅"}
-                                                {!["Cancelación", "equipaje", "desayuno", "público", "Itinerario"].some(k => item.condition?.name?.includes(k)) && "✓"}
+                                                {!["Cancelación", "reembolsable", "equipaje", "bodega", "desayuno", "alimentación", "público", "mayores", "Itinerario"].some(k => item.condition?.name?.includes(k)) && "✓"}
                                             </div>
                                             <div className="condition-info">
                                                 <h4>{item.condition?.name || "Condición"}</h4>
@@ -309,6 +313,8 @@ const TourPackageDetails = () => {
                                             <div className="restriction-icon">
                                                 {item.restriction?.name?.includes("Edad") && "🔞"}
                                                 {item.restriction?.name?.includes("Cancelación") && "🔄"}
+                                                {item.restriction?.name?.includes("reembolsable") && "💰"}
+                                                {item.restriction?.name?.includes("fecha") && "📅"}
                                                 {item.restriction?.name?.includes("Menores") && "👶"}
                                                 {item.restriction?.name?.includes("Máximo") && "👥"}
                                                 {item.restriction?.name?.includes("Pasaporte") && "🛂"}
@@ -317,7 +323,7 @@ const TourPackageDetails = () => {
                                                 {item.restriction?.name?.includes("Mascotas") && "🐾"}
                                                 {item.restriction?.name?.includes("Visa") && "📄"}
                                                 {item.restriction?.name?.includes("Vacuna") && "💉"}
-                                                {!["Edad", "Cancelación", "Menores", "Máximo", "Pasaporte", "Seguro", "equipaje", "Mascotas", "Visa", "Vacuna"].some(k => item.restriction?.name?.includes(k)) && "⚠️"}
+                                                {!["Edad", "Cancelación", "reembolsable", "fecha", "Menores", "Máximo", "Pasaporte", "Seguro", "equipaje", "Mascotas", "Visa", "Vacuna"].some(k => item.restriction?.name?.includes(k)) && "⚠️"}
                                             </div>
                                             <div className="restriction-info">
                                                 <h4>{item.restriction?.name || "Restricción"}</h4>

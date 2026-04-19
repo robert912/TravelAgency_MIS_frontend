@@ -18,7 +18,9 @@ import RestrictionAddEdit from './components/RestrictionAddEdit';
 import ServiceList from './components/ServiceList';
 import ServiceAddEdit from './components/ServiceAddEdit';
 import PersonList from './components/PersonList';
-import PersonForm from './components/PersonForm';
+import PersonAddEdit from './components/PersonAddEdit';
+import ReservationList from './components/ReservationList';
+import ReservationForm from './components/ReservationForm';
 
 
 function App() {
@@ -52,9 +54,13 @@ function App() {
                 <Route path="/admin/services/add" element={<ServiceAddEdit />} />
                 <Route path="/admin/services/edit/:id" element={<ServiceAddEdit />} />
                 <Route path="/admin/persons" element={<PersonList />} />
-                <Route path="/admin/persons/new" element={<PersonForm />} />
-                <Route path="/admin/persons/edit/:id" element={<PersonForm />} />
-                <Route path="/admin/persons/view/:id" element={<PersonForm />} />
+                <Route path="/admin/persons/new" element={<PersonAddEdit />} />
+                <Route path="/admin/persons/edit/:id" element={<PersonAddEdit />} />
+                <Route path="/admin/persons/view/:id" element={<PersonAddEdit />} />
+                <Route path="/admin/reservations/" element={<ReservationList />} />
+                <Route path="/admin/reservations/new" element={<ReservationForm />} />
+                <Route path="/admin/reservations/edit/:id" element={<ReservationForm />} />
+                <Route path="/admin/reservations/view/:id" element={<ReservationForm />} />
 
 
                 <Route path="*" element={<NotFound />} />

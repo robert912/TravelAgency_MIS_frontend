@@ -22,7 +22,7 @@ import {
 import Swal from 'sweetalert2';
 import personService from "../services/person.service";
 
-const PersonForm = () => {
+const PersonAddEdit = () => {
     const navigate = useNavigate();
     const { id } = useParams();
     const isEditMode = !!id && id !== 'new';
@@ -385,4 +385,4 @@ const PersonForm = () => {
     );
 };
 
-export default PersonForm;
+export default PersonAddEdit;
