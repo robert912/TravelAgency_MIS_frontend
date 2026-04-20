@@ -21,7 +21,8 @@ import {
     Pending as PendingIcon,
     Cancel as CancelIconBtn,
     Print as PrintIcon,
-    Close as CloseIcon
+    Close as CloseIcon,
+    Edit as EditIcon
 } from "@mui/icons-material";
 import Swal from 'sweetalert2';
 import reservationService from "../services/reservation.service";
@@ -86,7 +87,7 @@ const ReservationForm = () => {
                 personService.getAllActive(),
                 tourPackageService.getAllActive()
             ]);
-            
+
             setPersons(personsRes.data?.data || personsRes.data || []);
             setPackages(packagesRes.data?.data || packagesRes.data || []);
         } catch (error) {
@@ -113,19 +114,19 @@ const ReservationForm = () => {
                     modifiedByUserId: reservationData.modifiedByUserId || 1,
                     reservationDate: reservationData.reservationDate,
                     expirationDate: reservationData.expirationDate,
-                    totalAmount: reservationData.totalAmount || 
+                    totalAmount: reservationData.totalAmount ||
                         (reservationData.tourPackage?.price * (reservationData.passengersCount || 1)) || 0,
-                    subtotal: reservationData.subtotal || 
+                    subtotal: reservationData.subtotal ||
                         (reservationData.tourPackage?.price * (reservationData.passengersCount || 1)) || 0,
                     discountAmount: reservationData.discountAmount || 0,
                     solicitudes: reservationData.solicitudes || ""
                 });
-                
+
                 // Parsear descuentos
                 if (reservationData.discountDetails) {
                     try {
-                        const discounts = typeof reservationData.discountDetails === 'string' 
-                            ? JSON.parse(reservationData.discountDetails) 
+                        const discounts = typeof reservationData.discountDetails === 'string'
+                            ? JSON.parse(reservationData.discountDetails)
                             : reservationData.discountDetails;
                         setDiscountDetails(discounts);
                     } catch (e) {
@@ -215,7 +216,7 @@ const ReservationForm = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        
+
         if (isViewMode) {
             navigate('/admin/reservations');
             return;
@@ -230,20 +231,17 @@ const ReservationForm = () => {
         try {
             const fullPerson = getFullPerson(formData.personId);
             const fullPackage = getFullPackage(formData.tourPackageId);
-            
+
             if (!fullPerson || !fullPackage) {
                 throw new Error('No se encontraron los datos completos de la persona o el paquete');
             }
-            
-            const now = new Date().toISOString();
-            const reservationDate = formData.reservationDate || now;
-            const expirationDate = formData.expirationDate || dayjs().add(3, 'day').toISOString();
 
-            let submitData = {
+            const submitData = {
+                id: Number(id),
                 person: fullPerson,
                 tourPackage: fullPackage,
-                reservationDate: reservationDate,
-                expirationDate: expirationDate,
+                reservationDate: formData.reservationDate,
+                expirationDate: formData.expirationDate,
                 status: formData.status,
                 active: 1,
                 createdByUserId: 1,
@@ -251,14 +249,8 @@ const ReservationForm = () => {
                 solicitudes: formData.solicitudes || ""
             };
 
-            if (isEditMode) {
-                submitData = { ...submitData, id: Number(id) };
-                await reservationService.update(submitData);
-                Swal.fire('¡Actualizada!', 'La reserva ha sido actualizada correctamente', 'success');
-            } else {
-                await reservationService.create(submitData);
-                Swal.fire('¡Creada!', 'La reserva ha sido creada correctamente', 'success');
-            }
+            await reservationService.update(submitData);
+            Swal.fire('¡Actualizada!', 'La reserva ha sido actualizada correctamente', 'success');
             navigate('/admin/reservations');
         } catch (error) {
             console.error("Error al guardar", error);
@@ -300,37 +292,33 @@ const ReservationForm = () => {
                     p: 4
                 }}>
                     <Typography variant="overline" sx={{ opacity: 0.9, letterSpacing: 1.5 }}>
-                        {isViewMode ? 'VER REGISTRO' : isEditMode ? 'EDITAR REGISTRO' : 'NUEVA RESERVA'}
+                        {isViewMode ? 'VER REGISTRO' : 'EDITAR REGISTRO'}
                     </Typography>
                     <Typography variant="h4" fontWeight="bold">
-                        {isViewMode ? 'Detalles de Reserva' : isEditMode ? 'Editar Reserva' : 'Nueva Reserva'}
+                        {isViewMode ? 'Detalles de Reserva' : 'Editar Reserva'}
                     </Typography>
-                    {isEditMode && (
-                        <Typography variant="body2" sx={{ opacity: 0.8, mt: 0.5 }}>
-                            ID: {id}
-                        </Typography>
-                    )}
+                    <Typography variant="body2" sx={{ opacity: 0.8, mt: 0.5 }}>
+                        ID: {id}
+                    </Typography>
                 </Box>
 
                 <form onSubmit={handleSubmit}>
                     <Box sx={{ p: 4 }}>
                         <Grid container spacing={3}>
-                            {/* Estado actual (solo en modo vista/edición) */}
-                            {(isEditMode || isViewMode) && (
-                                <Grid item xs={12}>
-                                    <Alert 
-                                        severity={formData.status === 'PENDIENTE' ? 'warning' : 
-                                                formData.status === 'PAGADA' ? 'success' : 
-                                                formData.status === 'CANCELADA' ? 'error' : 'info'}
-                                        icon={statusColors[formData.status]?.icon}
-                                    >
-                                        <strong>Estado actual:</strong> {statusColors[formData.status]?.label}
-                                        {formData.status === 'PENDIENTE' && (
-                                            <span> - Expira: {dayjs(formData.expirationDate).format('DD/MM/YYYY HH:mm')}</span>
-                                        )}
-                                    </Alert>
-                                </Grid>
-                            )}
+                            {/* Estado actual */}
+                            <Grid item xs={12}>
+                                <Alert
+                                    severity={formData.status === 'PENDIENTE' ? 'warning' :
+                                        formData.status === 'PAGADA' ? 'success' :
+                                            formData.status === 'CANCELADA' ? 'error' : 'info'}
+                                    icon={statusColors[formData.status]?.icon}
+                                >
+                                    <strong>Estado actual:</strong> {statusColors[formData.status]?.label}
+                                    {formData.status === 'PENDIENTE' && (
+                                        <span> - Expira: {dayjs(formData.expirationDate).format('DD/MM/YYYY HH:mm')}</span>
+                                    )}
+                                </Alert>
+                            </Grid>
 
                             <Grid item xs={12}>
                                 <FormControl fullWidth error={!!errors.personId} required>
@@ -378,60 +366,42 @@ const ReservationForm = () => {
                                 </FormControl>
                             </Grid>
 
-                            {(isEditMode || isViewMode) && (
-                                <Grid item xs={12}>
-                                    <FormControl fullWidth>
-                                        <InputLabel>Estado</InputLabel>
-                                        <Select
-                                            name="status"
-                                            value={formData.status}
-                                            onChange={handleChange}
-                                            label="Estado"
-                                            disabled={isViewMode}
-                                        >
-                                            <MenuItem value="PENDIENTE">Pendiente</MenuItem>
-                                            <MenuItem value="PAGADA">Pagada</MenuItem>
-                                            <MenuItem value="CANCELADA">Cancelada</MenuItem>
-                                            <MenuItem value="EXPIRADA">Expirada</MenuItem>
-                                        </Select>
-                                    </FormControl>
-                                </Grid>
-                            )}
+                            <Grid item xs={12}>
+                                <FormControl fullWidth>
+                                    <InputLabel>Estado</InputLabel>
+                                    <Select
+                                        name="status"
+                                        value={formData.status}
+                                        onChange={handleChange}
+                                        label="Estado"
+                                        disabled={isViewMode}
+                                    >
+                                        <MenuItem value="PENDIENTE">Pendiente</MenuItem>
+                                        <MenuItem value="PAGADA">Pagada</MenuItem>
+                                        <MenuItem value="CANCELADA">Cancelada</MenuItem>
+                                        <MenuItem value="EXPIRADA">Expirada</MenuItem>
+                                    </Select>
+                                </FormControl>
+                            </Grid>
 
                             {/* Solicitudes especiales */}
-                            {!isViewMode && (
-                                <Grid item xs={12}>
-                                    <TextField
-                                        fullWidth
-                                        label="Solicitudes especiales"
-                                        name="solicitudes"
-                                        value={formData.solicitudes}
-                                        onChange={handleChange}
-                                        multiline
-                                        rows={3}
-                                        placeholder="Ej: Alimentación especial, necesidades de accesibilidad, habitación contigua, etc."
-                                        helperText="Opcional - Cuéntanos si tienes alguna solicitud especial"
-                                    />
-                                </Grid>
-                            )}
+                            <Grid item xs={12}>
+                                <TextField
+                                    fullWidth
+                                    label="Solicitudes especiales"
+                                    name="solicitudes"
+                                    value={formData.solicitudes}
+                                    onChange={handleChange}
+                                    multiline
+                                    rows={3}
+                                    disabled={isViewMode}
+                                    placeholder="Ej: Alimentación especial, necesidades de accesibilidad, habitación contigua, etc."
+                                    helperText="Opcional - Solicitudes especiales del cliente"
+                                />
+                            </Grid>
 
-                            {isViewMode && formData.solicitudes && (
-                                <Grid item xs={12}>
-                                    <TextField
-                                        name="solicitudes"
-                                        value={formData.solicitudes}
-                                        onChange={handleChange}
-                                        label="Solicitudes especiales"
-                                        disabled={isViewMode}
-                                        rows={3}
-                                    >
-
-                                    </TextField>
-                                </Grid>
-                            )}
-
-                            {/* Lista de pasajeros (solo en modo vista/edición) */}
-                            {(isEditMode || isViewMode) && passengers.length > 0 && (
+                            {/* Lista de pasajeros */}
+                            {passengers.length > 0 && (
                                 <Grid item xs={12}>
                                     <Typography variant="subtitle1" fontWeight="bold" gutterBottom sx={{ mt: 2 }}>
                                         Lista de Pasajeros
@@ -463,12 +433,12 @@ const ReservationForm = () => {
                                 </Grid>
                             )}
 
-                            {/* Monto total (solo en modo vista/edición) */}
-                            {(isEditMode || isViewMode) && formData.totalAmount > 0 && (
+                            {/* Monto total */}
+                            {formData.totalAmount > 0 && (
                                 <Grid item xs={12}>
-                                    <Box sx={{ 
-                                        p: 2, 
-                                        bgcolor: '#e3f2fd', 
+                                    <Box sx={{
+                                        p: 2,
+                                        bgcolor: '#e3f2fd',
                                         borderRadius: 2,
                                         display: 'flex',
                                         justifyContent: 'space-between',
@@ -494,7 +464,7 @@ const ReservationForm = () => {
                                 startIcon={<CancelIcon />}
                                 size="large"
                             >
-                                {isViewMode ? 'Volver' : 'Cancelar'}
+                                Volver
                             </Button>
 
                             {isViewMode && formData.status === 'PAGADA' && (
@@ -522,7 +492,7 @@ const ReservationForm = () => {
                                     }}
                                     size="large"
                                 >
-                                    {saving ? 'Guardando...' : (isEditMode ? 'Actualizar' : 'Crear')}
+                                    {saving ? 'Guardando...' : 'Actualizar'}
                                 </Button>
                             )}
                         </Stack>
@@ -531,10 +501,10 @@ const ReservationForm = () => {
             </Paper>
 
             {/* Diálogo del Recibo/Comprobante */}
-            <Dialog 
-                open={receiptOpen} 
-                onClose={() => setReceiptOpen(false)} 
-                maxWidth="md" 
+            <Dialog
+                open={receiptOpen}
+                onClose={() => setReceiptOpen(false)}
+                maxWidth="md"
                 fullWidth
                 PaperProps={{
                     sx: {
@@ -547,16 +517,16 @@ const ReservationForm = () => {
                     }
                 }}
             >
-                <DialogTitle sx={{ 
-                    bgcolor: 'var(--primary)', 
+                <DialogTitle sx={{
+                    bgcolor: 'var(--primary)',
                     color: 'white',
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center'
                 }}>
                     <Typography variant="h6">Comprobante de Reserva</Typography>
-                    <IconButton 
-                        onClick={() => setReceiptOpen(false)} 
+                    <IconButton
+                        onClick={() => setReceiptOpen(false)}
                         sx={{ color: 'white' }}
                         className="no-print"
                     >
@@ -682,7 +652,7 @@ const ReservationForm = () => {
                     <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
                         DETALLE DE PAGO
                     </Typography>
-                    
+
                     {/* Subtotal */}
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
                         <Typography variant="body2">Subtotal:</Typography>
@@ -734,9 +704,9 @@ const ReservationForm = () => {
                                 <Grid item xs={6}>
                                     <Typography variant="caption" color="text.secondary">Método de pago</Typography>
                                     <Typography variant="body2">
-                                        {paymentInfo.paymentMethod === 'CREDIT_CARD' ? 'Tarjeta de Crédito' : 
-                                         paymentInfo.paymentMethod === 'DEBIT_CARD' ? 'Tarjeta de Débito' : 
-                                         paymentInfo.paymentMethod || "N/A"}
+                                        {paymentInfo.paymentMethod === 'CREDIT_CARD' ? 'Tarjeta de Crédito' :
+                                            paymentInfo.paymentMethod === 'DEBIT_CARD' ? 'Tarjeta de Débito' :
+                                                paymentInfo.paymentMethod || "N/A"}
                                     </Typography>
                                 </Grid>
                                 <Grid item xs={6}>
@@ -754,9 +724,9 @@ const ReservationForm = () => {
                     <Divider sx={{ my: 2 }} />
 
                     {/* Monto total */}
-                    <Box sx={{ 
-                        display: 'flex', 
-                        justifyContent: 'space-between', 
+                    <Box sx={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
                         alignItems: 'center',
                         p: 2,
                         bgcolor: '#e3f2fd',
@@ -777,16 +747,16 @@ const ReservationForm = () => {
                     </Box>
                 </DialogContent>
                 <DialogActions sx={{ p: 2, justifyContent: 'center', className: 'no-print' }}>
-                    <Button 
-                        variant="contained" 
+                    <Button
+                        variant="contained"
                         onClick={handlePrint}
                         startIcon={<PrintIcon />}
                         sx={{ bgcolor: '#1565c0' }}
                     >
                         Imprimir / Guardar PDF
                     </Button>
-                    <Button 
-                        variant="outlined" 
+                    <Button
+                        variant="outlined"
                         onClick={() => setReceiptOpen(false)}
                     >
                         Cerrar

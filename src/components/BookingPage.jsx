@@ -42,14 +42,14 @@ const BookingPage = () => {
     const [packageData, setPackageData] = useState(null);
     const [expandedPassenger, setExpandedPassenger] = useState(0);
     const [searchingPassenger, setSearchingPassenger] = useState({});
-    
+
     // Estado del formulario
     const [formData, setFormData] = useState({
         passengers: 1,
         specialRequests: "",
         passengersInfo: []
     });
-    
+
     // Estado de precios y descuentos
     const [priceCalculation, setPriceCalculation] = useState({
         basePrice: 0,
@@ -60,13 +60,13 @@ const BookingPage = () => {
         total: 0,
         discountsDetail: []
     });
-    
+
     const [availability, setAvailability] = useState({
         available: true,
         availableSlots: 0,
         message: ""
     });
-    
+
     const [isFrequentClient, setIsFrequentClient] = useState(false);
     const [promoActive, setPromoActive] = useState(null);
 
@@ -84,6 +84,12 @@ const BookingPage = () => {
             calculatePrice();
         }
     }, [formData.passengers, packageData]);
+
+    useEffect(() => {
+        if (packageData?.id) {
+            checkAvailability();
+        }
+    }, [packageData?.id]); // Re-ejecutar cuando cambia el ID del paquete
 
     const loadPackageData = async () => {
         setLoading(true);
@@ -133,16 +139,16 @@ const BookingPage = () => {
         }
 
         setSearchingPassenger(prev => ({ ...prev, [index]: true }));
-        
+
         try {
             const response = await personService.searchPerson(identification.trim());
             const person = response.data?.data || response.data;
-            
+
             if (person) {
                 // Persona encontrada, actualizar datos
                 setFormData(prev => ({
                     ...prev,
-                    passengersInfo: prev.passengersInfo.map((p, i) => 
+                    passengersInfo: prev.passengersInfo.map((p, i) =>
                         i === index ? {
                             ...p,
                             personId: person.id,
@@ -156,7 +162,7 @@ const BookingPage = () => {
                         } : p
                     )
                 }));
-                
+
                 Swal.fire({
                     title: '¡Pasajero encontrado!',
                     text: `${person.fullName} ha sido cargado automáticamente.`,
@@ -176,7 +182,7 @@ const BookingPage = () => {
     const handlePassengerFieldChange = (index, field, value) => {
         setFormData(prev => ({
             ...prev,
-            passengersInfo: prev.passengersInfo.map((p, i) => 
+            passengersInfo: prev.passengersInfo.map((p, i) =>
                 i === index ? { ...p, [field]: value } : p
             )
         }));
@@ -185,7 +191,7 @@ const BookingPage = () => {
     const handleEditPassenger = (index) => {
         setFormData(prev => ({
             ...prev,
-            passengersInfo: prev.passengersInfo.map((p, i) => 
+            passengersInfo: prev.passengersInfo.map((p, i) =>
                 i === index ? { ...p, isEditing: true } : p
             )
         }));
@@ -193,7 +199,7 @@ const BookingPage = () => {
 
     const handleSavePassenger = async (index) => {
         const passenger = formData.passengersInfo[index];
-        
+
         // Validar datos requeridos
         if (!passenger.fullName.trim()) {
             Swal.fire('Error', `Ingrese el nombre del pasajero ${index + 1}`, 'error');
@@ -207,7 +213,7 @@ const BookingPage = () => {
             Swal.fire('Error', `Ingrese un email válido para el pasajero ${index + 1}`, 'error');
             return;
         }
-        
+
         if (!passenger.existsInDb && !passenger.personId) {
             // Es un pasajero nuevo, preguntar si desea registrarlo
             const result = await Swal.fire({
@@ -218,7 +224,7 @@ const BookingPage = () => {
                 confirmButtonText: 'Sí, registrar',
                 cancelButtonText: 'Solo esta vez'
             });
-            
+
             if (result.isConfirmed) {
                 setLoading(true);
                 try {
@@ -232,14 +238,14 @@ const BookingPage = () => {
                         createdByUserId: 1,
                         updatedByUserId: 1
                     };
-                    
+
                     const response = await personService.create(newPerson);
                     const createdPerson = response.data?.data || response.data;
-                    
+
                     if (createdPerson) {
                         setFormData(prev => ({
                             ...prev,
-                            passengersInfo: prev.passengersInfo.map((p, i) => 
+                            passengersInfo: prev.passengersInfo.map((p, i) =>
                                 i === index ? {
                                     ...p,
                                     personId: createdPerson.id,
@@ -248,7 +254,7 @@ const BookingPage = () => {
                                 } : p
                             )
                         }));
-                        
+
                         Swal.fire('¡Registrado!', 'El pasajero ha sido registrado exitosamente', 'success');
                     }
                 } catch (error) {
@@ -261,7 +267,7 @@ const BookingPage = () => {
                 // Guardar solo para esta reserva
                 setFormData(prev => ({
                     ...prev,
-                    passengersInfo: prev.passengersInfo.map((p, i) => 
+                    passengersInfo: prev.passengersInfo.map((p, i) =>
                         i === index ? { ...p, isEditing: false, existsInDb: false } : p
                     )
                 }));
@@ -270,7 +276,7 @@ const BookingPage = () => {
             // Pasajero existente, solo cerrar edición
             setFormData(prev => ({
                 ...prev,
-                passengersInfo: prev.passengersInfo.map((p, i) => 
+                passengersInfo: prev.passengersInfo.map((p, i) =>
                     i === index ? { ...p, isEditing: false } : p
                 )
             }));
@@ -290,7 +296,7 @@ const BookingPage = () => {
             isEditing: true,
             existsInDb: false
         };
-        
+
         setFormData(prev => ({
             ...prev,
             passengers: prev.passengers + 1,
@@ -304,7 +310,7 @@ const BookingPage = () => {
             Swal.fire('Error', 'Debe haber al menos un pasajero', 'error');
             return;
         }
-        
+
         const result = await Swal.fire({
             title: 'Eliminar pasajero',
             text: `¿Deseas eliminar a ${formData.passengersInfo[index].fullName || 'este pasajero'}?`,
@@ -313,7 +319,7 @@ const BookingPage = () => {
             confirmButtonText: 'Sí, eliminar',
             cancelButtonText: 'Cancelar'
         });
-        
+
         if (result.isConfirmed) {
             setFormData(prev => ({
                 ...prev,
@@ -329,28 +335,45 @@ const BookingPage = () => {
         const promotions = [
             { id: 1, name: "Descuento Verano", discount: 10, startDate: dayjs().subtract(5, 'day'), endDate: dayjs().add(10, 'day'), active: true }
         ];
-        
-        const activePromo = promotions.find(p => 
+
+        const activePromo = promotions.find(p =>
             p.active && now.isAfter(p.startDate) && now.isBefore(p.endDate)
         );
         setPromoActive(activePromo);
     };
 
     const checkAvailability = async () => {
+        if (!packageData?.id) return;
+
         setCheckingAvailability(true);
         try {
-            const availableSlots = packageData?.totalSlots || 0;
-            const isAvailable = formData.passengers <= availableSlots;
-            
+            // 🔥 Usar el endpoint correcto
+            const response = await tourPackageService.checkAvailabilityForQuantity(
+                packageData.id,
+                formData.passengers
+            );
+
+            // Dependiendo de cómo retorne tu backend
+            const data = response.data;
+
+            console.log("Disponibilidad desde backend:", data); // Debug
+
             setAvailability({
-                available: isAvailable,
-                availableSlots: availableSlots,
-                message: isAvailable 
-                    ? `✅ ${availableSlots} cupos disponibles` 
-                    : `❌ Solo quedan ${availableSlots} cupos disponibles`
+                available: data.isAvailable,
+                availableSlots: data.availableSlots,
+                totalSlots: data.totalSlots,
+                message: data.isAvailable
+                    ? `✅ ${data.availableSlots} cupos disponibles de ${data.totalSlots}`
+                    : `❌ ${data.message}`
             });
         } catch (error) {
             console.error("Error verificando disponibilidad:", error);
+            setAvailability({
+                available: false,
+                availableSlots: 0,
+                totalSlots: packageData?.totalSlots || 0,
+                message: "⚠️ Error al verificar disponibilidad"
+            });
         } finally {
             setCheckingAvailability(false);
         }
@@ -361,7 +384,7 @@ const BookingPage = () => {
         const subtotal = basePrice * formData.passengers;
         let total = subtotal;
         const discountsDetail = [];
-        
+
         // Descuento por grupo (≥ 4 personas)
         let groupDiscount = 0;
         if (formData.passengers >= 4) {
@@ -374,7 +397,7 @@ const BookingPage = () => {
             });
             total -= groupDiscount;
         }
-        
+
         // Descuento por promoción activa
         let promoDiscount = 0;
         if (promoActive) {
@@ -387,7 +410,7 @@ const BookingPage = () => {
             });
             total -= promoDiscount;
         }
-        
+
         setPriceCalculation({
             basePrice,
             subtotal,
@@ -426,20 +449,43 @@ const BookingPage = () => {
         return true;
     };
 
-    const handleNext = () => {
+    const handleNext = async () => {
         if (activeStep === 0) {
-            if (!availability.available) {
-                Swal.fire('Sin disponibilidad', 'No hay suficientes cupos disponibles', 'error');
+            // Verificar disponibilidad nuevamente antes de continuar
+            setCheckingAvailability(true);
+            try {
+                const response = await tourPackageService.checkAvailabilityForQuantity(
+                    packageData.id,
+                    formData.passengers
+                );
+                const data = response.data?.data || response.data;
+
+                if (!data.isAvailable) {
+                    Swal.fire({
+                        title: 'Sin disponibilidad',
+                        html: `No hay suficientes cupos disponibles.<br/>
+                            <strong>Cupos disponibles:</strong> ${data.availableSlots}<br/>
+                            <strong>Solicitados:</strong> ${formData.passengers}`,
+                        icon: 'error'
+                    });
+                    setCheckingAvailability(false);
+                    return;
+                }
+            } catch (error) {
+                console.error("Error verificando disponibilidad:", error);
+                Swal.fire('Error', 'No se pudo verificar disponibilidad', 'error');
+                setCheckingAvailability(false);
                 return;
             }
+            setCheckingAvailability(false);
         }
-        
+
         if (activeStep === 1) {
             if (!validatePassengers()) {
                 return;
             }
         }
-        
+
         setActiveStep((prev) => prev + 1);
     };
 
@@ -448,12 +494,41 @@ const BookingPage = () => {
     };
 
     const handleConfirmBooking = async () => {
-    // Validar que el pasajero principal esté completo
+        // Validar que el pasajero principal esté completo
         const mainPassenger = formData.passengersInfo[0];
         if (!mainPassenger.identification || !mainPassenger.fullName || !mainPassenger.email) {
             Swal.fire('Error', 'Complete los datos del pasajero principal', 'error');
             setActiveStep(1);
             setExpandedPassenger(0);
+            return;
+        }
+
+        // Verificar disponibilidad final antes de confirmar
+        setLoading(true);
+        try {
+            const availabilityCheck = await tourPackageService.checkAvailabilityForQuantity(
+                packageData.id,
+                formData.passengers
+            );
+            const availabilityData = availabilityCheck.data?.data || availabilityCheck.data;
+
+            if (!availabilityData.isAvailable) {
+                Swal.fire({
+                    title: 'Sin disponibilidad',
+                    html: `Lo sentimos, los cupos se agotaron mientras realizabas la reserva.<br/>
+                       <strong>Cupos disponibles ahora:</strong> ${availabilityData.availableSlots}<br/>
+                       <strong>Solicitados:</strong> ${formData.passengers}`,
+                    icon: 'error'
+                });
+                setLoading(false);
+                // Actualizar disponibilidad mostrada
+                await checkAvailability();
+                return;
+            }
+        } catch (error) {
+            console.error("Error verificando disponibilidad final:", error);
+            Swal.fire('Error', 'No se pudo verificar disponibilidad', 'error');
+            setLoading(false);
             return;
         }
 
@@ -485,7 +560,7 @@ const BookingPage = () => {
             try {
                 // Datos de la persona principal
                 const mainPassengerData = formData.passengersInfo[0];
-                
+
                 // Preparar datos de pasajeros
                 const passengersData = formData.passengersInfo.map(passenger => ({
                     personId: passenger.personId || null,
@@ -495,14 +570,14 @@ const BookingPage = () => {
                     phone: passenger.phone || "",
                     nationality: passenger.nationality || ""
                 }));
-                
+
                 // Preparar datos de descuentos
                 const discountsDetail = priceCalculation.discountsDetail.map(discount => ({
                     name: discount.name,
                     description: discount.description,
                     amount: Math.abs(discount.amount)
                 }));
-                
+
                 const reservationData = {
                     // Datos de la persona principal
                     personId: mainPassengerData.personId || null,
@@ -521,11 +596,11 @@ const BookingPage = () => {
                     discountsDetail: discountsDetail,
                     passengersData: passengersData
                 };
-                
+
                 console.log("Enviando reserva con descuentos:", reservationData);
-                
+
                 const response = await reservationService.createReservation(reservationData);
-                
+
                 if (response.data?.success) {
                     await Swal.fire({
                         title: '¡Reserva confirmada!',
@@ -539,7 +614,7 @@ const BookingPage = () => {
                         icon: 'success',
                         confirmButtonText: 'Ver mis reservas'
                     });
-                    
+
                     navigate('/my-reservations');
                 } else {
                     throw new Error(response.data?.message || 'Error al crear la reserva');
@@ -607,13 +682,20 @@ const BookingPage = () => {
                                                 type="number"
                                                 value={formData.passengers}
                                                 onChange={(e) => {
-                                                    const newCount = Math.min(Math.max(parseInt(e.target.value) || 1, 1), availability.availableSlots || 100);
-                                                    setFormData(prev => ({ ...prev, passengers: newCount }));
-                                                    if (newCount > formData.passengersInfo.length) {
-                                                        // Agregar más pasajeros
-                                                        const newPassengers = [...formData.passengersInfo];
-                                                        for (let i = formData.passengersInfo.length; i < newCount; i++) {
-                                                            newPassengers.push({
+                                                    const newCount = Math.min(
+                                                        Math.max(parseInt(e.target.value) || 1, 1),
+                                                        availability.availableSlots || 100
+                                                    );
+
+                                                    // 🔥 IMPORTANTE: Actualizar la lista de pasajeros
+                                                    const currentInfo = formData.passengersInfo;
+                                                    let newPassengersInfo;
+
+                                                    if (newCount > currentInfo.length) {
+                                                        // AGREGAR pasajeros - mantener los existentes y agregar nuevos vacíos
+                                                        newPassengersInfo = [...currentInfo];
+                                                        for (let i = currentInfo.length; i < newCount; i++) {
+                                                            newPassengersInfo.push({
                                                                 id: i,
                                                                 personId: null,
                                                                 identification: "",
@@ -626,8 +708,44 @@ const BookingPage = () => {
                                                                 existsInDb: false
                                                             });
                                                         }
-                                                        setFormData(prev => ({ ...prev, passengersInfo: newPassengers }));
+                                                    } else if (newCount < currentInfo.length) {
+                                                        // ELIMINAR pasajeros sobrantes - SOLO si no están completados
+                                                        const canReduce = currentInfo.slice(newCount).every(p =>
+                                                            !p.fullName && !p.identification && !p.email
+                                                        );
+
+                                                        if (!canReduce) {
+                                                            Swal.fire({
+                                                                title: '¿Eliminar pasajeros?',
+                                                                html: `Al reducir a ${newCount} pasajeros, se perderán los datos de:<br/>
+                           ${currentInfo.slice(newCount).map((p, i) => `• ${p.fullName || `Pasajero ${newCount + i + 1}`}`).join('<br/>')}`,
+                                                                icon: 'warning',
+                                                                showCancelButton: true,
+                                                                confirmButtonText: 'Sí, eliminar',
+                                                                cancelButtonText: 'Cancelar'
+                                                            }).then((result) => {
+                                                                if (result.isConfirmed) {
+                                                                    // Confirmar eliminación
+                                                                    setFormData(prev => ({
+                                                                        ...prev,
+                                                                        passengers: newCount,
+                                                                        passengersInfo: prev.passengersInfo.slice(0, newCount)
+                                                                    }));
+                                                                }
+                                                            });
+                                                            return;
+                                                        }
+
+                                                        newPassengersInfo = currentInfo.slice(0, newCount);
+                                                    } else {
+                                                        newPassengersInfo = currentInfo;
                                                     }
+
+                                                    setFormData(prev => ({
+                                                        ...prev,
+                                                        passengers: newCount,
+                                                        passengersInfo: newPassengersInfo
+                                                    }));
                                                 }}
                                                 InputProps={{
                                                     inputProps: { min: 1, max: availability.availableSlots || 10 }
@@ -653,7 +771,7 @@ const BookingPage = () => {
 
                                     {formData.passengers >= 4 && (
                                         <Alert severity="info" sx={{ mt: 3 }}>
-                                            <strong>🎉 Descuento por grupo aplicado!</strong> Al reservar para {formData.passengers} personas, 
+                                            <strong>🎉 Descuento por grupo aplicado!</strong> Al reservar para {formData.passengers} personas,
                                             recibes un 10% de descuento en el total.
                                         </Alert>
                                     )}
@@ -688,10 +806,10 @@ const BookingPage = () => {
                                     {formData.passengersInfo.map((passenger, index) => (
                                         <Card key={index} sx={{ mt: 2, borderRadius: 2, position: 'relative' }}>
                                             <CardContent>
-                                                <Box 
-                                                    sx={{ 
-                                                        display: 'flex', 
-                                                        justifyContent: 'space-between', 
+                                                <Box
+                                                    sx={{
+                                                        display: 'flex',
+                                                        justifyContent: 'space-between',
                                                         alignItems: 'center',
                                                         cursor: 'pointer'
                                                     }}
@@ -702,27 +820,27 @@ const BookingPage = () => {
                                                         <Typography variant="subtitle1" fontWeight="500">
                                                             Pasajero {index + 1}
                                                             {passenger.existsInDb && (
-                                                                <Chip 
-                                                                    label="Registrado" 
-                                                                    size="small" 
-                                                                    color="success" 
+                                                                <Chip
+                                                                    label="Registrado"
+                                                                    size="small"
+                                                                    color="success"
                                                                     icon={<VerifiedIcon sx={{ fontSize: 16 }} />}
                                                                     sx={{ ml: 1 }}
                                                                 />
                                                             )}
                                                             {!passenger.isEditing && !passenger.existsInDb && (
-                                                                <Chip 
-                                                                    label="Solo esta reserva" 
-                                                                    size="small" 
-                                                                    color="info" 
+                                                                <Chip
+                                                                    label="Solo esta reserva"
+                                                                    size="small"
+                                                                    color="info"
                                                                     sx={{ ml: 1 }}
                                                                 />
                                                             )}
                                                         </Typography>
                                                         {passenger.fullName && (
-                                                            <Chip 
-                                                                label={passenger.fullName} 
-                                                                size="small" 
+                                                            <Chip
+                                                                label={passenger.fullName}
+                                                                size="small"
                                                                 sx={{ ml: 1 }}
                                                             />
                                                         )}
@@ -747,41 +865,41 @@ const BookingPage = () => {
                                                         </IconButton>
                                                     </Box>
                                                 </Box>
-                                                
+
                                                 <Collapse in={expandedPassenger === index}>
                                                     <Box sx={{ mt: 2 }}>
                                                         {passenger.isEditing ? (
                                                             <Grid container spacing={2}>
                                                                 <Grid item xs={12}>
                                                                     <TextField
-                                                                fullWidth
-                                                                label="Número de identificación (RUT/DNI/Pasaporte)"
-                                                                value={passenger.identification}
-                                                                onChange={(e) => {
-                                                                    const value = e.target.value;
-                                                                    handlePassengerFieldChange(index, 'identification', value);
-                                                                    // Debounced search
-                                                                    const timeoutId = setTimeout(() => {
-                                                                        if (value.trim().length >= 3) {
-                                                                            searchPersonByIdentification(index, value);
-                                                                        }
-                                                                    }, 500);
-                                                                    return () => clearTimeout(timeoutId);
-                                                                }}
-                                                                InputProps={{
-                                                                    startAdornment: (
-                                                                        <InputAdornment position="start">
-                                                                            <SearchIcon color="action" />
-                                                                        </InputAdornment>
-                                                                    ),
-                                                                    endAdornment: searchingPassenger[index] && (
-                                                                        <InputAdornment position="end">
-                                                                            <CircularProgress size={20} />
-                                                                        </InputAdornment>
-                                                                    )
-                                                                }}
-                                                                helperText="Ingresa RUT/DNI para buscar automáticamente"
-                                                            />
+                                                                        fullWidth
+                                                                        label="Número de identificación (RUT/DNI/Pasaporte)"
+                                                                        value={passenger.identification}
+                                                                        onChange={(e) => {
+                                                                            const value = e.target.value;
+                                                                            handlePassengerFieldChange(index, 'identification', value);
+                                                                            // Debounced search
+                                                                            const timeoutId = setTimeout(() => {
+                                                                                if (value.trim().length >= 3) {
+                                                                                    searchPersonByIdentification(index, value);
+                                                                                }
+                                                                            }, 500);
+                                                                            return () => clearTimeout(timeoutId);
+                                                                        }}
+                                                                        InputProps={{
+                                                                            startAdornment: (
+                                                                                <InputAdornment position="start">
+                                                                                    <SearchIcon color="action" />
+                                                                                </InputAdornment>
+                                                                            ),
+                                                                            endAdornment: searchingPassenger[index] && (
+                                                                                <InputAdornment position="end">
+                                                                                    <CircularProgress size={20} />
+                                                                                </InputAdornment>
+                                                                            )
+                                                                        }}
+                                                                        helperText="Ingresa RUT/DNI para buscar automáticamente"
+                                                                    />
                                                                 </Grid>
                                                                 <Grid item xs={12}>
                                                                     <TextField
@@ -901,10 +1019,10 @@ const BookingPage = () => {
                                                 Pasajero {index + 1}
                                             </Typography>
                                             <Typography variant="body2">
-                                                <strong>Nombre:</strong> {passenger.fullName}<br/>
-                                                <strong>Identificación:</strong> {passenger.identification}<br/>
-                                                <strong>Email:</strong> {passenger.email}<br/>
-                                                <strong>Teléfono:</strong> {passenger.phone || 'No especificado'}<br/>
+                                                <strong>Nombre:</strong> {passenger.fullName}<br />
+                                                <strong>Identificación:</strong> {passenger.identification}<br />
+                                                <strong>Email:</strong> {passenger.email}<br />
+                                                <strong>Teléfono:</strong> {passenger.phone || 'No especificado'}<br />
                                                 <strong>Nacionalidad:</strong> {passenger.nationality || 'No especificada'}
                                             </Typography>
                                             {passenger.existsInDb && (

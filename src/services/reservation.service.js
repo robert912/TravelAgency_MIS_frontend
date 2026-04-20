@@ -8,7 +8,7 @@ const reservationService = {
         return httpClient.get(`${API_URL}/`);
     },
 
-    // Obtener reservas activas
+    // Obtener reservas activas (No se utiliza)
     getAllActive: () => {
         return httpClient.get(`${API_URL}/active`);
     },
@@ -17,7 +17,7 @@ const reservationService = {
     get: (id) => {
         return httpClient.get(`${API_URL}/${id}`);
     },
-    
+
     // Obtener pasajeros de una reserva
     getPassengers: (reservationId) => {
         return httpClient.get(`${API_URL}/${reservationId}/passengers`);
@@ -34,9 +34,9 @@ const reservationService = {
     },
 
     // Cancelar reserva
-    cancel: (id) => {
+    /*cancel: (id) => {
         return httpClient.delete(`${API_URL}/${id}`);
-    },
+    },*/
 
     // Cambiar estado de reserva
     changeStatus: (id, status) => {
@@ -48,14 +48,13 @@ const reservationService = {
         return httpClient.get(`${API_URL}/person/${personId}`);
     },
 
-    // Obtener reservas por paquete
+    // Obtener reservas por paquete (No se utiliza)
     getByPackageId: (packageId) => {
         return httpClient.get(`${API_URL}/package/${packageId}`);
     },
 
-    // Obtener reservas por estado
-    getByStatus: (status) => {
-        return httpClient.get(`${API_URL}/status/${status}`);
+    checkAvailability: (packageId) => {
+        return httpClient.get(`/api/tour-packages/${packageId}/availability`);
     },
 
 };

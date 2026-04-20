@@ -9,7 +9,6 @@ import {
     Accordion, AccordionSummary, AccordionDetails, Divider, Alert
 } from "@mui/material";
 import {
-    Add as AddIcon,
     Edit as EditIcon,
     Search as SearchIcon,
     Clear as ClearIcon,
@@ -68,11 +67,11 @@ const ReservationList = () => {
             const data = response.data?.data || response.data || [];
             setReservations(data);
             setFilteredReservations(data);
-            
+
             for (const reservation of data) {
                 await loadPassengersForReservation(reservation.id);
             }
-            
+
             await checkAndUpdateExpiredReservations(data);
         } catch (error) {
             console.error("Error cargando reservas:", error);
@@ -95,10 +94,10 @@ const ReservationList = () => {
 
     const checkAndUpdateExpiredReservations = async (reservationsList) => {
         const now = dayjs();
-        const expiredReservations = reservationsList.filter(r => 
+        const expiredReservations = reservationsList.filter(r =>
             r.status === 'PENDIENTE' && dayjs(r.expirationDate).isBefore(now)
         );
-        
+
         if (expiredReservations.length > 0) {
             for (const reservation of expiredReservations) {
                 try {
@@ -107,7 +106,7 @@ const ReservationList = () => {
                     console.error(`Error actualizando reserva ${reservation.id}:`, error);
                 }
             }
-            
+
             if (expiredReservations.length > 0) {
                 Swal.fire({
                     title: 'Reservas Expiradas',
@@ -133,14 +132,14 @@ const ReservationList = () => {
     const handleSearch = (event) => {
         const value = event.target.value.toLowerCase();
         setSearchTerm(value);
-        
+
         const filtered = reservations.filter(res =>
             res.id?.toString().includes(value) ||
             res.person?.fullName?.toLowerCase().includes(value) ||
             res.tourPackage?.name?.toLowerCase().includes(value) ||
             res.tourPackage?.destination?.toLowerCase().includes(value)
         );
-        
+
         setFilteredReservations(filtered);
         setPage(0);
     };
@@ -163,8 +162,8 @@ const ReservationList = () => {
         let title = '';
         let text = '';
         let confirmColor = '';
-        
-        switch(newStatus) {
+
+        switch (newStatus) {
             case 'PAGADA':
                 title = 'Confirmar pago';
                 text = `¿Marcar la reserva #${reservation.id} como PAGADA?`;
@@ -178,7 +177,7 @@ const ReservationList = () => {
             default:
                 return;
         }
-        
+
         const result = await Swal.fire({
             title,
             text,
@@ -334,7 +333,7 @@ const ReservationList = () => {
                 {/* Filtros */}
                 <Box sx={{ p: 3, borderBottom: '1px solid #e2e8f0' }}>
                     <Grid container spacing={2} alignItems="center">
-                        <Grid item xs={12} md={5}>
+                        <Grid item xs={12} md={6}>
                             <TextField
                                 fullWidth
                                 placeholder="Buscar por ID, cliente, paquete o destino..."
@@ -357,7 +356,7 @@ const ReservationList = () => {
                                 }}
                             />
                         </Grid>
-                        <Grid item xs={12} md={4}>
+                        <Grid item xs={12} md={6}>
                             <FormControl fullWidth size="small">
                                 <InputLabel>Estado</InputLabel>
                                 <Select
@@ -380,20 +379,6 @@ const ReservationList = () => {
                                     <MenuItem value="EXPIRADA">Expiradas</MenuItem>
                                 </Select>
                             </FormControl>
-                        </Grid>
-                        <Grid item xs={12} md={3}>
-                            <Button
-                                fullWidth
-                                variant="contained"
-                                startIcon={<AddIcon />}
-                                onClick={() => navigate('/admin/reservations/new')}
-                                sx={{
-                                    bgcolor: 'var(--primary)',
-                                    '&:hover': { bgcolor: 'var(--primary-hover)' }
-                                }}
-                            >
-                                Nueva Reserva
-                            </Button>
                         </Grid>
                     </Grid>
                 </Box>
@@ -421,7 +406,7 @@ const ReservationList = () => {
                                     const passengers = passengersMap[reservation.id] || [];
                                     const isReservationExpired = isExpired(reservation.expirationDate);
                                     const discountDetails = parseDiscountDetails(reservation.discountDetails);
-                                    
+
                                     return (
                                         <>
                                             <TableRow key={reservation.id} hover>
@@ -495,8 +480,8 @@ const ReservationList = () => {
                                                         {reservation.status === 'PENDIENTE' && !isReservationExpired && (
                                                             <>
                                                                 <Tooltip title="Marcar como pagada">
-                                                                    <IconButton 
-                                                                        size="small" 
+                                                                    <IconButton
+                                                                        size="small"
                                                                         onClick={() => handleStatusChange(reservation, 'PAGADA')}
                                                                         sx={{ color: '#2e7d32' }}
                                                                     >
@@ -504,8 +489,8 @@ const ReservationList = () => {
                                                                     </IconButton>
                                                                 </Tooltip>
                                                                 <Tooltip title="Cancelar reserva">
-                                                                    <IconButton 
-                                                                        size="small" 
+                                                                    <IconButton
+                                                                        size="small"
                                                                         onClick={() => handleStatusChange(reservation, 'CANCELADA')}
                                                                         sx={{ color: '#d32f2f' }}
                                                                     >
@@ -516,8 +501,8 @@ const ReservationList = () => {
                                                         )}
                                                         {reservation.status === 'PAGADA' && (
                                                             <Tooltip title="Ver comprobante">
-                                                                <IconButton 
-                                                                    size="small" 
+                                                                <IconButton
+                                                                    size="small"
                                                                     onClick={() => openReceipt(reservation)}
                                                                     sx={{ color: '#1565c0' }}
                                                                 >
@@ -528,7 +513,7 @@ const ReservationList = () => {
                                                     </Stack>
                                                 </TableCell>
                                             </TableRow>
-                                            
+
                                             {/* Fila expandida con pasajeros */}
                                             {expandedRow === reservation.id && (
                                                 <TableRow>
@@ -623,14 +608,14 @@ const ReservationList = () => {
                 </DialogContent>
                 <DialogActions>
                     <Button onClick={() => setCancelDialogOpen(false)}>No, volver</Button>
-                    <Button 
+                    <Button
                         onClick={() => {
                             if (selectedReservation) {
                                 handleStatusChange(selectedReservation, 'CANCELADA');
                                 setCancelDialogOpen(false);
                             }
-                        }} 
-                        color="error" 
+                        }}
+                        color="error"
                         variant="contained"
                     >
                         Sí, cancelar
@@ -639,10 +624,10 @@ const ReservationList = () => {
             </Dialog>
 
             {/* Diálogo del Comprobante */}
-            <Dialog 
-                open={receiptOpen} 
-                onClose={() => setReceiptOpen(false)} 
-                maxWidth="md" 
+            <Dialog
+                open={receiptOpen}
+                onClose={() => setReceiptOpen(false)}
+                maxWidth="md"
                 fullWidth
                 PaperProps={{
                     sx: {
@@ -655,16 +640,16 @@ const ReservationList = () => {
                     }
                 }}
             >
-                <DialogTitle sx={{ 
-                    bgcolor: 'var(--primary)', 
+                <DialogTitle sx={{
+                    bgcolor: 'var(--primary)',
                     color: 'white',
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center'
                 }}>
                     <Typography variant="h6">Comprobante de Reserva</Typography>
-                    <IconButton 
-                        onClick={() => setReceiptOpen(false)} 
+                    <IconButton
+                        onClick={() => setReceiptOpen(false)}
                         sx={{ color: 'white' }}
                         className="no-print"
                     >
@@ -697,7 +682,7 @@ const ReservationList = () => {
                                 </Grid>
                                 <Grid item xs={6}>
                                     <Typography variant="caption" color="text.secondary">Estado</Typography>
-                                    <Typography variant="body1">{statusColors[currentReceipt.status]?.label}</Typography>
+                                    <Typography variant="body1">{getStatusChip(currentReceipt.status)}</Typography>
                                 </Grid>
                                 <Grid item xs={6}>
                                     <Typography variant="caption" color="text.secondary">Fecha de Reserva</Typography>
@@ -799,7 +784,7 @@ const ReservationList = () => {
                                     <Typography variant="body2">Subtotal ({currentReceipt.passengersCount || 1} personas):</Typography>
                                     <Typography variant="body2">${(currentReceipt.subtotal || 0).toLocaleString()}</Typography>
                                 </Box>
-                                
+
                                 {/* Descuentos aplicados */}
                                 {currentReceipt.discountDetails && parseDiscountDetails(currentReceipt.discountDetails).length > 0 && (
                                     <>
@@ -824,12 +809,12 @@ const ReservationList = () => {
                                         </Box>
                                     </>
                                 )}
-                                
+
                                 <Divider sx={{ my: 2 }} />
-                                
-                                <Box sx={{ 
-                                    display: 'flex', 
-                                    justifyContent: 'space-between', 
+
+                                <Box sx={{
+                                    display: 'flex',
+                                    justifyContent: 'space-between',
                                     alignItems: 'center',
                                     p: 2,
                                     bgcolor: '#e3f2fd',
@@ -854,16 +839,16 @@ const ReservationList = () => {
                     )}
                 </DialogContent>
                 <DialogActions sx={{ p: 2, justifyContent: 'center', className: 'no-print' }}>
-                    <Button 
-                        variant="contained" 
+                    <Button
+                        variant="contained"
                         onClick={handlePrint}
                         startIcon={<PrintIcon />}
                         sx={{ bgcolor: '#1565c0' }}
                     >
                         Imprimir / Guardar PDF
                     </Button>
-                    <Button 
-                        variant="outlined" 
+                    <Button
+                        variant="outlined"
                         onClick={() => setReceiptOpen(false)}
                     >
                         Cerrar

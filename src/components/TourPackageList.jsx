@@ -45,6 +45,7 @@ const TourPackageList = () => {
     const [order, setOrder] = useState("desc");
     const [page, setPage] = useState(1);
     const [rowsPerPage, setRowsPerPage] = useState(10);
+    const [availabilityMap, setAvailabilityMap] = useState({});
 
     // Estados para el modal
     const [modalOpen, setModalOpen] = useState(false);
@@ -62,6 +63,9 @@ const TourPackageList = () => {
             const packagesArray = Array.isArray(data) ? data : [];
             setPackages(packagesArray);
             setFilteredPackages(packagesArray);
+
+            // Cargar disponibilidad para todos los paquetes
+            await loadAvailabilityForPackages(packagesArray);
         } catch (error) {
             console.error("Error al obtener paquetes", error);
             Swal.fire('Error', 'No se pudieron cargar los paquetes', 'error');
@@ -70,9 +74,53 @@ const TourPackageList = () => {
         }
     };
 
+    const fetchAvailabilityForPackage = async (packageId) => {
+        try {
+            const response = await tourPackageService.checkAvailabilityForQuantity(packageId, 0);
+            const data = response.data?.data || response.data;
+            return {
+                availableSlots: data.availableSlots || 0,
+                reservedSlots: data.reservedSlots || 0,
+                totalSlots: data.totalSlots || 0
+            };
+        } catch (error) {
+            console.error(`Error obteniendo disponibilidad del paquete ${packageId}:`, error);
+            return null;
+        }
+    };
+
+    // Cargar disponibilidad para todos los paquetes
+    const loadAvailabilityForPackages = async (packagesList) => {
+        const availabilityPromises = packagesList.map(pkg =>
+            fetchAvailabilityForPackage(pkg.id).then(availability => ({
+                id: pkg.id,
+                availability
+            }))
+        );
+
+        const results = await Promise.all(availabilityPromises);
+        const availabilityMapData = {};
+        results.forEach(result => {
+            if (result.availability) {
+                availabilityMapData[result.id] = result.availability;
+            }
+        });
+        setAvailabilityMap(availabilityMapData);
+    };
+
     useEffect(() => {
         fetchPackages();
     }, []);
+
+    useEffect(() => {
+        if (packages.length > 0) {
+            const interval = setInterval(() => {
+                loadAvailabilityForPackages(packages);
+            }, 30000); // 30 segundos
+
+            return () => clearInterval(interval);
+        }
+    }, [packages]);
 
     // Filtrar y ordenar
     useEffect(() => {
@@ -324,8 +372,8 @@ const TourPackageList = () => {
                             <MenuItem value="all">Todos</MenuItem>
                             <MenuItem value="disponible">Disponible</MenuItem>
                             <MenuItem value="agotado">Agotado</MenuItem>
-                            <MenuItem value="proximo">Próximo</MenuItem>
-                            <MenuItem value="finalizado">Finalizado</MenuItem>
+                            <MenuItem value="no_vigente">No Vigente</MenuItem>
+                            <MenuItem value="cancelado">Cancelado</MenuItem>
                         </Select>
                     </FormControl>
 
@@ -420,10 +468,32 @@ const TourPackageList = () => {
                                         <TableCell>{pkg.startDate}</TableCell>
                                         <TableCell>{pkg.endDate}</TableCell>
                                         <TableCell align="right">
-                                            <Badge
-                                                badgeContent={pkg.totalSlots}
-                                                color={pkg.totalSlots < 5 ? "warning" : "default"}
-                                            />
+                                            {availabilityMap[pkg.id] ? (
+                                                <Tooltip
+                                                    title={`${availabilityMap[pkg.id].reservedSlots} reservados de ${availabilityMap[pkg.id].totalSlots} cupos totales`}
+                                                    arrow
+                                                >
+                                                    <Chip
+                                                        label={`${availabilityMap[pkg.id].availableSlots} / ${pkg.totalSlots}`}
+                                                        size="small"
+                                                        color={availabilityMap[pkg.id].availableSlots < 5 ? "warning" : "default"}
+                                                        variant={availabilityMap[pkg.id].availableSlots === 0 ? "filled" : "outlined"}
+                                                        sx={{
+                                                            fontWeight: 'bold',
+                                                            '& .MuiChip-label': {
+                                                                display: 'inline-block',
+                                                                whiteSpace: 'nowrap'
+                                                            }
+                                                        }}
+                                                    />
+                                                </Tooltip>
+                                            ) : (
+                                                <Chip
+                                                    label={pkg.totalSlots}
+                                                    size="small"
+                                                    variant="outlined"
+                                                />
+                                            )}
                                         </TableCell>
                                         <TableCell>
                                             <Chip
@@ -589,12 +659,22 @@ const TourPackageList = () => {
                                                     {selectedPackage.startDate} → {selectedPackage.endDate}
                                                 </td>
                                             </tr>
+
                                             <tr>
-                                                <td style={{ padding: '8px 0', color: '#666', fontWeight: 500 }}>
-                                                    Cupos totales:
+                                                <td style={{ padding: '8px 0', width: '20%', color: '#666', fontWeight: 500 }}>
+                                                    Cupos disponibles:
                                                 </td>
                                                 <td style={{ padding: '8px 0' }}>
-                                                    {selectedPackage.totalSlots}
+                                                    {availabilityMap[selectedPackage.id].availableSlots} / {selectedPackage.totalSlots}
+                                                    {availabilityMap[selectedPackage.id].reservedSlots > 0 && (
+                                                        <Chip
+                                                            label={`${availabilityMap[selectedPackage.id].reservedSlots} reservados`}
+                                                            size="small"
+                                                            variant="outlined"
+                                                            color="info"
+                                                            sx={{ height: 20, fontSize: '0.7rem', ml: 1 }}
+                                                        />
+                                                    )}
                                                 </td>
                                             </tr>
                                             <tr>

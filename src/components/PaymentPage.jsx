@@ -30,7 +30,7 @@ const PaymentPage = () => {
     const [reservation, setReservation] = useState(null);
     const [showCvv, setShowCvv] = useState(false);
     const [discountDetails, setDiscountDetails] = useState([]);
-    
+
     const [formData, setFormData] = useState({
         cardNumber: "",
         cardHolderName: "",
@@ -38,7 +38,7 @@ const PaymentPage = () => {
         cardCvv: "",
         paymentMethod: "CREDIT_CARD"
     });
-    
+
     const [errors, setErrors] = useState({});
 
     useEffect(() => {
@@ -51,12 +51,12 @@ const PaymentPage = () => {
             const response = await reservationService.get(id);
             const data = response.data?.data || response.data;
             setReservation(data);
-            
+
             // Parsear detalles de descuentos
             if (data.discountDetails) {
                 try {
-                    const discounts = typeof data.discountDetails === 'string' 
-                        ? JSON.parse(data.discountDetails) 
+                    const discounts = typeof data.discountDetails === 'string'
+                        ? JSON.parse(data.discountDetails)
                         : data.discountDetails;
                     setDiscountDetails(discounts);
                 } catch (e) {
@@ -64,7 +64,7 @@ const PaymentPage = () => {
                     setDiscountDetails([]);
                 }
             }
-            
+
             // Verificar estado de la reserva
             if (data.status === 'PAGADA') {
                 Swal.fire({
@@ -105,28 +105,28 @@ const PaymentPage = () => {
 
     const validateForm = () => {
         const newErrors = {};
-        
+
         // Validar número de tarjeta (16 dígitos)
         const cleanCardNumber = formData.cardNumber.replace(/\s/g, '');
         if (!cleanCardNumber.match(/^\d{16}$/)) {
             newErrors.cardNumber = "Número de tarjeta inválido (16 dígitos)";
         }
-        
+
         // Validar nombre del titular
         if (!formData.cardHolderName.trim()) {
             newErrors.cardHolderName = "Nombre del titular es requerido";
         }
-        
+
         // Validar fecha de expiración (MM/YY o MM/YYYY)
         if (!formData.cardExpiration.match(/^(0[1-9]|1[0-2])\/(\d{2}|\d{4})$/)) {
             newErrors.cardExpiration = "Formato inválido (MM/YY o MM/YYYY)";
         }
-        
+
         // Validar CVV (3 dígitos)
         if (!formData.cardCvv.match(/^\d{3}$/)) {
             newErrors.cardCvv = "CVV inválido (3 dígitos)";
         }
-        
+
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
     };
@@ -189,9 +189,9 @@ const PaymentPage = () => {
                 paymentMethod: formData.paymentMethod,
                 userId: 1
             };
-            
+
             const response = await paymentService.processPayment(paymentData);
-            
+
             if (response.data?.success) {
                 Swal.fire({
                     title: '¡Pago exitoso!',
@@ -237,7 +237,7 @@ const PaymentPage = () => {
     }
 
     return (
-        <Box sx={{py: 4 }}>
+        <Box sx={{ py: 4 }}>
             <Container maxWidth="md">
                 <Button
                     startIcon={<ArrowBackIcon />}
@@ -269,7 +269,7 @@ const PaymentPage = () => {
                                 Resumen de la reserva
                             </Typography>
                             <Divider sx={{ mb: 3 }} />
-                            
+
                             <Card variant="outlined" sx={{ mb: 3 }}>
                                 <CardContent>
                                     <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
@@ -308,7 +308,7 @@ const PaymentPage = () => {
                                                 {reservation.passengersCount || 1} personas
                                             </Typography>
                                         </Grid>
-                                        
+
                                         {/* Mostrar descuentos si existen */}
                                         {discountDetails.length > 0 && (
                                             <Grid item xs={12}>
@@ -326,7 +326,7 @@ const PaymentPage = () => {
                                                 ))}
                                             </Grid>
                                         )}
-                                        
+
                                         <Grid item xs={12}>
                                             <Divider sx={{ my: 1 }} />
                                             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -359,13 +359,6 @@ const PaymentPage = () => {
                                     </Grid>
                                 </CardContent>
                             </Card>
-
-                            <Alert severity="info" sx={{ mt: 2 }}>
-                                <Typography variant="body2">
-                                    Este es un simulador de pago. Los datos de tarjeta no son validados realmente.
-                                    Puedes usar cualquier número de 16 dígitos, fecha futura y CVV de 3 dígitos.
-                                </Typography>
-                            </Alert>
                         </Box>
                     )}
 
@@ -386,15 +379,15 @@ const PaymentPage = () => {
                                             value={formData.paymentMethod}
                                             onChange={handleChange}
                                         >
-                                            <FormControlLabel 
-                                                value="CREDIT_CARD" 
-                                                control={<Radio />} 
-                                                label="Tarjeta de Crédito" 
+                                            <FormControlLabel
+                                                value="CREDIT_CARD"
+                                                control={<Radio />}
+                                                label="Tarjeta de Crédito"
                                             />
-                                            <FormControlLabel 
-                                                value="DEBIT_CARD" 
-                                                control={<Radio />} 
-                                                label="Tarjeta de Débito" 
+                                            <FormControlLabel
+                                                value="DEBIT_CARD"
+                                                control={<Radio />}
+                                                label="Tarjeta de Débito"
                                             />
                                         </RadioGroup>
                                     </FormControl>
@@ -465,13 +458,6 @@ const PaymentPage = () => {
                                     />
                                 </Grid>
                             </Grid>
-
-                            <Alert severity="warning" sx={{ mt: 3 }}>
-                                <Typography variant="body2">
-                                    <strong>Simulación:</strong> Este es un entorno de prueba. No se realizarán cargos reales.
-                                    Puedes usar: 4242 4242 4242 4242 | 12/28 | 123
-                                </Typography>
-                            </Alert>
                         </Box>
                     )}
 

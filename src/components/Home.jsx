@@ -2,12 +2,14 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from "react-router-dom";
 import '../App.css'
 import tourPackageService from '../services/tourPackage.service'
+import reservationService from '../services/reservation.service' // ← Agregar este import
 
 const Home = () => {
 
     const [packages, setPackages] = useState([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState(null)
+    const [availabilityMap, setAvailabilityMap] = useState({}) // ← Estado para disponibilidad
     const navigate = useNavigate();
 
     // Estado del buscador
@@ -19,29 +21,100 @@ const Home = () => {
         travelTypeId: ''
     });
 
-    const fetchPackages = () => {
+    // 🔥 Función para verificar disponibilidad de un paquete
+    const checkPackageAvailability = async (packageId) => {
+        try {
+            const response = await reservationService.checkAvailability(packageId);
+            const data = response.data?.data || response.data;
+            return {
+                availableSlots: data.availableSlots || 0,
+                reservedSlots: data.reservedSlots || 0,
+                totalSlots: data.totalSlots || 0,
+                isAvailable: data.isAvailable
+            };
+        } catch (error) {
+            console.error(`Error verificando disponibilidad del paquete ${packageId}:`, error);
+            return null;
+        }
+    };
+
+    // 🔥 Función para verificar si el paquete está vigente
+    const isPackageValid = (endDate) => {
+        if (!endDate) return true;
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const end = new Date(endDate);
+        end.setHours(0, 0, 0, 0);
+        return end >= today;
+    };
+
+    // 🔥 Función para obtener el estado del paquete
+    const getPackageStatus = (pkg, availability) => {
+        // Si el paquete está cancelado manualmente
+        if (pkg.status === 'CANCELADO') {
+            return { type: 'CANCELADO', message: 'Cancelado', icon: '❌', canView: false };
+        }
+
+        // Verificar vigencia por fecha
+        if (!isPackageValid(pkg.endDate)) {
+            return { type: 'NO_VIGENTE', message: 'No vigente', icon: '📅', canView: false };
+        }
+
+        // Verificar disponibilidad de cupos - SOLO si es 0, no permitir
+        if (availability && availability.availableSlots <= 0) {
+            return { type: 'AGOTADO', message: 'Agotado', icon: '⚠️', canView: false };
+        }
+
+        // Si hay cupos (aunque sea 1), permitir ver detalle
+        return { type: 'DISPONIBLE', message: 'Disponible', icon: '✅', canView: true };
+    };
+
+    // 🔥 Cargar disponibilidad para todos los paquetes
+    const loadAvailabilityForPackages = async (packagesList) => {
+        const availabilityPromises = packagesList.map(pkg =>
+            checkPackageAvailability(pkg.id).then(availability => ({
+                id: pkg.id,
+                availability
+            }))
+        );
+
+        const results = await Promise.all(availabilityPromises);
+        const availabilityMapData = {};
+        results.forEach(result => {
+            if (result.availability) {
+                availabilityMapData[result.id] = result.availability;
+            }
+        });
+        setAvailabilityMap(availabilityMapData);
+    };
+
+    const fetchPackages = async () => {
         setLoading(true);
-        tourPackageService.getAllActive()
-            .then(response => {
-                const data = response.data?.data || response.data || [];
-                setPackages(Array.isArray(data) ? data : []);
-                setLoading(false);
-            })
-            .catch(err => {
-                console.error("Error fetching packages:", err);
-                setError("Lo sentimos, no pudimos cargar los paquetes de viaje.");
-                setLoading(false);
-            });
+        try {
+            const response = await tourPackageService.getAllActive();
+            const data = response.data?.data || response.data || [];
+            const packagesArray = Array.isArray(data) ? data : [];
+            setPackages(packagesArray);
+
+            // 🔥 Cargar disponibilidad después de obtener los paquetes
+            if (packagesArray.length > 0) {
+                await loadAvailabilityForPackages(packagesArray);
+            }
+        } catch (err) {
+            console.error("Error fetching packages:", err);
+            setError("Lo sentimos, no pudimos cargar los paquetes de viaje.");
+        } finally {
+            setLoading(false);
+        }
     };
 
     useEffect(() => {
         fetchPackages();
     }, [])
 
-    const handleSearch = (e) => {
+    const handleSearch = async (e) => {
         if (e) e.preventDefault();
 
-        // Limpiamos filtros nulos o vacíos para enviar solo los solicitados
         const cleanParams = {};
         Object.keys(filters).forEach(key => {
             if (filters[key]) {
@@ -55,17 +128,22 @@ const Home = () => {
         }
 
         setLoading(true);
-        tourPackageService.searchFilter(cleanParams)
-            .then(response => {
-                const data = response.data?.data || response.data || [];
-                setPackages(Array.isArray(data) ? data : []);
-                setLoading(false);
-            })
-            .catch(err => {
-                console.error("Error filtrando paquetes:", err);
-                setError("Ocurrió un error al usar el buscador.");
-                setLoading(false);
-            });
+        try {
+            const response = await tourPackageService.searchFilter(cleanParams);
+            const data = response.data?.data || response.data || [];
+            const packagesArray = Array.isArray(data) ? data : [];
+            setPackages(packagesArray);
+
+            // 🔥 Cargar disponibilidad para los paquetes filtrados
+            if (packagesArray.length > 0) {
+                await loadAvailabilityForPackages(packagesArray);
+            }
+        } catch (err) {
+            console.error("Error filtrando paquetes:", err);
+            setError("Ocurrió un error al usar el buscador.");
+        } finally {
+            setLoading(false);
+        }
     }
 
     const handleChange = (e) => {
@@ -82,6 +160,27 @@ const Home = () => {
         });
         fetchPackages();
     }
+
+    // Función para manejar clic en botón
+    const handleViewDetail = (pkg, status) => {
+        // Solo permitir navegación si el paquete NO está cancelado, NO_VIGENTE o AGOTADO
+        if (status.canView) {
+            navigate(`/package/${pkg.id}`);
+        } else {
+            // Mostrar mensaje explicativo
+            const messages = {
+                'AGOTADO': 'Este paquete no tiene cupos disponibles',
+                'NO_VIGENTE': 'Este paquete ya no está vigente',
+                'CANCELADO': 'Este paquete ha sido cancelado'
+            };
+            Swal.fire({
+                title: 'Paquete no disponible',
+                text: messages[status.type] || 'Este paquete no está disponible actualmente',
+                icon: 'warning',
+                confirmButtonText: 'Entendido'
+            });
+        }
+    };
 
     return (
         <div className="app-container">
@@ -139,10 +238,10 @@ const Home = () => {
                                 <label>Experiencia</label>
                                 <select name="travelTypeId" value={filters.travelTypeId} onChange={handleChange}>
                                     <option value="">Cualquiera</option>
-                                    <option value="1">1 - Aventura</option>
-                                    <option value="2">2 - Relax</option>
-                                    <option value="3">3 - Cultural</option>
-                                    <option value="4">4 - Familiar</option>
+                                    <option value="1">Aventura</option>
+                                    <option value="2">Relax</option>
+                                    <option value="3">Cultural</option>
+                                    <option value="4">Familiar</option>
                                 </select>
                             </div>
 
@@ -192,27 +291,44 @@ const Home = () => {
                         <div className="packages-grid">
                             {packages.map((pkg, index) => {
                                 const currentPrice = pkg.price ? Number(pkg.price) : '999';
-                                // ✅ CALCULAR DÍAS Y NOCHES
+                                const availability = availabilityMap[pkg.id];
+                                const packageStatus = getPackageStatus(pkg, availability);
+                                const isBlocked = !packageStatus.canView; // Solo bloqueado si NO puede ver
+
+                                // Calcular días y noches
                                 let days = null;
                                 let nights = null;
 
                                 if (pkg.startDate && pkg.endDate) {
                                     const start = new Date(pkg.startDate + "T00:00:00");
                                     const end = new Date(pkg.endDate + "T23:59:59");
-
                                     const diffTime = end - start;
                                     days = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
                                     nights = days > 0 ? days - 1 : 0;
                                 }
 
                                 return (
-                                    <div key={pkg.id} className="package-card">
+                                    <div key={pkg.id} className={`package-card ${isBlocked ? 'blocked-card' : ''}`}>
                                         <div className="card-image-wrapper">
                                             <img
                                                 src={pkg.imageUrl || 'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'}
                                                 alt={pkg.name || 'Destino espectacular'}
                                                 onError={(e) => { e.target.src = 'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80' }}
                                             />
+
+                                            {/* 🔥 Badge de estado - estilo "clausurado" pero elegante */}
+                                            {isBlocked && (
+                                                <div className={`status-ribbon status-${packageStatus.type.toLowerCase()}`}>
+                                                    <span>{packageStatus.message}</span>
+                                                </div>
+                                            )}
+
+                                            {/* 🔥 Badge de pocos cupos (solo cuando hay entre 1 y 4 cupos) */}
+                                            {!isBlocked && availability && availability.availableSlots > 0 && availability.availableSlots <= 4 && (
+                                                <div className="low-stock-ribbon">
+                                                    <span>⚡ ¡Últimos {availability.availableSlots} cupos!</span>
+                                                </div>
+                                            )}
                                         </div>
 
                                         <div className="card-content">
@@ -222,8 +338,9 @@ const Home = () => {
                                                 ))}
                                             </div>
 
-                                            <h3 className="card-title">{pkg.name || 'Paquete Turístico'}</h3>
-
+                                            <h3 className={`card-title ${isBlocked ? 'blocked-text' : ''}`}>
+                                                {pkg.name || 'Paquete Turístico'}
+                                            </h3>
 
                                             <div className="card-details">
                                                 <div className="detail-item">
@@ -232,8 +349,7 @@ const Home = () => {
                                                 </div>
                                                 <div className="detail-item">
                                                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
-                                                    <span> {days ? `${days} Días / ${nights} Noches` : '7 Días'}
-                                                    </span>
+                                                    <span>{days ? `${days} Días / ${nights} Noches` : '7 Días'}</span>
                                                 </div>
                                             </div>
 
@@ -241,14 +357,17 @@ const Home = () => {
                                                 <div className="price-info">
                                                     <span className="home-price-label">Precio por persona desde</span>
                                                     <div className="price-row">
-                                                        <span className="current-price">${currentPrice.toLocaleString()}</span>
+                                                        <span className={`current-price ${isBlocked ? 'blocked-price' : ''}`}>
+                                                            ${currentPrice.toLocaleString()}
+                                                        </span>
                                                     </div>
                                                 </div>
                                                 <button
-                                                    className="book-btn"
-                                                    onClick={() => navigate(`/package/${pkg.id}`)}
+                                                    className={`book-btn ${isBlocked ? 'blocked-btn' : ''}`}
+                                                    onClick={() => handleViewDetail(pkg, packageStatus)}
+                                                    disabled={isBlocked}
                                                 >
-                                                    Ver Detalle
+                                                    {isBlocked ? packageStatus.message : 'Ver Detalle'}
                                                 </button>
                                             </div>
                                         </div>

@@ -698,7 +698,7 @@ const TourPackageAddEdit = () => {
                                 <Grid item xs={12} md={3}>
                                     <TextField
                                         fullWidth
-                                        label="Cupos disponibles"
+                                        label="Cupos totales"
                                         name="totalSlots"
                                         type="number"
                                         value={formData.totalSlots}
@@ -757,13 +757,51 @@ const TourPackageAddEdit = () => {
                                 <Grid item xs={12} md={6}>
                                     <FormControl fullWidth>
                                         <InputLabel>Estado del paquete</InputLabel>
-                                        <Select name="status" value={formData.status} onChange={handleChange} label="Estado del paquete">
+                                        <Select
+                                            name="status"
+                                            value={formData.status}
+                                            onChange={handleChange}
+                                            label="Estado del paquete"
+                                        >
                                             <MenuItem value="DISPONIBLE">Disponible</MenuItem>
                                             <MenuItem value="AGOTADO">Agotado</MenuItem>
                                             <MenuItem value="NO_VIGENTE">No Vigente</MenuItem>
                                             <MenuItem value="CANCELADO">Cancelado</MenuItem>
                                         </Select>
                                     </FormControl>
+
+                                    {/* Mostrar alerta según el estado */}
+                                    {formData.status === "AGOTADO" && (
+                                        <Alert severity="warning" sx={{ mt: 1 }}>
+                                            <Typography variant="caption">
+                                                ⚠️ Este paquete está agotado. Se actualizará automáticamente cuando haya cupos disponibles.
+                                            </Typography>
+                                        </Alert>
+                                    )}
+
+                                    {formData.status === "NO_VIGENTE" && (
+                                        <Alert severity="info" sx={{ mt: 1 }}>
+                                            <Typography variant="caption">
+                                                📅 Este paquete no está vigente porque la fecha de finalización ya pasó.
+                                            </Typography>
+                                        </Alert>
+                                    )}
+
+                                    {formData.status === "CANCELADO" && (
+                                        <Alert severity="error" sx={{ mt: 1 }}>
+                                            <Typography variant="caption">
+                                                ❌ Este paquete está cancelado. No se actualizará automáticamente.
+                                            </Typography>
+                                        </Alert>
+                                    )}
+
+                                    {formData.status === "DISPONIBLE" && (
+                                        <Alert severity="success" sx={{ mt: 1 }}>
+                                            <Typography variant="caption">
+                                                ✅ Este paquete está disponible.
+                                            </Typography>
+                                        </Alert>
+                                    )}
                                 </Grid>
 
                                 <Grid item xs={12} md={6}>
