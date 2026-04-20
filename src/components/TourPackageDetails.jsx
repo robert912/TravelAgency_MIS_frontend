@@ -392,7 +392,10 @@ const TourPackageDetails = () => {
                             </span>
                         </div>
 
-                        <button className="book-action-btn">
+                        <button 
+                            className="book-action-btn" 
+                            onClick={() => navigate(`/booking/${pkg.id}`)}
+                        >
                             Reservar Ahora
                         </button>
                         <p className="support-text">Reserva segura garantizada. Pago 100% encriptado.</p>

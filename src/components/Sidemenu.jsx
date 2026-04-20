@@ -101,35 +101,16 @@ export default function Sidemenu({ open, toggleDrawer }) {
                     </ListItemIcon>
                     <ListItemText primary="Servicios" />
                 </ListItemButton>
-
-                <ListItemButton onClick={() => navigate("/reports/AnualReport")}>
-                    <ListItemIcon>
-                        <AnalyticsIcon />
-                    </ListItemIcon>
-                    <ListItemText primary="Gráficos Planillas" />
-                </ListItemButton>
             </List>
 
             <Divider />
 
             <List>
-                <ListItemButton onClick={() => navigate("/employee/discounts")}>
+                <ListItemButton onClick={() => navigate("/my-reservations")}>
                     <ListItemIcon>
                         <DiscountIcon />
                     </ListItemIcon>
-                    <ListItemText primary="Descuentos" />
-                </ListItemButton>
-                <ListItemButton onClick={() => navigate("/paycheck/vacations")}>
-                    <ListItemIcon>
-                        <HailIcon />
-                    </ListItemIcon>
-                    <ListItemText primary="Vacaciones" />
-                </ListItemButton>
-                <ListItemButton onClick={() => navigate("/paycheck/medicalleave")}>
-                    <ListItemIcon>
-                        <MedicationLiquidIcon />
-                    </ListItemIcon>
-                    <ListItemText primary="Licencias Medicas" />
+                    <ListItemText primary="Mis reservas" />
                 </ListItemButton>
             </List>
         </Box>

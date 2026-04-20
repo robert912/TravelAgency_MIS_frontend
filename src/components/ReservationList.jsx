@@ -6,6 +6,7 @@ import {
     InputAdornment, Button, Stack, Tooltip, Grid, FormControl,
     InputLabel, Select, MenuItem, Dialog, DialogTitle, DialogContent,
     DialogContentText, DialogActions, CircularProgress, Card, CardContent,
+    Accordion, AccordionSummary, AccordionDetails, Divider, Alert
 } from "@mui/material";
 import {
     Add as AddIcon,
@@ -19,7 +20,10 @@ import {
     Schedule as ScheduleIcon,
     Person as PersonIcon,
     CardTravel as PackageIcon,
-    Delete as DeleteIcon,
+    ExpandMore as ExpandMoreIcon,
+    Receipt as ReceiptIcon,
+    Print as PrintIcon,
+    Close as CloseIcon
 } from "@mui/icons-material";
 import Swal from 'sweetalert2';
 import reservationService from "../services/reservation.service";
@@ -41,12 +45,14 @@ const ReservationList = () => {
     const [statusFilter, setStatusFilter] = useState("all");
     const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
     const [selectedReservation, setSelectedReservation] = useState(null);
-    const [alertShown, setAlertShown] = useState({});
+    const [passengersMap, setPassengersMap] = useState({});
+    const [expandedRow, setExpandedRow] = useState(null);
+    const [receiptOpen, setReceiptOpen] = useState(false);
+    const [currentReceipt, setCurrentReceipt] = useState(null);
 
-    // Colores para los estados (sin PAGADA)
     const statusColors = {
         PENDIENTE: { bg: '#fff3e0', color: '#e65100', icon: <PendingIcon sx={{ fontSize: 16 }} /> },
-        CONFIRMADA: { bg: '#e8f5e9', color: '#2e7d32', icon: <CheckCircleIcon sx={{ fontSize: 16 }} /> },
+        PAGADA: { bg: '#e8f5e9', color: '#2e7d32', icon: <CheckCircleIcon sx={{ fontSize: 16 }} /> },
         CANCELADA: { bg: '#ffebee', color: '#c62828', icon: <CancelIcon sx={{ fontSize: 16 }} /> },
         EXPIRADA: { bg: '#f5f5f5', color: '#757575', icon: <ScheduleIcon sx={{ fontSize: 16 }} /> }
     };
@@ -54,42 +60,6 @@ const ReservationList = () => {
     useEffect(() => {
         fetchReservations();
     }, []);
-
-    // Verificar reservas expiradas periódicamente
-    useEffect(() => {
-        const checkExpiredReservations = () => {
-            const now = dayjs();
-            reservations.forEach(reservation => {
-                if (reservation.status === 'PENDIENTE' && dayjs(reservation.expirationDate).isBefore(now)) {
-                    // Si la reserva está expirada y no se ha mostrado alerta
-                    if (!alertShown[reservation.id]) {
-                        setAlertShown(prev => ({ ...prev, [reservation.id]: true }));
-                        Swal.fire({
-                            title: 'Reserva Expirada',
-                            html: `La reserva #${reservation.id} de <strong>${reservation.person?.fullName}</strong> ha expirado.<br/>Fecha de expiración: ${dayjs(reservation.expirationDate).format('DD/MM/YYYY HH:mm')}`,
-                            icon: 'warning',
-                            confirmButtonText: 'Entendido',
-                            confirmButtonColor: '#d33'
-                        });
-                        // Actualizar el estado de la reserva a EXPIRADA
-                        updateExpiredStatus(reservation.id);
-                    }
-                }
-            });
-        };
-
-        const interval = setInterval(checkExpiredReservations, 60000); // Revisar cada minuto
-        return () => clearInterval(interval);
-    }, [reservations, alertShown]);
-
-    const updateExpiredStatus = async (reservationId) => {
-        try {
-            await reservationService.changeStatus(reservationId, 'EXPIRADA');
-            fetchReservations(); // Recargar la lista
-        } catch (error) {
-            console.error("Error actualizando estado a EXPIRADA:", error);
-        }
-    };
 
     const fetchReservations = async () => {
         setLoading(true);
@@ -99,30 +69,55 @@ const ReservationList = () => {
             setReservations(data);
             setFilteredReservations(data);
             
-            // Verificar reservas expiradas al cargar
-            const now = dayjs();
-            const expiredReservations = data.filter(r => 
-                r.status === 'PENDIENTE' && dayjs(r.expirationDate).isBefore(now)
-            );
-            
-            if (expiredReservations.length > 0) {
-                Swal.fire({
-                    title: 'Reservas Expiradas',
-                    html: `Hay ${expiredReservations.length} reserva(s) que han expirado.<br/>Se actualizarán automáticamente a estado EXPIRADA.`,
-                    icon: 'info',
-                    confirmButtonText: 'Aceptar'
-                });
-                
-                // Actualizar cada reserva expirada
-                for (const reservation of expiredReservations) {
-                    await updateExpiredStatus(reservation.id);
-                }
+            for (const reservation of data) {
+                await loadPassengersForReservation(reservation.id);
             }
+            
+            await checkAndUpdateExpiredReservations(data);
         } catch (error) {
             console.error("Error cargando reservas:", error);
             Swal.fire('Error', 'No se pudieron cargar las reservas', 'error');
         } finally {
             setLoading(false);
+        }
+    };
+
+    const loadPassengersForReservation = async (reservationId) => {
+        try {
+            const response = await reservationService.getPassengers(reservationId);
+            const passengers = response.data?.data || response.data || [];
+            setPassengersMap(prev => ({ ...prev, [reservationId]: passengers }));
+        } catch (error) {
+            console.error(`Error cargando pasajeros para reserva ${reservationId}:`, error);
+            setPassengersMap(prev => ({ ...prev, [reservationId]: [] }));
+        }
+    };
+
+    const checkAndUpdateExpiredReservations = async (reservationsList) => {
+        const now = dayjs();
+        const expiredReservations = reservationsList.filter(r => 
+            r.status === 'PENDIENTE' && dayjs(r.expirationDate).isBefore(now)
+        );
+        
+        if (expiredReservations.length > 0) {
+            for (const reservation of expiredReservations) {
+                try {
+                    await reservationService.changeStatus(reservation.id, 'EXPIRADA');
+                } catch (error) {
+                    console.error(`Error actualizando reserva ${reservation.id}:`, error);
+                }
+            }
+            
+            if (expiredReservations.length > 0) {
+                Swal.fire({
+                    title: 'Reservas Expiradas',
+                    html: `${expiredReservations.length} reserva(s) han sido actualizadas a estado EXPIRADA`,
+                    icon: 'info',
+                    timer: 3000,
+                    showConfirmButton: false
+                });
+                fetchReservations();
+            }
         }
     };
 
@@ -136,11 +131,24 @@ const ReservationList = () => {
     };
 
     const handleSearch = (event) => {
-        setSearchTerm(event.target.value);
+        const value = event.target.value.toLowerCase();
+        setSearchTerm(value);
+        
+        const filtered = reservations.filter(res =>
+            res.id?.toString().includes(value) ||
+            res.person?.fullName?.toLowerCase().includes(value) ||
+            res.tourPackage?.name?.toLowerCase().includes(value) ||
+            res.tourPackage?.destination?.toLowerCase().includes(value)
+        );
+        
+        setFilteredReservations(filtered);
+        setPage(0);
     };
 
     const clearSearch = () => {
         setSearchTerm("");
+        setFilteredReservations(reservations);
+        setPage(0);
     };
 
     const handleView = (reservation) => {
@@ -151,77 +159,58 @@ const ReservationList = () => {
         navigate(`/admin/reservations/edit/${reservation.id}`);
     };
 
-    const handleCancelClick = (reservation) => {
-        setSelectedReservation(reservation);
-        setCancelDialogOpen(true);
-    };
-
-    const handleCancelConfirm = async () => {
-        if (!selectedReservation) return;
-
-        setLoading(true);
-        try {
-            await reservationService.changeStatus(selectedReservation.id, 'CANCELADA');
-            Swal.fire('¡Cancelada!', 'La reserva ha sido cancelada correctamente', 'success');
-            fetchReservations();
-        } catch (error) {
-            console.error("Error cancelando reserva:", error);
-            Swal.fire('Error', error.response?.data?.message || 'No se pudo cancelar la reserva', 'error');
-        } finally {
-            setLoading(false);
-            setCancelDialogOpen(false);
-            setSelectedReservation(null);
+    const handleStatusChange = async (reservation, newStatus) => {
+        let title = '';
+        let text = '';
+        let confirmColor = '';
+        
+        switch(newStatus) {
+            case 'PAGADA':
+                title = 'Confirmar pago';
+                text = `¿Marcar la reserva #${reservation.id} como PAGADA?`;
+                confirmColor = '#2e7d32';
+                break;
+            case 'CANCELADA':
+                title = 'Cancelar reserva';
+                text = `¿Estás seguro de cancelar la reserva #${reservation.id}?`;
+                confirmColor = '#d33';
+                break;
+            default:
+                return;
         }
-    };
-
-    const handleConfirmReservation = async (reservation) => {
+        
         const result = await Swal.fire({
-            title: 'Confirmar reserva',
-            text: `¿Estás seguro de que deseas confirmar la reserva #${reservation.id}?`,
+            title,
+            text,
             icon: 'question',
             showCancelButton: true,
-            confirmButtonColor: '#2e7d32',
             confirmButtonText: 'Sí, confirmar',
-            cancelButtonText: 'Cancelar'
+            cancelButtonText: 'Cancelar',
+            confirmButtonColor: confirmColor
         });
 
         if (result.isConfirmed) {
             setLoading(true);
             try {
-                await reservationService.changeStatus(reservation.id, 'CONFIRMADA');
-                Swal.fire('¡Confirmada!', 'La reserva ha sido confirmada correctamente', 'success');
+                await reservationService.changeStatus(reservation.id, newStatus);
+                Swal.fire('¡Actualizado!', `Reserva #${reservation.id} ${newStatus === 'PAGADA' ? 'pagada' : 'cancelada'} correctamente`, 'success');
                 fetchReservations();
             } catch (error) {
-                Swal.fire('Error', 'No se pudo confirmar la reserva', 'error');
+                console.error("Error cambiando estado:", error);
+                Swal.fire('Error', 'No se pudo cambiar el estado', 'error');
             } finally {
                 setLoading(false);
             }
         }
     };
 
-    const handleCancelReservation = async (reservation) => {
-        const result = await Swal.fire({
-            title: 'Cancelar reserva',
-            text: `¿Estás seguro de que deseas cancelar la reserva #${reservation.id}?`,
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#d33',
-            confirmButtonText: 'Sí, cancelar',
-            cancelButtonText: 'No, volver'
-        });
+    const openReceipt = (reservation) => {
+        setCurrentReceipt(reservation);
+        setReceiptOpen(true);
+    };
 
-        if (result.isConfirmed) {
-            setLoading(true);
-            try {
-                await reservationService.changeStatus(reservation.id, 'CANCELADA');
-                Swal.fire('¡Cancelada!', 'La reserva ha sido cancelada correctamente', 'success');
-                fetchReservations();
-            } catch (error) {
-                Swal.fire('Error', 'No se pudo cancelar la reserva', 'error');
-            } finally {
-                setLoading(false);
-            }
-        }
+    const handlePrint = () => {
+        window.print();
     };
 
     const getStatusChip = (status) => {
@@ -240,14 +229,28 @@ const ReservationList = () => {
         return dayjs(expirationDate).isBefore(dayjs());
     };
 
-    // Verificar si se puede confirmar una reserva (no está expirada ni cancelada)
-    const canConfirm = (reservation) => {
-        return reservation.status === 'PENDIENTE' && !isExpired(reservation.expirationDate);
+    const getTotalPassengers = (reservationId) => {
+        return passengersMap[reservationId]?.length || 0;
     };
 
-    // Verificar si se puede cancelar
-    const canCancel = (reservation) => {
-        return reservation.status !== 'CANCELADA' && reservation.status !== 'EXPIRADA';
+    const getTotalAmount = (reservation) => {
+        if (reservation.totalAmount) return reservation.totalAmount;
+        const price = reservation.tourPackage?.price || 0;
+        const passengers = getTotalPassengers(reservation.id);
+        return price * passengers;
+    };
+
+    // Parsear descuentos
+    const parseDiscountDetails = (discountDetails) => {
+        if (!discountDetails) return [];
+        try {
+            if (typeof discountDetails === 'string') {
+                return JSON.parse(discountDetails);
+            }
+            return discountDetails;
+        } catch (e) {
+            return [];
+        }
     };
 
     if (loading && reservations.length === 0) {
@@ -282,7 +285,7 @@ const ReservationList = () => {
                 <Box sx={{ p: 3, borderBottom: '1px solid #e2e8f0' }}>
                     <Grid container spacing={2}>
                         <Grid item xs={6} sm={4} md={3}>
-                            <Card sx={{ bgcolor: '#fff3e0' }}>
+                            <Card sx={{ bgcolor: '#fff3e0', cursor: 'pointer' }} onClick={() => setStatusFilter('PENDIENTE')}>
                                 <CardContent sx={{ textAlign: 'center', p: 2 }}>
                                     <PendingIcon sx={{ color: '#e65100', fontSize: 30 }} />
                                     <Typography variant="h6">
@@ -293,18 +296,18 @@ const ReservationList = () => {
                             </Card>
                         </Grid>
                         <Grid item xs={6} sm={4} md={3}>
-                            <Card sx={{ bgcolor: '#e8f5e9' }}>
+                            <Card sx={{ bgcolor: '#e8f5e9', cursor: 'pointer' }} onClick={() => setStatusFilter('PAGADA')}>
                                 <CardContent sx={{ textAlign: 'center', p: 2 }}>
                                     <CheckCircleIcon sx={{ color: '#2e7d32', fontSize: 30 }} />
                                     <Typography variant="h6">
-                                        {reservations.filter(r => r.status === 'CONFIRMADA').length}
+                                        {reservations.filter(r => r.status === 'PAGADA').length}
                                     </Typography>
-                                    <Typography variant="caption">Confirmadas</Typography>
+                                    <Typography variant="caption">Pagadas</Typography>
                                 </CardContent>
                             </Card>
                         </Grid>
                         <Grid item xs={6} sm={4} md={3}>
-                            <Card sx={{ bgcolor: '#ffebee' }}>
+                            <Card sx={{ bgcolor: '#ffebee', cursor: 'pointer' }} onClick={() => setStatusFilter('CANCELADA')}>
                                 <CardContent sx={{ textAlign: 'center', p: 2 }}>
                                     <CancelIcon sx={{ color: '#c62828', fontSize: 30 }} />
                                     <Typography variant="h6">
@@ -315,7 +318,7 @@ const ReservationList = () => {
                             </Card>
                         </Grid>
                         <Grid item xs={6} sm={4} md={3}>
-                            <Card sx={{ bgcolor: '#f5f5f5' }}>
+                            <Card sx={{ bgcolor: '#f5f5f5', cursor: 'pointer' }} onClick={() => setStatusFilter('EXPIRADA')}>
                                 <CardContent sx={{ textAlign: 'center', p: 2 }}>
                                     <ScheduleIcon sx={{ color: '#757575', fontSize: 30 }} />
                                     <Typography variant="h6">
@@ -331,10 +334,10 @@ const ReservationList = () => {
                 {/* Filtros */}
                 <Box sx={{ p: 3, borderBottom: '1px solid #e2e8f0' }}>
                     <Grid container spacing={2} alignItems="center">
-                        <Grid item xs={12} md={6}>
+                        <Grid item xs={12} md={5}>
                             <TextField
                                 fullWidth
-                                placeholder="Buscar por cliente, paquete o ID..."
+                                placeholder="Buscar por ID, cliente, paquete o destino..."
                                 value={searchTerm}
                                 onChange={handleSearch}
                                 size="small"
@@ -354,17 +357,25 @@ const ReservationList = () => {
                                 }}
                             />
                         </Grid>
-                        <Grid item xs={12} md={3}>
+                        <Grid item xs={12} md={4}>
                             <FormControl fullWidth size="small">
                                 <InputLabel>Estado</InputLabel>
                                 <Select
                                     value={statusFilter}
-                                    onChange={(e) => setStatusFilter(e.target.value)}
+                                    onChange={(e) => {
+                                        setStatusFilter(e.target.value);
+                                        if (e.target.value === 'all') {
+                                            setFilteredReservations(reservations);
+                                        } else {
+                                            setFilteredReservations(reservations.filter(r => r.status === e.target.value));
+                                        }
+                                        setPage(0);
+                                    }}
                                     label="Estado"
                                 >
                                     <MenuItem value="all">Todos</MenuItem>
                                     <MenuItem value="PENDIENTE">Pendientes</MenuItem>
-                                    <MenuItem value="CONFIRMADA">Confirmadas</MenuItem>
+                                    <MenuItem value="PAGADA">Pagadas</MenuItem>
                                     <MenuItem value="CANCELADA">Canceladas</MenuItem>
                                     <MenuItem value="EXPIRADA">Expiradas</MenuItem>
                                 </Select>
@@ -395,8 +406,10 @@ const ReservationList = () => {
                                 <TableCell sx={{ fontWeight: 'bold' }}>ID</TableCell>
                                 <TableCell sx={{ fontWeight: 'bold' }}>Cliente</TableCell>
                                 <TableCell sx={{ fontWeight: 'bold' }}>Paquete</TableCell>
+                                <TableCell sx={{ fontWeight: 'bold' }}>Pasajeros</TableCell>
+                                <TableCell sx={{ fontWeight: 'bold' }}>Total</TableCell>
                                 <TableCell sx={{ fontWeight: 'bold' }}>Fecha Reserva</TableCell>
-                                <TableCell sx={{ fontWeight: 'bold' }}>Fecha Expiración</TableCell>
+                                <TableCell sx={{ fontWeight: 'bold' }}>Expiración</TableCell>
                                 <TableCell sx={{ fontWeight: 'bold' }}>Estado</TableCell>
                                 <TableCell sx={{ fontWeight: 'bold' }} align="center">Acciones</TableCell>
                             </TableRow>
@@ -404,76 +417,177 @@ const ReservationList = () => {
                         <TableBody>
                             {filteredReservations
                                 .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                                .map((reservation) => (
-                                    <TableRow key={reservation.id} hover>
-                                        <TableCell>#{reservation.id}</TableCell>
-                                        <TableCell>
-                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                                <PersonIcon fontSize="small" color="action" />
-                                                {reservation.person?.fullName || 'N/A'}
-                                            </Box>
-                                        </TableCell>
-                                        <TableCell>
-                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                                <PackageIcon fontSize="small" color="action" />
-                                                {reservation.tourPackage?.name || 'N/A'}
-                                            </Box>
-                                        </TableCell>
-                                        <TableCell>
-                                            {dayjs(reservation.reservationDate).format('DD/MM/YYYY HH:mm')}
-                                        </TableCell>
-                                        <TableCell>
-                                            <Tooltip title={isExpired(reservation.expirationDate) ? "Expirada" : "Vigente"}>
-                                                <span>
-                                                    {dayjs(reservation.expirationDate).format('DD/MM/YYYY HH:mm')}
-                                                    {isExpired(reservation.expirationDate) && (
-                                                        <Chip size="small" label="Expirada" color="error" sx={{ ml: 1, height: 20 }} />
-                                                    )}
-                                                </span>
-                                            </Tooltip>
-                                        </TableCell>
-                                        <TableCell>{getStatusChip(reservation.status)}</TableCell>
-                                        <TableCell align="center">
-                                            <Stack direction="row" spacing={1} justifyContent="center">
-                                                <Tooltip title="Ver detalles">
-                                                    <IconButton size="small" onClick={() => handleView(reservation)}>
-                                                        <VisibilityIcon />
-                                                    </IconButton>
-                                                </Tooltip>
-                                                <Tooltip title="Editar">
-                                                    <IconButton size="small" onClick={() => handleEdit(reservation)}>
-                                                        <EditIcon />
-                                                    </IconButton>
-                                                </Tooltip>
-                                                {canConfirm(reservation) && (
-                                                    <Tooltip title="Confirmar reserva">
-                                                        <IconButton 
-                                                            size="small" 
-                                                            onClick={() => handleConfirmReservation(reservation)}
-                                                            sx={{ color: '#2e7d32' }}
-                                                        >
-                                                            <CheckCircleIcon />
-                                                        </IconButton>
+                                .map((reservation) => {
+                                    const passengers = passengersMap[reservation.id] || [];
+                                    const isReservationExpired = isExpired(reservation.expirationDate);
+                                    const discountDetails = parseDiscountDetails(reservation.discountDetails);
+                                    
+                                    return (
+                                        <>
+                                            <TableRow key={reservation.id} hover>
+                                                <TableCell>#{reservation.id}</TableCell>
+                                                <TableCell>
+                                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                        <PersonIcon fontSize="small" color="action" />
+                                                        <Box>
+                                                            <Typography variant="body2">
+                                                                {reservation.person?.fullName || 'N/A'}
+                                                            </Typography>
+                                                            <Typography variant="caption" color="text.secondary">
+                                                                {reservation.person?.identification || ''}
+                                                            </Typography>
+                                                        </Box>
+                                                    </Box>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <Box>
+                                                        <Typography variant="body2">
+                                                            {reservation.tourPackage?.name || 'N/A'}
+                                                        </Typography>
+                                                        <Typography variant="caption" color="text.secondary">
+                                                            {reservation.tourPackage?.destination}
+                                                        </Typography>
+                                                    </Box>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <Button
+                                                        size="small"
+                                                        variant="text"
+                                                        onClick={() => setExpandedRow(expandedRow === reservation.id ? null : reservation.id)}
+                                                        startIcon={<PersonIcon fontSize="small" />}
+                                                    >
+                                                        {passengers.length} persona(s)
+                                                    </Button>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <Typography variant="body2" fontWeight="bold" color="primary">
+                                                        ${getTotalAmount(reservation).toLocaleString()}
+                                                    </Typography>
+                                                </TableCell>
+                                                <TableCell>
+                                                    {dayjs(reservation.reservationDate).format('DD/MM/YYYY HH:mm')}
+                                                </TableCell>
+                                                <TableCell>
+                                                    <Tooltip title={isReservationExpired ? "Expirada" : "Vigente"}>
+                                                        <Box>
+                                                            <Typography variant="body2" color={isReservationExpired ? 'error' : 'text.primary'}>
+                                                                {dayjs(reservation.expirationDate).format('DD/MM/YYYY HH:mm')}
+                                                            </Typography>
+                                                            {isReservationExpired && (
+                                                                <Chip size="small" label="Expirada" color="error" sx={{ height: 20, fontSize: '10px' }} />
+                                                            )}
+                                                        </Box>
                                                     </Tooltip>
-                                                )}
-                                                {canCancel(reservation) && (
-                                                    <Tooltip title="Cancelar reserva">
-                                                        <IconButton 
-                                                            size="small" 
-                                                            onClick={() => handleCancelReservation(reservation)}
-                                                            sx={{ color: '#d32f2f' }}
-                                                        >
-                                                            <CancelIcon />
-                                                        </IconButton>
-                                                    </Tooltip>
-                                                )}
-                                            </Stack>
-                                        </TableCell>
-                                    </TableRow>
-                                ))}
+                                                </TableCell>
+                                                <TableCell>{getStatusChip(reservation.status)}</TableCell>
+                                                <TableCell align="center">
+                                                    <Stack direction="row" spacing={1} justifyContent="center">
+                                                        <Tooltip title="Ver detalles">
+                                                            <IconButton size="small" onClick={() => handleView(reservation)}>
+                                                                <VisibilityIcon />
+                                                            </IconButton>
+                                                        </Tooltip>
+                                                        <Tooltip title="Editar">
+                                                            <IconButton size="small" onClick={() => handleEdit(reservation)}>
+                                                                <EditIcon />
+                                                            </IconButton>
+                                                        </Tooltip>
+                                                        {reservation.status === 'PENDIENTE' && !isReservationExpired && (
+                                                            <>
+                                                                <Tooltip title="Marcar como pagada">
+                                                                    <IconButton 
+                                                                        size="small" 
+                                                                        onClick={() => handleStatusChange(reservation, 'PAGADA')}
+                                                                        sx={{ color: '#2e7d32' }}
+                                                                    >
+                                                                        <CheckCircleIcon />
+                                                                    </IconButton>
+                                                                </Tooltip>
+                                                                <Tooltip title="Cancelar reserva">
+                                                                    <IconButton 
+                                                                        size="small" 
+                                                                        onClick={() => handleStatusChange(reservation, 'CANCELADA')}
+                                                                        sx={{ color: '#d32f2f' }}
+                                                                    >
+                                                                        <CancelIcon />
+                                                                    </IconButton>
+                                                                </Tooltip>
+                                                            </>
+                                                        )}
+                                                        {reservation.status === 'PAGADA' && (
+                                                            <Tooltip title="Ver comprobante">
+                                                                <IconButton 
+                                                                    size="small" 
+                                                                    onClick={() => openReceipt(reservation)}
+                                                                    sx={{ color: '#1565c0' }}
+                                                                >
+                                                                    <ReceiptIcon />
+                                                                </IconButton>
+                                                            </Tooltip>
+                                                        )}
+                                                    </Stack>
+                                                </TableCell>
+                                            </TableRow>
+                                            
+                                            {/* Fila expandida con pasajeros */}
+                                            {expandedRow === reservation.id && (
+                                                <TableRow>
+                                                    <TableCell colSpan={9} sx={{ bgcolor: '#f8fafc', p: 2 }}>
+                                                        <Accordion expanded={true} sx={{ boxShadow: 'none', border: '1px solid #e2e8f0' }}>
+                                                            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                                                                <Typography variant="subtitle2">
+                                                                    Lista de pasajeros ({passengers.length})
+                                                                </Typography>
+                                                            </AccordionSummary>
+                                                            <AccordionDetails>
+                                                                <Grid container spacing={2}>
+                                                                    {passengers.map((passenger, idx) => (
+                                                                        <Grid item xs={12} sm={6} md={4} key={idx}>
+                                                                            <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
+                                                                                <Typography variant="subtitle2" gutterBottom color="primary">
+                                                                                    Pasajero {idx + 1}
+                                                                                </Typography>
+                                                                                <Typography variant="body2">
+                                                                                    <strong>Nombre:</strong> {passenger.person?.fullName}
+                                                                                </Typography>
+                                                                                <Typography variant="body2">
+                                                                                    <strong>Identificación:</strong> {passenger.person?.identification}
+                                                                                </Typography>
+                                                                                <Typography variant="body2">
+                                                                                    <strong>Email:</strong> {passenger.person?.email}
+                                                                                </Typography>
+                                                                                {passenger.person?.phone && (
+                                                                                    <Typography variant="body2">
+                                                                                        <strong>Teléfono:</strong> {passenger.person?.phone}
+                                                                                    </Typography>
+                                                                                )}
+                                                                                {passenger.person?.nationality && (
+                                                                                    <Typography variant="body2">
+                                                                                        <strong>Nacionalidad:</strong> {passenger.person?.nationality}
+                                                                                    </Typography>
+                                                                                )}
+                                                                            </Paper>
+                                                                        </Grid>
+                                                                    ))}
+                                                                    {passengers.length === 0 && (
+                                                                        <Grid item xs={12}>
+                                                                            <Typography variant="body2" color="text.secondary" align="center">
+                                                                                No hay pasajeros registrados
+                                                                            </Typography>
+                                                                        </Grid>
+                                                                    )}
+                                                                </Grid>
+                                                            </AccordionDetails>
+                                                        </Accordion>
+                                                    </TableCell>
+                                                </TableRow>
+                                            )}
+                                        </>
+                                    );
+                                })}
                             {filteredReservations.length === 0 && (
                                 <TableRow>
-                                    <TableCell colSpan={7} align="center" sx={{ py: 8 }}>
+                                    <TableCell colSpan={9} align="center" sx={{ py: 8 }}>
                                         <Typography variant="body1" color="text.secondary">
                                             No se encontraron reservas
                                         </Typography>
@@ -509,11 +623,275 @@ const ReservationList = () => {
                 </DialogContent>
                 <DialogActions>
                     <Button onClick={() => setCancelDialogOpen(false)}>No, volver</Button>
-                    <Button onClick={handleCancelConfirm} color="error" variant="contained">
+                    <Button 
+                        onClick={() => {
+                            if (selectedReservation) {
+                                handleStatusChange(selectedReservation, 'CANCELADA');
+                                setCancelDialogOpen(false);
+                            }
+                        }} 
+                        color="error" 
+                        variant="contained"
+                    >
                         Sí, cancelar
                     </Button>
                 </DialogActions>
             </Dialog>
+
+            {/* Diálogo del Comprobante */}
+            <Dialog 
+                open={receiptOpen} 
+                onClose={() => setReceiptOpen(false)} 
+                maxWidth="md" 
+                fullWidth
+                PaperProps={{
+                    sx: {
+                        borderRadius: 3,
+                        '@media print': {
+                            margin: 0,
+                            padding: 0,
+                            boxShadow: 'none'
+                        }
+                    }
+                }}
+            >
+                <DialogTitle sx={{ 
+                    bgcolor: 'var(--primary)', 
+                    color: 'white',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center'
+                }}>
+                    <Typography variant="h6">Comprobante de Reserva</Typography>
+                    <IconButton 
+                        onClick={() => setReceiptOpen(false)} 
+                        sx={{ color: 'white' }}
+                        className="no-print"
+                    >
+                        <CloseIcon />
+                    </IconButton>
+                </DialogTitle>
+                <DialogContent sx={{ p: 4 }} id="receipt-content">
+                    {currentReceipt && (
+                        <>
+                            {/* Encabezado */}
+                            <Box sx={{ textAlign: 'center', mb: 3 }}>
+                                <Typography variant="h5" fontWeight="bold" color="primary">
+                                    COMPROBANTE DE RESERVA
+                                </Typography>
+                                <Typography variant="caption" color="text.secondary">
+                                    Fecha de emisión: {dayjs().format('DD/MM/YYYY HH:mm')}
+                                </Typography>
+                            </Box>
+
+                            <Divider sx={{ my: 2 }} />
+
+                            {/* Información de la reserva */}
+                            <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
+                                INFORMACIÓN DE LA RESERVA
+                            </Typography>
+                            <Grid container spacing={2} sx={{ mb: 3 }}>
+                                <Grid item xs={6}>
+                                    <Typography variant="caption" color="text.secondary">Número de Reserva</Typography>
+                                    <Typography variant="body1" fontWeight="bold">#{currentReceipt.id}</Typography>
+                                </Grid>
+                                <Grid item xs={6}>
+                                    <Typography variant="caption" color="text.secondary">Estado</Typography>
+                                    <Typography variant="body1">{statusColors[currentReceipt.status]?.label}</Typography>
+                                </Grid>
+                                <Grid item xs={6}>
+                                    <Typography variant="caption" color="text.secondary">Fecha de Reserva</Typography>
+                                    <Typography variant="body2">{dayjs(currentReceipt.reservationDate).format('DD/MM/YYYY HH:mm')}</Typography>
+                                </Grid>
+                            </Grid>
+
+                            <Divider sx={{ my: 2 }} />
+
+                            {/* Información del cliente */}
+                            <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
+                                INFORMACIÓN DEL CLIENTE
+                            </Typography>
+                            <Grid container spacing={2} sx={{ mb: 3 }}>
+                                <Grid item xs={12}>
+                                    <Typography variant="caption" color="text.secondary">Nombre</Typography>
+                                    <Typography variant="body2">{currentReceipt.person?.fullName || "N/A"}</Typography>
+                                </Grid>
+                                <Grid item xs={6}>
+                                    <Typography variant="caption" color="text.secondary">Identificación</Typography>
+                                    <Typography variant="body2">{currentReceipt.person?.identification || "N/A"}</Typography>
+                                </Grid>
+                                <Grid item xs={6}>
+                                    <Typography variant="caption" color="text.secondary">Email</Typography>
+                                    <Typography variant="body2">{currentReceipt.person?.email || "N/A"}</Typography>
+                                </Grid>
+                                <Grid item xs={12}>
+                                    <Typography variant="caption" color="text.secondary">Teléfono</Typography>
+                                    <Typography variant="body2">{currentReceipt.person?.phone || "N/A"}</Typography>
+                                </Grid>
+                            </Grid>
+
+                            <Divider sx={{ my: 2 }} />
+
+                            {/* Información del paquete */}
+                            <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
+                                INFORMACIÓN DEL PAQUETE
+                            </Typography>
+                            <Grid container spacing={2} sx={{ mb: 3 }}>
+                                <Grid item xs={12}>
+                                    <Typography variant="caption" color="text.secondary">Paquete</Typography>
+                                    <Typography variant="body2">{currentReceipt.tourPackage?.name || "N/A"}</Typography>
+                                </Grid>
+                                <Grid item xs={12}>
+                                    <Typography variant="caption" color="text.secondary">Destino</Typography>
+                                    <Typography variant="body2">{currentReceipt.tourPackage?.destination || "N/A"}</Typography>
+                                </Grid>
+                                <Grid item xs={6}>
+                                    <Typography variant="caption" color="text.secondary">Fecha Ida</Typography>
+                                    <Typography variant="body2">{currentReceipt.tourPackage?.startDate || "N/A"}</Typography>
+                                </Grid>
+                                <Grid item xs={6}>
+                                    <Typography variant="caption" color="text.secondary">Fecha Vuelta</Typography>
+                                    <Typography variant="body2">{currentReceipt.tourPackage?.endDate || "N/A"}</Typography>
+                                </Grid>
+                            </Grid>
+
+                            <Divider sx={{ my: 2 }} />
+
+                            {/* Lista de pasajeros */}
+                            {passengersMap[currentReceipt.id]?.length > 0 && (
+                                <>
+                                    <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
+                                        LISTA DE PASAJEROS ({passengersMap[currentReceipt.id].length} personas)
+                                    </Typography>
+                                    <TableContainer component={Paper} variant="outlined" sx={{ mb: 3 }}>
+                                        <Table size="small">
+                                            <TableHead sx={{ bgcolor: '#f8fafc' }}>
+                                                <TableRow>
+                                                    <TableCell>#</TableCell>
+                                                    <TableCell>Nombre</TableCell>
+                                                    <TableCell>Identificación</TableCell>
+                                                    <TableCell>Email</TableCell>
+                                                </TableRow>
+                                            </TableHead>
+                                            <TableBody>
+                                                {passengersMap[currentReceipt.id].map((passenger, idx) => (
+                                                    <TableRow key={idx}>
+                                                        <TableCell>{idx + 1}</TableCell>
+                                                        <TableCell>{passenger.person?.fullName}</TableCell>
+                                                        <TableCell>{passenger.person?.identification}</TableCell>
+                                                        <TableCell>{passenger.person?.email}</TableCell>
+                                                    </TableRow>
+                                                ))}
+                                            </TableBody>
+                                        </Table>
+                                    </TableContainer>
+                                </>
+                            )}
+
+                            <Divider sx={{ my: 2 }} />
+
+                            {/* Detalle de precios y descuentos */}
+                            <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
+                                DETALLE DE PAGO
+                            </Typography>
+                            <Box sx={{ mb: 3 }}>
+                                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                                    <Typography variant="body2">Subtotal ({currentReceipt.passengersCount || 1} personas):</Typography>
+                                    <Typography variant="body2">${(currentReceipt.subtotal || 0).toLocaleString()}</Typography>
+                                </Box>
+                                
+                                {/* Descuentos aplicados */}
+                                {currentReceipt.discountDetails && parseDiscountDetails(currentReceipt.discountDetails).length > 0 && (
+                                    <>
+                                        <Typography variant="subtitle2" gutterBottom sx={{ mt: 2 }}>
+                                            Descuentos aplicados:
+                                        </Typography>
+                                        {parseDiscountDetails(currentReceipt.discountDetails).map((discount, idx) => (
+                                            <Box key={idx} sx={{ display: 'flex', justifyContent: 'space-between', mb: 1, ml: 2 }}>
+                                                <Typography variant="body2" color="success.main">
+                                                    {discount.name} - {discount.description}
+                                                </Typography>
+                                                <Typography variant="body2" color="success.main">
+                                                    -${Math.abs(discount.amount).toLocaleString()}
+                                                </Typography>
+                                            </Box>
+                                        ))}
+                                        <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 1, mb: 1 }}>
+                                            <Typography variant="body2" fontWeight="bold">Total descuentos:</Typography>
+                                            <Typography variant="body2" color="success.main" fontWeight="bold">
+                                                -${(currentReceipt.discountAmount || 0).toLocaleString()}
+                                            </Typography>
+                                        </Box>
+                                    </>
+                                )}
+                                
+                                <Divider sx={{ my: 2 }} />
+                                
+                                <Box sx={{ 
+                                    display: 'flex', 
+                                    justifyContent: 'space-between', 
+                                    alignItems: 'center',
+                                    p: 2,
+                                    bgcolor: '#e3f2fd',
+                                    borderRadius: 2
+                                }}>
+                                    <Typography variant="h6" fontWeight="bold">
+                                        TOTAL PAGADO
+                                    </Typography>
+                                    <Typography variant="h5" color="primary" fontWeight="bold">
+                                        ${(currentReceipt.totalAmount || getTotalAmount(currentReceipt)).toLocaleString()}
+                                    </Typography>
+                                </Box>
+                            </Box>
+
+                            {/* Pie de página */}
+                            <Box sx={{ textAlign: 'center', mt: 3, pt: 2, borderTop: '1px dashed #ccc' }}>
+                                <Typography variant="caption" color="text.secondary">
+                                    Este documento es un comprobante de reserva. Para cualquier consulta, contacte a nuestro servicio al cliente.
+                                </Typography>
+                            </Box>
+                        </>
+                    )}
+                </DialogContent>
+                <DialogActions sx={{ p: 2, justifyContent: 'center', className: 'no-print' }}>
+                    <Button 
+                        variant="contained" 
+                        onClick={handlePrint}
+                        startIcon={<PrintIcon />}
+                        sx={{ bgcolor: '#1565c0' }}
+                    >
+                        Imprimir / Guardar PDF
+                    </Button>
+                    <Button 
+                        variant="outlined" 
+                        onClick={() => setReceiptOpen(false)}
+                    >
+                        Cerrar
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
+            {/* Estilos para impresión */}
+            <style jsx global>{`
+                @media print {
+                    .no-print {
+                        display: none !important;
+                    }
+                    body {
+                        background: white;
+                        margin: 0;
+                        padding: 0;
+                    }
+                    .MuiDialog-paper {
+                        margin: 0 !important;
+                        padding: 0 !important;
+                        box-shadow: none !important;
+                    }
+                    #receipt-content {
+                        padding: 20px !important;
+                    }
+                }
+            `}</style>
         </Box>
     );
 };

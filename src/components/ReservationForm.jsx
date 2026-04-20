@@ -3,7 +3,10 @@ import { useNavigate, useParams } from "react-router-dom";
 import {
     Box, Paper, Typography, TextField, Button, Grid,
     Divider, CircularProgress, Stack, Chip, InputAdornment,
-    FormControl, InputLabel, Select, MenuItem, Alert
+    FormControl, InputLabel, Select, MenuItem, Alert,
+    Accordion, AccordionSummary, AccordionDetails,
+    Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
+    IconButton, Tooltip, Dialog, DialogTitle, DialogContent, DialogActions
 } from "@mui/material";
 import {
     Save as SaveIcon,
@@ -11,12 +14,20 @@ import {
     Person as PersonIcon,
     CardTravel as PackageIcon,
     Schedule as ScheduleIcon,
-    AttachMoney as MoneyIcon
+    ExpandMore as ExpandMoreIcon,
+    Visibility as VisibilityIcon,
+    Receipt as ReceiptIcon,
+    CheckCircle as CheckCircleIcon,
+    Pending as PendingIcon,
+    Cancel as CancelIconBtn,
+    Print as PrintIcon,
+    Close as CloseIcon
 } from "@mui/icons-material";
 import Swal from 'sweetalert2';
 import reservationService from "../services/reservation.service";
 import personService from "../services/person.service";
 import tourPackageService from "../services/tourPackage.service";
+import paymentService from "../services/payment.service";
 import dayjs from 'dayjs';
 
 const ReservationForm = () => {
@@ -31,6 +42,10 @@ const ReservationForm = () => {
     const [persons, setPersons] = useState([]);
     const [packages, setPackages] = useState([]);
     const [loadingData, setLoadingData] = useState(true);
+    const [passengers, setPassengers] = useState([]);
+    const [receiptOpen, setReceiptOpen] = useState(false);
+    const [paymentInfo, setPaymentInfo] = useState(null);
+    const [discountDetails, setDiscountDetails] = useState([]);
 
     const [formData, setFormData] = useState({
         personId: "",
@@ -38,13 +53,29 @@ const ReservationForm = () => {
         status: "PENDIENTE",
         active: 1,
         createdByUserId: 1,
-        modifiedByUserId: 1
+        modifiedByUserId: 1,
+        reservationDate: null,
+        expirationDate: null,
+        totalAmount: 0,
+        subtotal: 0,
+        discountAmount: 0,
+        solicitudes: ""
     });
+
+    // Estados para los colores
+    const statusColors = {
+        PENDIENTE: { bg: '#fff3e0', color: '#e65100', label: 'Pendiente', icon: <PendingIcon sx={{ fontSize: 16 }} /> },
+        PAGADA: { bg: '#e8f5e9', color: '#2e7d32', label: 'Pagada', icon: <CheckCircleIcon sx={{ fontSize: 16 }} /> },
+        CANCELADA: { bg: '#ffebee', color: '#c62828', label: 'Cancelada', icon: <CancelIconBtn sx={{ fontSize: 16 }} /> },
+        EXPIRADA: { bg: '#f5f5f5', color: '#757575', label: 'Expirada', icon: <ScheduleIcon sx={{ fontSize: 16 }} /> }
+    };
 
     useEffect(() => {
         loadSelectData();
         if (isEditMode || isViewMode) {
             fetchReservationData();
+            fetchPassengers();
+            fetchPaymentInfo();
         }
     }, [id]);
 
@@ -79,8 +110,28 @@ const ReservationForm = () => {
                     status: reservationData.status || "PENDIENTE",
                     active: reservationData.active || 1,
                     createdByUserId: reservationData.createdByUserId || 1,
-                    modifiedByUserId: reservationData.modifiedByUserId || 1
+                    modifiedByUserId: reservationData.modifiedByUserId || 1,
+                    reservationDate: reservationData.reservationDate,
+                    expirationDate: reservationData.expirationDate,
+                    totalAmount: reservationData.totalAmount || 
+                        (reservationData.tourPackage?.price * (reservationData.passengersCount || 1)) || 0,
+                    subtotal: reservationData.subtotal || 
+                        (reservationData.tourPackage?.price * (reservationData.passengersCount || 1)) || 0,
+                    discountAmount: reservationData.discountAmount || 0,
+                    solicitudes: reservationData.solicitudes || ""
                 });
+                
+                // Parsear descuentos
+                if (reservationData.discountDetails) {
+                    try {
+                        const discounts = typeof reservationData.discountDetails === 'string' 
+                            ? JSON.parse(reservationData.discountDetails) 
+                            : reservationData.discountDetails;
+                        setDiscountDetails(discounts);
+                    } catch (e) {
+                        setDiscountDetails([]);
+                    }
+                }
             }
         } catch (error) {
             console.error("Error al cargar la reserva", error);
@@ -88,6 +139,28 @@ const ReservationForm = () => {
             navigate('/admin/reservations');
         } finally {
             setLoading(false);
+        }
+    };
+
+    const fetchPassengers = async () => {
+        try {
+            const response = await reservationService.getPassengers(id);
+            const passengersData = response.data?.data || response.data || [];
+            setPassengers(passengersData);
+        } catch (error) {
+            console.error("Error cargando pasajeros:", error);
+            setPassengers([]);
+        }
+    };
+
+    const fetchPaymentInfo = async () => {
+        try {
+            const response = await paymentService.getByReservationId(id);
+            const payment = response.data?.data || response.data;
+            setPaymentInfo(payment);
+        } catch (error) {
+            console.error("Error cargando información de pago:", error);
+            setPaymentInfo(null);
         }
     };
 
@@ -105,12 +178,9 @@ const ReservationForm = () => {
         return Object.keys(newErrors).length === 0;
     };
 
-    // Función para obtener el objeto completo de la persona
     const getFullPerson = (personId) => {
         const person = persons.find(p => p.id === Number(personId));
         if (!person) return null;
-        
-        // Devolver el objeto completo que el backend espera
         return {
             id: person.id,
             fullName: person.fullName || "",
@@ -118,45 +188,29 @@ const ReservationForm = () => {
             email: person.email || "",
             phone: person.phone || "",
             nationality: person.nationality || "",
-            failedAttempts: person.failedAttempts || 3,
-            active: person.active || 1,
-            createdByUserId: person.createdByUserId || 1,
-            updatedByUserId: person.updatedByUserId || 1,
-            createdAt: person.createdAt || new Date().toISOString(),
-            updatedAt: person.updatedAt || new Date().toISOString()
+            active: person.active || 1
         };
     };
 
-    // Función para obtener el objeto completo del paquete
     const getFullPackage = (packageId) => {
         const pkg = packages.find(p => p.id === Number(packageId));
         if (!pkg) return null;
-        
-        // Devolver el objeto completo que el backend espera
         return {
             id: pkg.id,
             name: pkg.name || "",
             destination: pkg.destination || "",
-            season: pkg.season || null,
-            category: pkg.category || null,
-            travelType: pkg.travelType || null,
-            description: pkg.description || "",
-            startDate: pkg.startDate || "",
-            endDate: pkg.endDate || "",
             price: pkg.price || 0,
-            totalSlots: pkg.totalSlots || 0,
-            status: pkg.status || "DISPONIBLE",
-            stars: pkg.stars || 0,
-            imageUrl: pkg.imageUrl || "",
-            active: pkg.active || 1,
-            createdByUserId: pkg.createdByUserId || 1,
-            modifiedByUserId: pkg.modifiedByUserId || 1,
-            createdAt: pkg.createdAt || new Date().toISOString(),
-            updatedAt: pkg.updatedAt || new Date().toISOString(),
-            conditions: pkg.conditions || [],
-            restrictions: pkg.restrictions || [],
-            services: pkg.services || []
+            startDate: pkg.startDate || "",
+            endDate: pkg.endDate || ""
         };
+    };
+
+    const openReceipt = () => {
+        setReceiptOpen(true);
+    };
+
+    const handlePrint = () => {
+        window.print();
     };
 
     const handleSubmit = async (e) => {
@@ -174,7 +228,6 @@ const ReservationForm = () => {
 
         setSaving(true);
         try {
-            // Obtener los objetos completos
             const fullPerson = getFullPerson(formData.personId);
             const fullPackage = getFullPackage(formData.tourPackageId);
             
@@ -183,10 +236,9 @@ const ReservationForm = () => {
             }
             
             const now = new Date().toISOString();
-            const reservationDate = now;
-            const expirationDate = dayjs().add(3, 'day').toISOString();
+            const reservationDate = formData.reservationDate || now;
+            const expirationDate = formData.expirationDate || dayjs().add(3, 'day').toISOString();
 
-            // Construir el objeto completo que el backend espera
             let submitData = {
                 person: fullPerson,
                 tourPackage: fullPackage,
@@ -196,15 +248,11 @@ const ReservationForm = () => {
                 active: 1,
                 createdByUserId: 1,
                 modifiedByUserId: 1,
-                createdAt: now,
-                updatedAt: now
+                solicitudes: formData.solicitudes || ""
             };
 
             if (isEditMode) {
-                submitData = { 
-                    ...submitData, 
-                    id: Number(id)
-                };
+                submitData = { ...submitData, id: Number(id) };
                 await reservationService.update(submitData);
                 Swal.fire('¡Actualizada!', 'La reserva ha sido actualizada correctamente', 'success');
             } else {
@@ -220,6 +268,21 @@ const ReservationForm = () => {
         }
     };
 
+    const getStatusChip = (status) => {
+        const style = statusColors[status] || statusColors.PENDIENTE;
+        return (
+            <Chip
+                label={style.label}
+                size="small"
+                icon={style.icon}
+                sx={{ bgcolor: style.bg, color: style.color, fontWeight: 'bold' }}
+            />
+        );
+    };
+
+    const selectedPerson = persons.find(p => p.id === Number(formData.personId));
+    const selectedPackage = packages.find(p => p.id === Number(formData.tourPackageId));
+
     if (loading || loadingData) {
         return (
             <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
@@ -230,7 +293,7 @@ const ReservationForm = () => {
 
     return (
         <Box sx={{ p: 3, bgcolor: '#f5f7fa', minHeight: '100vh' }}>
-            <Paper elevation={0} sx={{ borderRadius: 3, maxWidth: 800, mx: 'auto', overflow: 'hidden' }}>
+            <Paper elevation={0} sx={{ borderRadius: 3, maxWidth: 900, mx: 'auto', overflow: 'hidden' }}>
                 <Box sx={{
                     background: 'linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%)',
                     color: 'white',
@@ -252,6 +315,23 @@ const ReservationForm = () => {
                 <form onSubmit={handleSubmit}>
                     <Box sx={{ p: 4 }}>
                         <Grid container spacing={3}>
+                            {/* Estado actual (solo en modo vista/edición) */}
+                            {(isEditMode || isViewMode) && (
+                                <Grid item xs={12}>
+                                    <Alert 
+                                        severity={formData.status === 'PENDIENTE' ? 'warning' : 
+                                                formData.status === 'PAGADA' ? 'success' : 
+                                                formData.status === 'CANCELADA' ? 'error' : 'info'}
+                                        icon={statusColors[formData.status]?.icon}
+                                    >
+                                        <strong>Estado actual:</strong> {statusColors[formData.status]?.label}
+                                        {formData.status === 'PENDIENTE' && (
+                                            <span> - Expira: {dayjs(formData.expirationDate).format('DD/MM/YYYY HH:mm')}</span>
+                                        )}
+                                    </Alert>
+                                </Grid>
+                            )}
+
                             <Grid item xs={12}>
                                 <FormControl fullWidth error={!!errors.personId} required>
                                     <InputLabel>Cliente</InputLabel>
@@ -288,7 +368,7 @@ const ReservationForm = () => {
                                         <MenuItem value=""><em>Seleccione un paquete</em></MenuItem>
                                         {packages.map(pkg => (
                                             <MenuItem key={pkg.id} value={pkg.id}>
-                                                {pkg.name} - ${pkg.price}
+                                                {pkg.name} - {pkg.destination} - ${pkg.price?.toLocaleString()}
                                             </MenuItem>
                                         ))}
                                     </Select>
@@ -298,7 +378,7 @@ const ReservationForm = () => {
                                 </FormControl>
                             </Grid>
 
-                            {isEditMode && (
+                            {(isEditMode || isViewMode) && (
                                 <Grid item xs={12}>
                                     <FormControl fullWidth>
                                         <InputLabel>Estado</InputLabel>
@@ -310,12 +390,97 @@ const ReservationForm = () => {
                                             disabled={isViewMode}
                                         >
                                             <MenuItem value="PENDIENTE">Pendiente</MenuItem>
-                                            <MenuItem value="CONFIRMADA">Confirmada</MenuItem>
                                             <MenuItem value="PAGADA">Pagada</MenuItem>
                                             <MenuItem value="CANCELADA">Cancelada</MenuItem>
                                             <MenuItem value="EXPIRADA">Expirada</MenuItem>
                                         </Select>
                                     </FormControl>
+                                </Grid>
+                            )}
+
+                            {/* Solicitudes especiales */}
+                            {!isViewMode && (
+                                <Grid item xs={12}>
+                                    <TextField
+                                        fullWidth
+                                        label="Solicitudes especiales"
+                                        name="solicitudes"
+                                        value={formData.solicitudes}
+                                        onChange={handleChange}
+                                        multiline
+                                        rows={3}
+                                        placeholder="Ej: Alimentación especial, necesidades de accesibilidad, habitación contigua, etc."
+                                        helperText="Opcional - Cuéntanos si tienes alguna solicitud especial"
+                                    />
+                                </Grid>
+                            )}
+
+                            {isViewMode && formData.solicitudes && (
+                                <Grid item xs={12}>
+                                    <TextField
+                                        name="solicitudes"
+                                        value={formData.solicitudes}
+                                        onChange={handleChange}
+                                        label="Solicitudes especiales"
+                                        disabled={isViewMode}
+                                        rows={3}
+                                    >
+
+                                    </TextField>
+                                </Grid>
+                            )}
+
+                            {/* Lista de pasajeros (solo en modo vista/edición) */}
+                            {(isEditMode || isViewMode) && passengers.length > 0 && (
+                                <Grid item xs={12}>
+                                    <Typography variant="subtitle1" fontWeight="bold" gutterBottom sx={{ mt: 2 }}>
+                                        Lista de Pasajeros
+                                    </Typography>
+                                    <TableContainer component={Paper} variant="outlined">
+                                        <Table size="small">
+                                            <TableHead sx={{ bgcolor: '#f8fafc' }}>
+                                                <TableRow>
+                                                    <TableCell>#</TableCell>
+                                                    <TableCell>Nombre</TableCell>
+                                                    <TableCell>Identificación</TableCell>
+                                                    <TableCell>Email</TableCell>
+                                                    <TableCell>Teléfono</TableCell>
+                                                </TableRow>
+                                            </TableHead>
+                                            <TableBody>
+                                                {passengers.map((passenger, idx) => (
+                                                    <TableRow key={idx}>
+                                                        <TableCell>{idx + 1}</TableCell>
+                                                        <TableCell>{passenger.person?.fullName}</TableCell>
+                                                        <TableCell>{passenger.person?.identification}</TableCell>
+                                                        <TableCell>{passenger.person?.email}</TableCell>
+                                                        <TableCell>{passenger.person?.phone || '-'}</TableCell>
+                                                    </TableRow>
+                                                ))}
+                                            </TableBody>
+                                        </Table>
+                                    </TableContainer>
+                                </Grid>
+                            )}
+
+                            {/* Monto total (solo en modo vista/edición) */}
+                            {(isEditMode || isViewMode) && formData.totalAmount > 0 && (
+                                <Grid item xs={12}>
+                                    <Box sx={{ 
+                                        p: 2, 
+                                        bgcolor: '#e3f2fd', 
+                                        borderRadius: 2,
+                                        display: 'flex',
+                                        justifyContent: 'space-between',
+                                        alignItems: 'center'
+                                    }}>
+                                        <Typography variant="subtitle1" fontWeight="bold">
+                                            Monto Total:
+                                        </Typography>
+                                        <Typography variant="h5" color="primary" fontWeight="bold">
+                                            ${(formData.totalAmount || 0).toLocaleString()}
+                                        </Typography>
+                                    </Box>
                                 </Grid>
                             )}
                         </Grid>
@@ -331,6 +496,17 @@ const ReservationForm = () => {
                             >
                                 {isViewMode ? 'Volver' : 'Cancelar'}
                             </Button>
+
+                            {isViewMode && formData.status === 'PAGADA' && (
+                                <Button
+                                    variant="contained"
+                                    onClick={openReceipt}
+                                    startIcon={<ReceiptIcon />}
+                                    sx={{ bgcolor: '#1565c0', '&:hover': { bgcolor: '#0d47a1' } }}
+                                >
+                                    Ver Comprobante
+                                </Button>
+                            )}
 
                             {!isViewMode && (
                                 <Button
@@ -353,6 +529,289 @@ const ReservationForm = () => {
                     </Box>
                 </form>
             </Paper>
+
+            {/* Diálogo del Recibo/Comprobante */}
+            <Dialog 
+                open={receiptOpen} 
+                onClose={() => setReceiptOpen(false)} 
+                maxWidth="md" 
+                fullWidth
+                PaperProps={{
+                    sx: {
+                        borderRadius: 3,
+                        '@media print': {
+                            margin: 0,
+                            padding: 0,
+                            boxShadow: 'none'
+                        }
+                    }
+                }}
+            >
+                <DialogTitle sx={{ 
+                    bgcolor: 'var(--primary)', 
+                    color: 'white',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center'
+                }}>
+                    <Typography variant="h6">Comprobante de Reserva</Typography>
+                    <IconButton 
+                        onClick={() => setReceiptOpen(false)} 
+                        sx={{ color: 'white' }}
+                        className="no-print"
+                    >
+                        <CloseIcon />
+                    </IconButton>
+                </DialogTitle>
+                <DialogContent sx={{ p: 4 }} id="receipt-content">
+                    {/* Contenido del recibo */}
+                    <Box sx={{ textAlign: 'center', mb: 3 }}>
+                        <Typography variant="h5" fontWeight="bold" color="primary">
+                            COMPROBANTE DE RESERVA
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                            Fecha de emisión: {dayjs().format('DD/MM/YYYY HH:mm')}
+                        </Typography>
+                    </Box>
+
+                    <Divider sx={{ my: 2 }} />
+
+                    {/* Información de la reserva */}
+                    <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
+                        INFORMACIÓN DE LA RESERVA
+                    </Typography>
+                    <Grid container spacing={2} sx={{ mb: 3 }}>
+                        <Grid item xs={6}>
+                            <Typography variant="caption" color="text.secondary">Número de Reserva</Typography>
+                            <Typography variant="body1" fontWeight="bold">#{id}</Typography>
+                        </Grid>
+                        <Grid item xs={6}>
+                            <Typography variant="caption" color="text.secondary">Estado</Typography>
+                            <Typography variant="body1">{statusColors[formData.status]?.label}</Typography>
+                        </Grid>
+                        <Grid item xs={6}>
+                            <Typography variant="caption" color="text.secondary">Fecha de Reserva</Typography>
+                            <Typography variant="body2">{dayjs(formData.reservationDate).format('DD/MM/YYYY HH:mm')}</Typography>
+                        </Grid>
+                    </Grid>
+
+                    <Divider sx={{ my: 2 }} />
+
+                    {/* Información del cliente */}
+                    <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
+                        INFORMACIÓN DEL CLIENTE
+                    </Typography>
+                    <Grid container spacing={2} sx={{ mb: 3 }}>
+                        <Grid item xs={12}>
+                            <Typography variant="caption" color="text.secondary">Nombre</Typography>
+                            <Typography variant="body2">{selectedPerson?.fullName || "N/A"}</Typography>
+                        </Grid>
+                        <Grid item xs={6}>
+                            <Typography variant="caption" color="text.secondary">Identificación</Typography>
+                            <Typography variant="body2">{selectedPerson?.identification || "N/A"}</Typography>
+                        </Grid>
+                        <Grid item xs={6}>
+                            <Typography variant="caption" color="text.secondary">Email</Typography>
+                            <Typography variant="body2">{selectedPerson?.email || "N/A"}</Typography>
+                        </Grid>
+                        <Grid item xs={12}>
+                            <Typography variant="caption" color="text.secondary">Teléfono</Typography>
+                            <Typography variant="body2">{selectedPerson?.phone || "N/A"}</Typography>
+                        </Grid>
+                    </Grid>
+
+                    <Divider sx={{ my: 2 }} />
+
+                    {/* Información del paquete */}
+                    <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
+                        INFORMACIÓN DEL PAQUETE
+                    </Typography>
+                    <Grid container spacing={2} sx={{ mb: 3 }}>
+                        <Grid item xs={12}>
+                            <Typography variant="caption" color="text.secondary">Paquete</Typography>
+                            <Typography variant="body2">{selectedPackage?.name || "N/A"}</Typography>
+                        </Grid>
+                        <Grid item xs={12}>
+                            <Typography variant="caption" color="text.secondary">Destino</Typography>
+                            <Typography variant="body2">{selectedPackage?.destination || "N/A"}</Typography>
+                        </Grid>
+                        <Grid item xs={6}>
+                            <Typography variant="caption" color="text.secondary">Fecha Ida</Typography>
+                            <Typography variant="body2">{selectedPackage?.startDate || "N/A"}</Typography>
+                        </Grid>
+                        <Grid item xs={6}>
+                            <Typography variant="caption" color="text.secondary">Fecha Vuelta</Typography>
+                            <Typography variant="body2">{selectedPackage?.endDate || "N/A"}</Typography>
+                        </Grid>
+                    </Grid>
+
+                    <Divider sx={{ my: 2 }} />
+
+                    {/* Lista de pasajeros */}
+                    {passengers.length > 0 && (
+                        <>
+                            <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
+                                LISTA DE PASAJEROS
+                            </Typography>
+                            <TableContainer component={Paper} variant="outlined" sx={{ mb: 3 }}>
+                                <Table size="small">
+                                    <TableHead sx={{ bgcolor: '#f8fafc' }}>
+                                        <TableRow>
+                                            <TableCell>#</TableCell>
+                                            <TableCell>Nombre</TableCell>
+                                            <TableCell>Identificación</TableCell>
+                                        </TableRow>
+                                    </TableHead>
+                                    <TableBody>
+                                        {passengers.map((passenger, idx) => (
+                                            <TableRow key={idx}>
+                                                <TableCell>{idx + 1}</TableCell>
+                                                <TableCell>{passenger.person?.fullName}</TableCell>
+                                                <TableCell>{passenger.person?.identification}</TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                            </TableContainer>
+                        </>
+                    )}
+
+                    <Divider sx={{ my: 2 }} />
+
+                    {/* Detalle de pago y descuentos */}
+                    <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
+                        DETALLE DE PAGO
+                    </Typography>
+                    
+                    {/* Subtotal */}
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                        <Typography variant="body2">Subtotal:</Typography>
+                        <Typography variant="body2" fontWeight="bold">
+                            ${(formData.subtotal || 0).toLocaleString()}
+                        </Typography>
+                    </Box>
+
+                    {/* Descuentos aplicados */}
+                    {discountDetails.length > 0 && (
+                        <>
+                            <Typography variant="subtitle2" gutterBottom sx={{ mt: 2, color: '#2e7d32' }}>
+                                Descuentos aplicados:
+                            </Typography>
+                            {discountDetails.map((discount, idx) => (
+                                <Box key={idx} sx={{ display: 'flex', justifyContent: 'space-between', mb: 1, ml: 2 }}>
+                                    <Typography variant="body2" color="success.main">
+                                        {discount.name} - {discount.description}
+                                    </Typography>
+                                    <Typography variant="body2" color="success.main">
+                                        -${Math.abs(discount.amount).toLocaleString()}
+                                    </Typography>
+                                </Box>
+                            ))}
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 1, mb: 2, ml: 2 }}>
+                                <Typography variant="body2" fontWeight="bold" color="success.main">
+                                    Total descuentos:
+                                </Typography>
+                                <Typography variant="body2" fontWeight="bold" color="success.main">
+                                    -${(formData.discountAmount || 0).toLocaleString()}
+                                </Typography>
+                            </Box>
+                        </>
+                    )}
+
+                    <Divider sx={{ my: 2 }} />
+
+                    {/* Información del pago */}
+                    {paymentInfo && (
+                        <Box sx={{ mb: 3 }}>
+                            <Typography variant="subtitle2" gutterBottom>
+                                Información de la transacción:
+                            </Typography>
+                            <Grid container spacing={1}>
+                                <Grid item xs={12}>
+                                    <Typography variant="caption" color="text.secondary">ID de Transacción</Typography>
+                                    <Typography variant="body2">{paymentInfo.transactionId || "N/A"}</Typography>
+                                </Grid>
+                                <Grid item xs={6}>
+                                    <Typography variant="caption" color="text.secondary">Método de pago</Typography>
+                                    <Typography variant="body2">
+                                        {paymentInfo.paymentMethod === 'CREDIT_CARD' ? 'Tarjeta de Crédito' : 
+                                         paymentInfo.paymentMethod === 'DEBIT_CARD' ? 'Tarjeta de Débito' : 
+                                         paymentInfo.paymentMethod || "N/A"}
+                                    </Typography>
+                                </Grid>
+                                <Grid item xs={6}>
+                                    <Typography variant="caption" color="text.secondary">Tarjeta</Typography>
+                                    <Typography variant="body2">{paymentInfo.cardNumber || "****"}</Typography>
+                                </Grid>
+                                <Grid item xs={12}>
+                                    <Typography variant="caption" color="text.secondary">Fecha de pago</Typography>
+                                    <Typography variant="body2">{dayjs(paymentInfo.createdAt).format('DD/MM/YYYY HH:mm')}</Typography>
+                                </Grid>
+                            </Grid>
+                        </Box>
+                    )}
+
+                    <Divider sx={{ my: 2 }} />
+
+                    {/* Monto total */}
+                    <Box sx={{ 
+                        display: 'flex', 
+                        justifyContent: 'space-between', 
+                        alignItems: 'center',
+                        p: 2,
+                        bgcolor: '#e3f2fd',
+                        borderRadius: 2
+                    }}>
+                        <Typography variant="h6" fontWeight="bold">
+                            TOTAL PAGADO
+                        </Typography>
+                        <Typography variant="h5" color="primary" fontWeight="bold">
+                            ${(formData.totalAmount || 0).toLocaleString()}
+                        </Typography>
+                    </Box>
+
+                    <Box sx={{ textAlign: 'center', mt: 3, pt: 2, borderTop: '1px dashed #ccc' }}>
+                        <Typography variant="caption" color="text.secondary">
+                            Este documento es un comprobante de reserva. Para cualquier consulta, contacte a nuestro servicio al cliente.
+                        </Typography>
+                    </Box>
+                </DialogContent>
+                <DialogActions sx={{ p: 2, justifyContent: 'center', className: 'no-print' }}>
+                    <Button 
+                        variant="contained" 
+                        onClick={handlePrint}
+                        startIcon={<PrintIcon />}
+                        sx={{ bgcolor: '#1565c0' }}
+                    >
+                        Imprimir / Guardar PDF
+                    </Button>
+                    <Button 
+                        variant="outlined" 
+                        onClick={() => setReceiptOpen(false)}
+                    >
+                        Cerrar
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
+            {/* Estilos para impresión */}
+            <style jsx global>{`
+                @media print {
+                    .no-print {
+                        display: none !important;
+                    }
+                    body {
+                        background: white;
+                        margin: 0;
+                        padding: 0;
+                    }
+                    .MuiDialog-paper {
+                        margin: 0 !important;
+                        padding: 0 !important;
+                        box-shadow: none !important;
+                    }
+                }
+            `}</style>
         </Box>
     );
 };

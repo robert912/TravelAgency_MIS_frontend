@@ -21,6 +21,10 @@ import PersonList from './components/PersonList';
 import PersonAddEdit from './components/PersonAddEdit';
 import ReservationList from './components/ReservationList';
 import ReservationForm from './components/ReservationForm';
+import BookingPage from './components/BookingPage';
+import MyReservations from './components/MyReservations';
+import ReservationDetails from './components/ReservationDetails';
+import PaymentPage from './components/PaymentPage';
 
 
 function App() {
@@ -30,6 +34,11 @@ function App() {
             <Routes>
                 <Route path="/" element={<Home />} />
                 <Route path="/package/:id" element={<TourPackageDetail />} />
+
+                <Route path="/booking/:id" element={<BookingPage />} />
+                <Route path="/my-reservations" element={<MyReservations />} />
+                <Route path="/reservation-details/:id" element={<ReservationDetails />} />
+                <Route path="/payment/:id" element={<PaymentPage />} />
 
                 {/* Rutas de Administrador */}
                 <Route path="/admin/travel-types" element={<TravelTypeList />} />

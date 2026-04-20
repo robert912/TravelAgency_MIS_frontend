@@ -17,10 +17,15 @@ const reservationService = {
     get: (id) => {
         return httpClient.get(`${API_URL}/${id}`);
     },
+    
+    // Obtener pasajeros de una reserva
+    getPassengers: (reservationId) => {
+        return httpClient.get(`${API_URL}/${reservationId}/passengers`);
+    },
 
-    // Crear nueva reserva
-    create: (data) => {
-        return httpClient.post(`${API_URL}/`, data);
+    // Crear reserva con DTO (NUEVO MÉTODO)
+    createReservation: (data) => {
+        return httpClient.post(`${API_URL}/create`, data);
     },
 
     // Actualizar reserva
@@ -28,16 +33,14 @@ const reservationService = {
         return httpClient.put(`${API_URL}/`, data);
     },
 
-    // Cancelar reserva (borrado lógico)
+    // Cancelar reserva
     cancel: (id) => {
         return httpClient.delete(`${API_URL}/${id}`);
     },
 
     // Cambiar estado de reserva
-    changeStatus: (id, status, userId = 1) => {
-        return httpClient.patch(`${API_URL}/${id}/status`, null, {
-            params: { status, userId }
-        });
+    changeStatus: (id, status) => {
+        return httpClient.patch(`${API_URL}/${id}/status`, null, { params: { status } });
     },
 
     // Obtener reservas por persona
@@ -55,15 +58,6 @@ const reservationService = {
         return httpClient.get(`${API_URL}/status/${status}`);
     },
 
-    // Obtener reservas próximas a vencer
-    getExpiringSoon: (days = 3) => {
-        return httpClient.get(`${API_URL}/expiring-soon`, { params: { days } });
-    },
-
-    // Buscar reservas con filtros
-    search: (filters) => {
-        return httpClient.get(`${API_URL}/search`, { params: filters });
-    }
 };
 
 export default reservationService;
