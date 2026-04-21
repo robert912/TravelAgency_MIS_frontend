@@ -2,14 +2,15 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from "react-router-dom";
 import '../App.css'
 import tourPackageService from '../services/tourPackage.service'
-import reservationService from '../services/reservation.service' // ← Agregar este import
+import reservationService from '../services/reservation.service'  // ← Necesario para getAvailability
+import Swal from 'sweetalert2'
 
 const Home = () => {
 
     const [packages, setPackages] = useState([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState(null)
-    const [availabilityMap, setAvailabilityMap] = useState({}) // ← Estado para disponibilidad
+    const [availabilityMap, setAvailabilityMap] = useState({})  // ← Para almacenar availableSlots
     const navigate = useNavigate();
 
     // Estado del buscador
@@ -21,71 +22,54 @@ const Home = () => {
         travelTypeId: ''
     });
 
-    // 🔥 Función para verificar disponibilidad de un paquete
-    const checkPackageAvailability = async (packageId) => {
+    // 🔥 Función para obtener disponibilidad de un paquete
+    const getAvailabilityForPackage = async (packageId) => {
         try {
             const response = await reservationService.checkAvailability(packageId);
             const data = response.data?.data || response.data;
             return {
                 availableSlots: data.availableSlots || 0,
-                reservedSlots: data.reservedSlots || 0,
-                totalSlots: data.totalSlots || 0,
-                isAvailable: data.isAvailable
+                reservedSlots: data.reservedSlots || 0
             };
         } catch (error) {
-            console.error(`Error verificando disponibilidad del paquete ${packageId}:`, error);
-            return null;
+            console.error(`Error obteniendo disponibilidad del paquete ${packageId}:`, error);
+            return { availableSlots: 0, reservedSlots: 0 };
         }
-    };
-
-    // 🔥 Función para verificar si el paquete está vigente
-    const isPackageValid = (endDate) => {
-        if (!endDate) return true;
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        const end = new Date(endDate);
-        end.setHours(0, 0, 0, 0);
-        return end >= today;
-    };
-
-    // 🔥 Función para obtener el estado del paquete
-    const getPackageStatus = (pkg, availability) => {
-        // Si el paquete está cancelado manualmente
-        if (pkg.status === 'CANCELADO') {
-            return { type: 'CANCELADO', message: 'Cancelado', icon: '❌', canView: false };
-        }
-
-        // Verificar vigencia por fecha
-        if (!isPackageValid(pkg.endDate)) {
-            return { type: 'NO_VIGENTE', message: 'No vigente', icon: '📅', canView: false };
-        }
-
-        // Verificar disponibilidad de cupos - SOLO si es 0, no permitir
-        if (availability && availability.availableSlots <= 0) {
-            return { type: 'AGOTADO', message: 'Agotado', icon: '⚠️', canView: false };
-        }
-
-        // Si hay cupos (aunque sea 1), permitir ver detalle
-        return { type: 'DISPONIBLE', message: 'Disponible', icon: '✅', canView: true };
     };
 
     // 🔥 Cargar disponibilidad para todos los paquetes
     const loadAvailabilityForPackages = async (packagesList) => {
         const availabilityPromises = packagesList.map(pkg =>
-            checkPackageAvailability(pkg.id).then(availability => ({
+            getAvailabilityForPackage(pkg.id).then(availability => ({
                 id: pkg.id,
-                availability
+                availableSlots: availability.availableSlots,
+                reservedSlots: availability.reservedSlots
             }))
         );
 
         const results = await Promise.all(availabilityPromises);
         const availabilityMapData = {};
         results.forEach(result => {
-            if (result.availability) {
-                availabilityMapData[result.id] = result.availability;
-            }
+            availabilityMapData[result.id] = {
+                availableSlots: result.availableSlots,
+                reservedSlots: result.reservedSlots
+            };
         });
         setAvailabilityMap(availabilityMapData);
+    };
+
+    // 🔥 Función para obtener el estado del paquete (usando pkg.status del backend)
+    const getPackageStatus = (pkg) => {
+        switch (pkg.status) {
+            case 'CANCELADO':
+                return { type: 'CANCELADO', message: 'Cancelado', icon: '❌', canView: false };
+            case 'NO_VIGENTE':
+                return { type: 'NO_VIGENTE', message: 'No vigente', icon: '📅', canView: false };
+            case 'AGOTADO':
+                return { type: 'AGOTADO', message: 'Agotado', icon: '⚠️', canView: false };
+            default:
+                return { type: 'DISPONIBLE', message: 'Disponible', icon: '✅', canView: true };
+        }
     };
 
     const fetchPackages = async () => {
@@ -96,7 +80,7 @@ const Home = () => {
             const packagesArray = Array.isArray(data) ? data : [];
             setPackages(packagesArray);
 
-            // 🔥 Cargar disponibilidad después de obtener los paquetes
+            // 🔥 Cargar disponibilidad para mostrar cupos actualizados
             if (packagesArray.length > 0) {
                 await loadAvailabilityForPackages(packagesArray);
             }
@@ -134,7 +118,6 @@ const Home = () => {
             const packagesArray = Array.isArray(data) ? data : [];
             setPackages(packagesArray);
 
-            // 🔥 Cargar disponibilidad para los paquetes filtrados
             if (packagesArray.length > 0) {
                 await loadAvailabilityForPackages(packagesArray);
             }
@@ -161,13 +144,10 @@ const Home = () => {
         fetchPackages();
     }
 
-    // Función para manejar clic en botón
     const handleViewDetail = (pkg, status) => {
-        // Solo permitir navegación si el paquete NO está cancelado, NO_VIGENTE o AGOTADO
         if (status.canView) {
             navigate(`/package/${pkg.id}`);
         } else {
-            // Mostrar mensaje explicativo
             const messages = {
                 'AGOTADO': 'Este paquete no tiene cupos disponibles',
                 'NO_VIGENTE': 'Este paquete ya no está vigente',
@@ -291,9 +271,10 @@ const Home = () => {
                         <div className="packages-grid">
                             {packages.map((pkg, index) => {
                                 const currentPrice = pkg.price ? Number(pkg.price) : '999';
+                                const packageStatus = getPackageStatus(pkg);
+                                const isBlocked = !packageStatus.canView;
                                 const availability = availabilityMap[pkg.id];
-                                const packageStatus = getPackageStatus(pkg, availability);
-                                const isBlocked = !packageStatus.canView; // Solo bloqueado si NO puede ver
+                                const availableSlots = availability?.availableSlots || pkg.totalSlots;
 
                                 // Calcular días y noches
                                 let days = null;
@@ -316,17 +297,17 @@ const Home = () => {
                                                 onError={(e) => { e.target.src = 'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80' }}
                                             />
 
-                                            {/* 🔥 Badge de estado - estilo "clausurado" pero elegante */}
+                                            {/* Badge de estado - solo para paquetes no disponibles */}
                                             {isBlocked && (
                                                 <div className={`status-ribbon status-${packageStatus.type.toLowerCase()}`}>
                                                     <span>{packageStatus.message}</span>
                                                 </div>
                                             )}
 
-                                            {/* 🔥 Badge de pocos cupos (solo cuando hay entre 1 y 4 cupos) */}
-                                            {!isBlocked && availability && availability.availableSlots > 0 && availability.availableSlots <= 4 && (
+                                            {/* Badge de pocos cupos (solo cuando hay entre 1 y 4 cupos) */}
+                                            {!isBlocked && availableSlots <= 4 && availableSlots > 0 && (
                                                 <div className="low-stock-ribbon">
-                                                    <span>⚡ ¡Últimos {availability.availableSlots} cupos!</span>
+                                                    <span>¡Últimos {availableSlots} cupos!</span>
                                                 </div>
                                             )}
                                         </div>
@@ -361,6 +342,11 @@ const Home = () => {
                                                             ${currentPrice.toLocaleString()}
                                                         </span>
                                                     </div>
+                                                    {!isBlocked && availableSlots > 0 && (
+                                                        <span className="home-price-label">
+                                                            {availableSlots} cupos disponibles
+                                                        </span>
+                                                    )}
                                                 </div>
                                                 <button
                                                     className={`book-btn ${isBlocked ? 'blocked-btn' : ''}`}
