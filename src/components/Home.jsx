@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from "react-router-dom";
 import '../App.css'
 import tourPackageService from '../services/tourPackage.service'
-import reservationService from '../services/reservation.service'  // ← Necesario para getAvailability
 import Swal from 'sweetalert2'
 
 const Home = () => {
@@ -10,7 +9,6 @@ const Home = () => {
     const [packages, setPackages] = useState([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState(null)
-    const [availabilityMap, setAvailabilityMap] = useState({})  // ← Para almacenar availableSlots
     const navigate = useNavigate();
 
     // Estado del buscador
@@ -22,43 +20,7 @@ const Home = () => {
         travelTypeId: ''
     });
 
-    // 🔥 Función para obtener disponibilidad de un paquete
-    const getAvailabilityForPackage = async (packageId) => {
-        try {
-            const response = await reservationService.checkAvailability(packageId);
-            const data = response.data?.data || response.data;
-            return {
-                availableSlots: data.availableSlots || 0,
-                reservedSlots: data.reservedSlots || 0
-            };
-        } catch (error) {
-            console.error(`Error obteniendo disponibilidad del paquete ${packageId}:`, error);
-            return { availableSlots: 0, reservedSlots: 0 };
-        }
-    };
-
-    // 🔥 Cargar disponibilidad para todos los paquetes
-    const loadAvailabilityForPackages = async (packagesList) => {
-        const availabilityPromises = packagesList.map(pkg =>
-            getAvailabilityForPackage(pkg.id).then(availability => ({
-                id: pkg.id,
-                availableSlots: availability.availableSlots,
-                reservedSlots: availability.reservedSlots
-            }))
-        );
-
-        const results = await Promise.all(availabilityPromises);
-        const availabilityMapData = {};
-        results.forEach(result => {
-            availabilityMapData[result.id] = {
-                availableSlots: result.availableSlots,
-                reservedSlots: result.reservedSlots
-            };
-        });
-        setAvailabilityMap(availabilityMapData);
-    };
-
-    // 🔥 Función para obtener el estado del paquete (usando pkg.status del backend)
+    // 🔥 Función para obtener el estado del paquete DIRECTAMENTE del JSON
     const getPackageStatus = (pkg) => {
         switch (pkg.status) {
             case 'CANCELADO':
@@ -79,11 +41,6 @@ const Home = () => {
             const data = response.data?.data || response.data || [];
             const packagesArray = Array.isArray(data) ? data : [];
             setPackages(packagesArray);
-
-            // 🔥 Cargar disponibilidad para mostrar cupos actualizados
-            if (packagesArray.length > 0) {
-                await loadAvailabilityForPackages(packagesArray);
-            }
         } catch (err) {
             console.error("Error fetching packages:", err);
             setError("Lo sentimos, no pudimos cargar los paquetes de viaje.");
@@ -117,10 +74,6 @@ const Home = () => {
             const data = response.data?.data || response.data || [];
             const packagesArray = Array.isArray(data) ? data : [];
             setPackages(packagesArray);
-
-            if (packagesArray.length > 0) {
-                await loadAvailabilityForPackages(packagesArray);
-            }
         } catch (err) {
             console.error("Error filtrando paquetes:", err);
             setError("Ocurrió un error al usar el buscador.");
@@ -144,6 +97,7 @@ const Home = () => {
         fetchPackages();
     }
 
+    // 🔥 Función para manejar clic en botón - simplificada
     const handleViewDetail = (pkg, status) => {
         if (status.canView) {
             navigate(`/package/${pkg.id}`);
@@ -273,8 +227,6 @@ const Home = () => {
                                 const currentPrice = pkg.price ? Number(pkg.price) : '999';
                                 const packageStatus = getPackageStatus(pkg);
                                 const isBlocked = !packageStatus.canView;
-                                const availability = availabilityMap[pkg.id];
-                                const availableSlots = availability?.availableSlots || pkg.totalSlots;
 
                                 // Calcular días y noches
                                 let days = null;
@@ -304,12 +256,6 @@ const Home = () => {
                                                 </div>
                                             )}
 
-                                            {/* Badge de pocos cupos (solo cuando hay entre 1 y 4 cupos) */}
-                                            {!isBlocked && availableSlots <= 4 && availableSlots > 0 && (
-                                                <div className="low-stock-ribbon">
-                                                    <span>¡Últimos {availableSlots} cupos!</span>
-                                                </div>
-                                            )}
                                         </div>
 
                                         <div className="card-content">
@@ -342,11 +288,6 @@ const Home = () => {
                                                             ${currentPrice.toLocaleString()}
                                                         </span>
                                                     </div>
-                                                    {!isBlocked && availableSlots > 0 && (
-                                                        <span className="home-price-label">
-                                                            {availableSlots} cupos disponibles
-                                                        </span>
-                                                    )}
                                                 </div>
                                                 <button
                                                     className={`book-btn ${isBlocked ? 'blocked-btn' : ''}`}
