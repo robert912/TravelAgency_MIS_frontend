@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import tourPackageService from "../services/tourPackage.service";
+import reservationService from "../services/reservation.service";
 import '../css/TourPackageDetails.css';
 
 const TourPackageDetails = () => {
@@ -11,6 +12,8 @@ const TourPackageDetails = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [activeTab, setActiveTab] = useState("overview");
+    const [availableSlots, setAvailableSlots] = useState(null);
+    const [totalSlots, setTotalSlots] = useState(null);
 
     useEffect(() => {
         window.scrollTo(0, 0);
@@ -29,6 +32,19 @@ const TourPackageDetails = () => {
                 console.error(err);
                 setError("Ocurrió un error al cargar la información del paquete.");
                 setLoading(false);
+            });
+
+        // Cargar cupos disponibles
+        reservationService.checkAvailability(id)
+            .then(res => {
+                const data = res.data?.data || res.data;
+                setAvailableSlots(data.availableSlots || 0);
+                setTotalSlots(data.totalSlots || 0);
+            })
+            .catch(err => {
+                console.error("Error cargando disponibilidad:", err);
+                setAvailableSlots(0);
+                setTotalSlots(0);
             });
     }, [id]);
 
@@ -68,11 +84,12 @@ const TourPackageDetails = () => {
 
     const currentPrice = pkg.price ? Number(pkg.price) : 0;
     const stars = pkg.stars || 0;
-
-    // Obtener arrays de condiciones, restricciones y servicios
     const conditions = pkg.conditions || [];
     const restrictions = pkg.restrictions || [];
     const services = pkg.services || [];
+
+    // Determinar si está disponible
+    const isAvailable = pkg.status === "DISPONIBLE" && availableSlots > 0;
 
     return (
         <div className="package-detail-container">
@@ -382,21 +399,37 @@ const TourPackageDetails = () => {
                             <span className="summary-value">{pkg.endDate || "Por definir"}</span>
                         </div>
 
+                        {/* 🔥 NUEVO: Cupos disponibles - Simple y directo */}
+                        <div className="summary-item">
+                            <span className="summary-label">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                                Cupos disponibles
+                            </span>
+                            <div className="summary-value">
+                                <span style={{ paddingRight: "5px", color: availableSlots <= 5 && availableSlots > 0 ? '#ed6c02' : availableSlots <= 0 ? '#d32f2f' : '#2e7d32' }}>
+                                    {availableSlots !== null ? availableSlots : "Cargando..."}
+                                </span>
+                                / {totalSlots !== null ? totalSlots : "Cargando..."}
+                            </div>
+                        </div>
+
                         <div className="summary-item">
                             <span className="summary-label">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
                                 Estado
                             </span>
-                            <span className={`status-badge ${pkg.status === "DISPONIBLE" ? "status-available" : "status-unavailable"}`}>
-                                {pkg.status === "DISPONIBLE" ? "✓ Disponible" : "No disponible"}
+                            <span className={`status-badge ${isAvailable ? "status-available" : "status-unavailable"}`}>
+                                {isAvailable ? "✓ Disponible" : availableSlots <= 0 ? "❌ Agotado" : "No disponible"}
                             </span>
                         </div>
 
-                        <button 
-                            className="book-action-btn" 
-                            onClick={() => navigate(`/booking/${pkg.id}`)}
+                        <button
+                            className="book-action-btn"
+                            onClick={() => isAvailable && navigate(`/booking/${pkg.id}`)}
+                            disabled={!isAvailable}
+                            style={{ opacity: !isAvailable ? 0.6 : 1, cursor: !isAvailable ? 'not-allowed' : 'pointer' }}
                         >
-                            Reservar Ahora
+                            {isAvailable ? "Reservar Ahora" : "No disponible"}
                         </button>
                         <p className="support-text">Reserva segura garantizada. Pago 100% encriptado.</p>
                     </div>
