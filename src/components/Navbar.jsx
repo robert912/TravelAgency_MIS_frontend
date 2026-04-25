@@ -7,13 +7,16 @@ import Button from "@mui/material/Button";
 import IconButton from "@mui/material/IconButton";
 import MenuIcon from "@mui/icons-material/Menu";
 import LoginIcon from "@mui/icons-material/Login";
+import LogoutIcon from '@mui/icons-material/Logout';
 import ConnectingAirportsIcon from '@mui/icons-material/ConnectingAirports';
 import { useState } from "react";
 import Sidemenu from "./Sidemenu";
+import { useKeycloak } from "@react-keycloak/web";
 import '../App.css'
 
 export default function Navbar() {
     const [open, setOpen] = useState(false);
+    const { keycloak, initialized } = useKeycloak();
 
     const toggleDrawer = (open) => () => {
         setOpen(open);
@@ -42,12 +45,29 @@ export default function Navbar() {
                     </Box>
 
                     {/* DERECHA */}
-                    <Button sx={{ color: "#777777", fontWeight: "bold" }}
+                    {initialized && (
+                        <>
+                            {keycloak.authenticated ? (
+                                <>
+                                    <Typography sx={{ mr: 2 }}>
+                                        {keycloak.tokenParsed?.preferred_username ||
+                                            keycloak.tokenParsed?.email}
+                                    </Typography>
+                                    <Button sx={{ color: "#777777", fontWeight: "bold" }}
                         className="hover-primary"
-                        startIcon={<LoginIcon />}
-                    >
-                        Login
-                    </Button>
+                        startIcon={<LogoutIcon />} onClick={() => keycloak.logout()}>
+                                        Logout
+                                    </Button>
+                                </>
+                            ) : (
+                                <Button sx={{ color: "#777777", fontWeight: "bold" }}
+                        className="hover-primary"
+                        startIcon={<LoginIcon />}>
+                                    Login
+                                </Button>
+                            )}
+                        </>
+                    )}
 
                 </Toolbar>
             </AppBar>
