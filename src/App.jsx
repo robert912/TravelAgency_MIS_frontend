@@ -47,11 +47,6 @@ function App() {
         return element;
     };
 
-    if (!isLoggedIn) {
-        keycloak.login();
-        return null;
-    }  
-
     return (
         <BrowserRouter>
             <Navbar></Navbar>
@@ -59,41 +54,41 @@ function App() {
                 <Route path="/" element={<Home />} />
                 <Route path="/package/:id" element={<TourPackageDetail />} />
 
-                <Route path="/booking/:id" element={<BookingPage />} />
-                <Route path="/my-reservations" element={<MyReservations />} />
-                <Route path="/reservation-details/:id" element={<ReservationDetails />} />
-                <Route path="/payment/:id" element={<PaymentPage />} />
+                <Route path="/booking/:id" element={<PrivateRoute element={<BookingPage />} />} />
+                <Route path="/my-reservations" element={<PrivateRoute element={<MyReservations />} />} />
+                <Route path="/reservation-details/:id" element={<PrivateRoute element={<ReservationDetails />} />} />
+                <Route path="/payment/:id" element={<PrivateRoute element={<PaymentPage />} />} />
 
                 {/* Rutas de Administrador */}
-                <Route path="/admin/travel-types" element={<TravelTypeList />} />
-                <Route path="/admin/travel-types/add" element={<TravelTypeAddEdit />} />
-                <Route path="/admin/travel-types/edit/:id" element={<TravelTypeAddEdit />} />
-                <Route path="/admin/seasons" element={<SeasonList />} />
-                <Route path="/admin/seasons/add" element={<SeasonAddEdit />} />
-                <Route path="/admin/seasons/edit/:id" element={<SeasonAddEdit />} />
-                <Route path="/admin/categories" element={<CategoryList />} />
-                <Route path="/admin/categories/add" element={<CategoryAddEdit />} />
-                <Route path="/admin/categories/edit/:id" element={<CategoryAddEdit />} />
-                <Route path="/admin/packages" element={<TourPackageList />} />
-                <Route path="/admin/packages/add" element={<TourPackageAddEdit />} />
-                <Route path="/admin/packages/edit/:id" element={<TourPackageAddEdit />} />
-                <Route path="/admin/conditions" element={<ConditionList />} />
-                <Route path="/admin/conditions/add" element={<ConditionAddEdit />} />
-                <Route path="/admin/conditions/edit/:id" element={<ConditionAddEdit />} />
-                <Route path="/admin/restrictions" element={<RestrictionList />} />
-                <Route path="/admin/restrictions/add" element={<RestrictionAddEdit />} />
-                <Route path="/admin/restrictions/edit/:id" element={<RestrictionAddEdit />} />
-                <Route path="/admin/services" element={<ServiceList />} />
-                <Route path="/admin/services/add" element={<ServiceAddEdit />} />
-                <Route path="/admin/services/edit/:id" element={<ServiceAddEdit />} />
-                <Route path="/admin/persons" element={<PersonList />} />
-                <Route path="/admin/persons/new" element={<PersonAddEdit />} />
-                <Route path="/admin/persons/edit/:id" element={<PersonAddEdit />} />
-                <Route path="/admin/persons/view/:id" element={<PersonAddEdit />} />
-                <Route path="/admin/reservations/" element={<ReservationList />} />
-                <Route path="/admin/reservations/new" element={<ReservationForm />} />
-                <Route path="/admin/reservations/edit/:id" element={<ReservationForm />} />
-                <Route path="/admin/reservations/view/:id" element={<ReservationForm />} />
+                <Route path="/admin/travel-types" element={<PrivateRoute element={<TravelTypeList />} />} />
+                <Route path="/admin/travel-types/add" element={<PrivateRoute element={<TravelTypeAddEdit />} />} />
+                <Route path="/admin/travel-types/edit/:id" element={<PrivateRoute element={<TravelTypeAddEdit />} />} />
+                <Route path="/admin/seasons" element={<PrivateRoute element={<SeasonList />} />} />
+                <Route path="/admin/seasons/add" element={<PrivateRoute element={<SeasonAddEdit />} />} />
+                <Route path="/admin/seasons/edit/:id" element={<PrivateRoute element={<SeasonAddEdit />} />} />
+                <Route path="/admin/categories" element={<PrivateRoute element={<CategoryList />} />} />
+                <Route path="/admin/categories/add" element={<PrivateRoute element={<CategoryAddEdit />} />} />
+                <Route path="/admin/categories/edit/:id" element={<PrivateRoute element={<CategoryAddEdit />} />} />
+                <Route path="/admin/packages" element={<PrivateRoute element={<TourPackageList />} />} />
+                <Route path="/admin/packages/add" element={<PrivateRoute element={<TourPackageAddEdit />} />} />
+                <Route path="/admin/packages/edit/:id" element={<PrivateRoute element={<TourPackageAddEdit />} />} />
+                <Route path="/admin/conditions" element={<PrivateRoute element={<ConditionList />} />} />
+                <Route path="/admin/conditions/add" element={<PrivateRoute element={<ConditionAddEdit />} />} />
+                <Route path="/admin/conditions/edit/:id" element={<PrivateRoute element={<ConditionAddEdit />} />} />
+                <Route path="/admin/restrictions" element={<PrivateRoute element={<RestrictionList />} />} />
+                <Route path="/admin/restrictions/add" element={<PrivateRoute element={<RestrictionAddEdit />} />} />
+                <Route path="/admin/restrictions/edit/:id" element={<PrivateRoute element={<RestrictionAddEdit />} />} />
+                <Route path="/admin/services" element={<PrivateRoute element={<ServiceList />} />} />
+                <Route path="/admin/services/add" element={<PrivateRoute element={<ServiceAddEdit />} />} />
+                <Route path="/admin/services/edit/:id" element={<PrivateRoute element={<ServiceAddEdit />} />} />
+                <Route path="/admin/persons" element={<PrivateRoute element={<PersonList />} />} />
+                <Route path="/admin/persons/new" element={<PrivateRoute element={<PersonAddEdit />} />} />
+                <Route path="/admin/persons/edit/:id" element={<PrivateRoute element={<PersonAddEdit />} />} />
+                <Route path="/admin/persons/view/:id" element={<PrivateRoute element={<PersonAddEdit />} />} />
+                <Route path="/admin/reservations/" element={<PrivateRoute element={<ReservationList />} />} />
+                <Route path="/admin/reservations/new" element={<PrivateRoute element={<ReservationForm />} />} />
+                <Route path="/admin/reservations/edit/:id" element={<PrivateRoute element={<ReservationForm />} />} />
+                <Route path="/admin/reservations/view/:id" element={<PrivateRoute element={<ReservationForm />} />} />
 
 
                 <Route path="*" element={<NotFound />} />

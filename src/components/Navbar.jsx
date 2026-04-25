@@ -54,15 +54,15 @@ export default function Navbar() {
                                             keycloak.tokenParsed?.email}
                                     </Typography>
                                     <Button sx={{ color: "#777777", fontWeight: "bold" }}
-                        className="hover-primary"
-                        startIcon={<LogoutIcon />} onClick={() => keycloak.logout()}>
+                                        className="hover-primary"
+                                        startIcon={<LogoutIcon />} onClick={() => keycloak.logout({ redirectUri: window.location.origin })}>
                                         Logout
                                     </Button>
                                 </>
                             ) : (
                                 <Button sx={{ color: "#777777", fontWeight: "bold" }}
-                        className="hover-primary"
-                        startIcon={<LoginIcon />}>
+                                    className="hover-primary"
+                                    startIcon={<LoginIcon />} onClick={() => keycloak.login()}>
                                     Login
                                 </Button>
                             )}

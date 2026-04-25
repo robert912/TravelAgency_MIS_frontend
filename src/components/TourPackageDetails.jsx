@@ -60,11 +60,7 @@ const TourPackageDetails = () => {
     if (error || !pkg) {
         return (
             <div className="package-detail-container error-container">
-                <h2>Upps... ¡Paquete no encontrado!</h2>
-                <p>{error || "El paquete que buscas no está disponible en este momento."}</p>
-                <button className="back-btn" onClick={() => navigate("/")}>
-                    Volver al Inicio
-                </button>
+                {navigate("/*")};
             </div>
         );
     }
