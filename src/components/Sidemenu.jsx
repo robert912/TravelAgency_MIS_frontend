@@ -21,8 +21,15 @@ import CategoryIcon from '@mui/icons-material/Category';
 import ReservationIcon from '@mui/icons-material/AssignmentTurnedIn';
 import { useNavigate } from "react-router-dom";
 
+import { useKeycloak } from "@react-keycloak/web";
+
 export default function Sidemenu({ open, toggleDrawer }) {
     const navigate = useNavigate();
+    const { keycloak } = useKeycloak();
+
+    const roles = keycloak?.tokenParsed?.realm_access?.roles || [];
+    const isAdmin = roles.includes('Admin');
+    const isAuthenticated = keycloak?.authenticated;
 
     const listOptions = () => (
         <Box
@@ -37,82 +44,88 @@ export default function Sidemenu({ open, toggleDrawer }) {
                     <ListItemText primary="Home" />
                 </ListItemButton>
 
-                <Divider />
+                {isAdmin && (
+                    <>
+                        <Divider />
+                        <ListItemButton onClick={() => navigate("/admin/persons")}>
+                            <ListItemIcon>
+                                <PeopleAltIcon />
+                            </ListItemIcon>
+                            <ListItemText primary="Personas" />
+                        </ListItemButton>
 
-                <ListItemButton onClick={() => navigate("/admin/persons")}>
-                    <ListItemIcon>
-                        <PeopleAltIcon />
-                    </ListItemIcon>
-                    <ListItemText primary="Personas" />
-                </ListItemButton>
+                        <ListItemButton onClick={() => navigate("/admin/packages")}>
+                            <ListItemIcon>
+                                <PaidIcon />
+                            </ListItemIcon>
+                            <ListItemText primary="Paquetes Turísticos" />
+                        </ListItemButton>
 
-                <ListItemButton onClick={() => navigate("/admin/packages")}>
-                    <ListItemIcon>
-                        <PaidIcon />
-                    </ListItemIcon>
-                    <ListItemText primary="Paquetes Turísticos" />
-                </ListItemButton>
+                        <ListItemButton onClick={() => navigate("/admin/reservations")}>
+                            <ListItemIcon>
+                                <ReservationIcon />
+                            </ListItemIcon>
+                            <ListItemText primary="Reservas" />
+                        </ListItemButton>
 
-                <ListItemButton onClick={() => navigate("/admin/reservations")}>
-                    <ListItemIcon>
-                        <ReservationIcon />
-                    </ListItemIcon>
-                    <ListItemText primary="Reservas" />
-                </ListItemButton>
+                        <ListItemButton onClick={() => navigate("/admin/travel-types")}>
+                            <ListItemIcon>
+                                <TourIcon />
+                            </ListItemIcon>
+                            <ListItemText primary="Tipos de Viajes" />
+                        </ListItemButton>
 
-                <ListItemButton onClick={() => navigate("/admin/travel-types")}>
-                    <ListItemIcon>
-                        <TourIcon />
-                    </ListItemIcon>
-                    <ListItemText primary="Tipos de Viajes" />
-                </ListItemButton>
+                        <ListItemButton onClick={() => navigate("/admin/seasons")}>
+                            <ListItemIcon>
+                                <FreeCancellationIcon />
+                            </ListItemIcon>
+                            <ListItemText primary="Temporadas" />
+                        </ListItemButton>
 
-                <ListItemButton onClick={() => navigate("/admin/seasons")}>
-                    <ListItemIcon>
-                        <FreeCancellationIcon />
-                    </ListItemIcon>
-                    <ListItemText primary="Temporadas" />
-                </ListItemButton>
+                        <ListItemButton onClick={() => navigate("/admin/categories")}>
+                            <ListItemIcon>
+                                <CategoryIcon />
+                            </ListItemIcon>
+                            <ListItemText primary="Categorías" />
+                        </ListItemButton>
 
-                <ListItemButton onClick={() => navigate("/admin/categories")}>
-                    <ListItemIcon>
-                        <CategoryIcon />
-                    </ListItemIcon>
-                    <ListItemText primary="Categorías" />
-                </ListItemButton>
+                        <ListItemButton onClick={() => navigate("/admin/conditions")}>
+                            <ListItemIcon>
+                                <CalculateIcon />
+                            </ListItemIcon>
+                            <ListItemText primary="Condiciones" />
+                        </ListItemButton>
 
-                <ListItemButton onClick={() => navigate("/admin/conditions")}>
-                    <ListItemIcon>
-                        <CalculateIcon />
-                    </ListItemIcon>
-                    <ListItemText primary="Condiciones" />
-                </ListItemButton>
+                        <ListItemButton onClick={() => navigate("/admin/restrictions")}>
+                            <ListItemIcon>
+                                <CalculateIcon />
+                            </ListItemIcon>
+                            <ListItemText primary="Restricciones" />
+                        </ListItemButton>
 
-                <ListItemButton onClick={() => navigate("/admin/restrictions")}>
-                    <ListItemIcon>
-                        <CalculateIcon />
-                    </ListItemIcon>
-                    <ListItemText primary="Restricciones" />
-                </ListItemButton>
-
-                <ListItemButton onClick={() => navigate("/admin/services")}>
-                    <ListItemIcon>
-                        <CalculateIcon />
-                    </ListItemIcon>
-                    <ListItemText primary="Servicios" />
-                </ListItemButton>
+                        <ListItemButton onClick={() => navigate("/admin/services")}>
+                            <ListItemIcon>
+                                <CalculateIcon />
+                            </ListItemIcon>
+                            <ListItemText primary="Servicios" />
+                        </ListItemButton>
+                    </>
+                )}
             </List>
 
-            <Divider />
-
-            <List>
-                <ListItemButton onClick={() => navigate("/my-reservations")}>
-                    <ListItemIcon>
-                        <DiscountIcon />
-                    </ListItemIcon>
-                    <ListItemText primary="Mis reservas" />
-                </ListItemButton>
-            </List>
+            {isAuthenticated && (
+                <>
+                    <Divider />
+                    <List>
+                        <ListItemButton onClick={() => navigate("/my-reservations")}>
+                            <ListItemIcon>
+                                <DiscountIcon />
+                            </ListItemIcon>
+                            <ListItemText primary="Mis reservas" />
+                        </ListItemButton>
+                    </List>
+                </>
+            )}
         </Box>
     );
 

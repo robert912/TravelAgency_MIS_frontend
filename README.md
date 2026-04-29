@@ -49,3 +49,11 @@ npm install @mui/material @emotion/react @emotion/styled #Material UI
 npm install @mui/icons-material #íconos de Material UI
 npm install sweetalert2 #alertas personalizadas
 ```
+
+## KeyCloak
+
+- en la carpeta /bin ejecuta en una terminal:
+
+```bash
+    ./kc.bat start-dev --http-port=9090
+```
