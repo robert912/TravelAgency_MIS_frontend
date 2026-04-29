@@ -25,6 +25,8 @@ import BookingPage from './components/BookingPage';
 import MyReservations from './components/MyReservations';
 import ReservationDetails from './components/ReservationDetails';
 import PaymentPage from './components/PaymentPage';
+import MyProfile from './components/MyProfile';
+import AuthSync from './components/AuthSync';
 import { useKeycloak } from "@react-keycloak/web";
 
 
@@ -49,6 +51,7 @@ function App() {
 
     return (
         <BrowserRouter>
+            <AuthSync />
             <Navbar></Navbar>
             <Routes>
                 {/* Rutas publicas */}
@@ -60,6 +63,7 @@ function App() {
                 <Route path="/my-reservations" element={<PrivateRoute element={<MyReservations />} />} />
                 <Route path="/reservation-details/:id" element={<PrivateRoute element={<ReservationDetails />} />} />
                 <Route path="/payment/:id" element={<PrivateRoute element={<PaymentPage />} />} />
+                <Route path="/profile" element={<PrivateRoute element={<MyProfile />} />} />
 
                 {/* Rutas de Administrador */}
                 <Route path="/admin/travel-types" element={<PrivateRoute element={<TravelTypeList />} rolesAllowed={['Admin']} />} />

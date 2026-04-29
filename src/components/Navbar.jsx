@@ -14,9 +14,29 @@ import Sidemenu from "./Sidemenu";
 import { useKeycloak } from "@react-keycloak/web";
 import '../App.css'
 
+import Menu from "@mui/material/Menu";
+import MenuItem from "@mui/material/MenuItem";
+import AccountCircle from '@mui/icons-material/AccountCircle';
+import { useNavigate } from "react-router-dom";
+
 export default function Navbar() {
     const [open, setOpen] = useState(false);
+    const [anchorEl, setAnchorEl] = useState(null);
     const { keycloak, initialized } = useKeycloak();
+    const navigate = useNavigate();
+
+    const handleMenu = (event) => {
+        setAnchorEl(event.currentTarget);
+    };
+
+    const handleClose = () => {
+        setAnchorEl(null);
+    };
+
+    const goToProfile = () => {
+        handleClose();
+        navigate('/profile');
+    };
 
     const toggleDrawer = (open) => () => {
         setOpen(open);
@@ -48,17 +68,34 @@ export default function Navbar() {
                     {initialized && (
                         <>
                             {keycloak.authenticated ? (
-                                <>
-                                    <Typography sx={{ mr: 2 }}>
-                                        {keycloak.tokenParsed?.preferred_username ||
-                                            keycloak.tokenParsed?.email}
-                                    </Typography>
-                                    <Button sx={{ color: "#777777", fontWeight: "bold" }}
-                                        className="hover-primary"
-                                        startIcon={<LogoutIcon />} onClick={() => keycloak.logout({ redirectUri: window.location.origin })}>
-                                        Logout
+                                <Box sx={{ display: "flex", alignItems: "center" }}>
+                                    <Button 
+                                        onClick={handleMenu} 
+                                        sx={{ color: "#777777", fontWeight: "bold", textTransform: 'none' }}
+                                        startIcon={<AccountCircle />}
+                                    >
+                                        {keycloak.tokenParsed?.preferred_username || keycloak.tokenParsed?.email}
                                     </Button>
-                                </>
+                                    <Menu
+                                        id="menu-appbar"
+                                        anchorEl={anchorEl}
+                                        anchorOrigin={{
+                                            vertical: 'bottom',
+                                            horizontal: 'right',
+                                        }}
+                                        keepMounted
+                                        transformOrigin={{
+                                            vertical: 'top',
+                                            horizontal: 'right',
+                                        }}
+                                        open={Boolean(anchorEl)}
+                                        onClose={handleClose}
+                                    >
+                                        <MenuItem onClick={goToProfile}>Mi Perfil</MenuItem>
+                                        <MenuItem onClick={() => keycloak.logout({ redirectUri: window.location.origin })}>Logout</MenuItem>
+                                    </Menu>
+                                </Box>
+
                             ) : (
                                 <Button sx={{ color: "#777777", fontWeight: "bold" }}
                                     className="hover-primary"
