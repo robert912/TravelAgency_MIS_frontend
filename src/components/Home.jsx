@@ -196,7 +196,6 @@ const Home = () => {
                 <section className="packages-section">
                     <div className="section-header">
                         <h2>Paquetes Populares</h2>
-                        <button className="view-all">Ver todos</button>
                     </div>
 
                     {loading && (
