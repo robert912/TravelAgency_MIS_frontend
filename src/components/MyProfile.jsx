@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import {
     Box, Paper, Typography, TextField, Button, Grid,
     Divider, CircularProgress, Stack, InputAdornment
@@ -9,7 +10,8 @@ import {
     Badge as BadgeIcon,
     Email as EmailIcon,
     Phone as PhoneIcon,
-    Public as PublicIcon
+    Public as PublicIcon,
+    ArrowBack as ArrowBackIcon
 } from "@mui/icons-material";
 import Swal from 'sweetalert2';
 import { useKeycloak } from '@react-keycloak/web';
@@ -17,6 +19,7 @@ import personService from "../services/person.service";
 
 const MyProfile = () => {
     const { keycloak } = useKeycloak();
+    const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
     const [errors, setErrors] = useState({});
@@ -106,7 +109,7 @@ const MyProfile = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        
+
         if (!validateForm()) {
             Swal.fire('Error de validación', 'Por favor revisa los campos marcados', 'error');
             return;
@@ -144,12 +147,11 @@ const MyProfile = () => {
     }
 
     return (
-        <Box sx={{ p: 3, bgcolor: '#f5f7fa', minHeight: '100vh' }}>
+        <Box sx={{ p: 3 }}>
             <Paper elevation={0} sx={{ borderRadius: 3, maxWidth: 800, mx: 'auto', overflow: 'hidden' }}>
                 {/* Header */}
                 <Box sx={{
                     background: 'linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%)',
-                    color: 'white',
                     p: 4
                 }}>
                     <Typography variant="overline" sx={{ opacity: 0.9, letterSpacing: 1.5 }}>
@@ -195,6 +197,7 @@ const MyProfile = () => {
                                     error={!!errors.identification}
                                     helperText={errors.identification}
                                     required
+                                    disabled
                                     InputProps={{
                                         startAdornment: (
                                             <InputAdornment position="start">
@@ -270,7 +273,19 @@ const MyProfile = () => {
                         <Divider sx={{ my: 4 }} />
 
                         {/* Botones de acción */}
-                        <Stack direction="row" spacing={2} justifyContent="flex-end">
+                        <Stack direction="row" spacing={2} justifyContent="flex-start">
+                            <Button
+                                variant="contained"
+                                startIcon={<ArrowBackIcon />}
+                                onClick={() => navigate('/')}
+                                sx={{
+                                    bgcolor: 'var(--info)',
+                                    '&:hover': { bgcolor: 'var(--info-hover)' },
+                                }}
+                                size="large"
+                            >
+                                Volver
+                            </Button>
                             <Button
                                 type="submit"
                                 variant="contained"

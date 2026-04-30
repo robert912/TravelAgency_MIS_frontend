@@ -4,7 +4,7 @@ import personService from '../services/person.service';
 
 const AuthSync = () => {
     const { keycloak, initialized } = useKeycloak();
-    const hasSynced = useRef(false); // Evitar doble ejecución por StrictMode
+    const hasSynced = useRef(false);
 
     useEffect(() => {
         if (!initialized || !keycloak.authenticated || hasSynced.current) {
@@ -23,12 +23,10 @@ const AuthSync = () => {
 
                 console.log("Iniciando sincronización con Keycloak...");
                 const { email, given_name, family_name, preferred_username, identification } = keycloak.tokenParsed;
-                
                 // 1. Obtener todos los usuarios y buscar si ya existe por email
-                const response = await personService.getAll();
-                const allPersons = response.data?.data || response.data || [];
-                
-                let localPerson = allPersons.find(p => p.email === email);
+                const response = await personService.searchPerson(email);
+
+                let localPerson = response.data?.data || response.data;
 
                 // 2. Si no existe, crearlo
                 if (!localPerson) {
@@ -40,7 +38,7 @@ const AuthSync = () => {
                         phone: '',
                         nationality: '',
                         active: 1,
-                        failedAttempts: 0,
+                        failedAttempts: 3,
                         createdByUserId: 1,
                         updatedByUserId: 1
                     };

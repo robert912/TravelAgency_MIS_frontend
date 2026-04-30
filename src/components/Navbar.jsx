@@ -69,12 +69,13 @@ export default function Navbar() {
                         <>
                             {keycloak.authenticated ? (
                                 <Box sx={{ display: "flex", alignItems: "center" }}>
-                                    <Button 
-                                        onClick={handleMenu} 
+                                    {console.log(keycloak.tokenParsed)}
+                                    <Button
+                                        onClick={handleMenu}
                                         sx={{ color: "#777777", fontWeight: "bold", textTransform: 'none' }}
                                         startIcon={<AccountCircle />}
                                     >
-                                        {keycloak.tokenParsed?.preferred_username || keycloak.tokenParsed?.email}
+                                        {keycloak.tokenParsed?.given_name + " " + keycloak.tokenParsed?.family_name || keycloak.tokenParsed?.email}
                                     </Button>
                                     <Menu
                                         id="menu-appbar"

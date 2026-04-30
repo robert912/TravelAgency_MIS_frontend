@@ -38,9 +38,9 @@ const personService = {
     //     return httpClient.get(`${API_URL}/search`, { params: filters });
     // },
 
-    // Buscar persona por identificación
-    searchPerson: (identification) => {
-        return httpClient.get(`${API_URL}/search`, { params: { identification } });
+    // Buscar persona por identificación o correo
+    searchPerson: (query) => {
+        return httpClient.get(`${API_URL}/search`, { params: { query: query } });
     }
 };
 
