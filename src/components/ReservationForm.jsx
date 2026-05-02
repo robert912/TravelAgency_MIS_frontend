@@ -30,10 +30,13 @@ import personService from "../services/person.service";
 import tourPackageService from "../services/tourPackage.service";
 import paymentService from "../services/payment.service";
 import dayjs from 'dayjs';
+import { useKeycloak } from '@react-keycloak/web';
 
 const ReservationForm = () => {
     const navigate = useNavigate();
     const { id } = useParams();
+    const { keycloak } = useKeycloak();
+    const currentUserId = keycloak?.subject ? localStorage.getItem(`person_id_${keycloak.subject}`) : 1;
     const isEditMode = !!id && id !== 'new';
     const isViewMode = window.location.pathname.includes('/view/');
 
@@ -53,8 +56,8 @@ const ReservationForm = () => {
         tourPackageId: "",
         status: "PENDIENTE",
         active: 1,
-        createdByUserId: 1,
-        modifiedByUserId: 1,
+        createdByUserId: currentUserId || 1,
+        modifiedByUserId: currentUserId || 1,
         reservationDate: null,
         expirationDate: null,
         totalAmount: 0,
@@ -110,8 +113,8 @@ const ReservationForm = () => {
                     tourPackageId: reservationData.tourPackage?.id || "",
                     status: reservationData.status || "PENDIENTE",
                     active: reservationData.active || 1,
-                    createdByUserId: reservationData.createdByUserId || 1,
-                    modifiedByUserId: reservationData.modifiedByUserId || 1,
+                    createdByUserId: reservationData.createdByUserId || currentUserId || 1,
+                    modifiedByUserId: currentUserId || 1,
                     reservationDate: reservationData.reservationDate,
                     expirationDate: reservationData.expirationDate,
                     totalAmount: reservationData.totalAmount ||
@@ -244,8 +247,8 @@ const ReservationForm = () => {
                 expirationDate: formData.expirationDate,
                 status: formData.status,
                 active: 1,
-                createdByUserId: 1,
-                modifiedByUserId: 1,
+                createdByUserId: formData.createdByUserId || currentUserId || 1,
+                modifiedByUserId: currentUserId || 1,
                 solicitudes: formData.solicitudes || ""
             };
 

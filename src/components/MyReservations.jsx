@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useKeycloak } from '@react-keycloak/web';
 import {
     Box, Container, Paper, Typography, Grid, Card, CardContent,
     Chip, Button, Divider, CircularProgress, Alert, Accordion,
@@ -26,6 +27,7 @@ import Swal from 'sweetalert2';
 
 const MyReservations = () => {
     const navigate = useNavigate();
+    const { keycloak } = useKeycloak();
     const [reservations, setReservations] = useState([]);
     const [loading, setLoading] = useState(true);
     const [expandedReservation, setExpandedReservation] = useState(null);
@@ -42,7 +44,7 @@ const MyReservations = () => {
     const loadReservations = async () => {
         setLoading(true);
         try {
-            const userId = 1;
+            const userId = localStorage.getItem(`person_id_${keycloak?.subject}`) || 1;
             const response = await reservationService.getByPersonId(userId);
             const data = response.data?.data || response.data || [];
             setReservations(data);

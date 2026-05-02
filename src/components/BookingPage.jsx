@@ -30,12 +30,15 @@ import tourPackageService from "../services/tourPackage.service";
 import reservationService from "../services/reservation.service";
 import personService from "../services/person.service";
 import dayjs from 'dayjs';
+import { useKeycloak } from '@react-keycloak/web';
 
 const steps = ['Datos del viaje', 'Información de pasajeros', 'Resumen y pago'];
 
 const BookingPage = () => {
     const { id } = useParams();
     const navigate = useNavigate();
+    const { keycloak } = useKeycloak();
+    const currentUserId = keycloak?.subject ? localStorage.getItem(`person_id_${keycloak.subject}`) : 1;
     const [activeStep, setActiveStep] = useState(0);
     const [loading, setLoading] = useState(false);
     const [checkingAvailability, setCheckingAvailability] = useState(false);
@@ -235,8 +238,8 @@ const BookingPage = () => {
                         phone: passenger.phone || "",
                         nationality: passenger.nationality || "",
                         active: 1,
-                        createdByUserId: 1,
-                        updatedByUserId: 1
+                        createdByUserId: currentUserId || 1,
+                        updatedByUserId: currentUserId || 1
                     };
 
                     const response = await personService.create(newPerson);
@@ -580,7 +583,7 @@ const BookingPage = () => {
 
                 const reservationData = {
                     // Datos de la persona principal
-                    personId: mainPassengerData.personId || null,
+                    personId: currentUserId || mainPassengerData.personId || null,
                     identification: mainPassengerData.identification,
                     fullName: mainPassengerData.fullName,
                     email: mainPassengerData.email,

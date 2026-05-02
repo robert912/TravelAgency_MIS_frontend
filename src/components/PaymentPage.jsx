@@ -18,12 +18,15 @@ import Swal from 'sweetalert2';
 import reservationService from "../services/reservation.service";
 import paymentService from "../services/payment.service";
 import dayjs from 'dayjs';
+import { useKeycloak } from '@react-keycloak/web';
 
 const steps = ['Verificar reserva', 'Datos de pago', 'Confirmación'];
 
 const PaymentPage = () => {
     const { id } = useParams();
     const navigate = useNavigate();
+    const { keycloak } = useKeycloak();
+    const currentUserId = keycloak?.subject ? localStorage.getItem(`person_id_${keycloak.subject}`) : 1;
     const [activeStep, setActiveStep] = useState(0);
     const [loading, setLoading] = useState(false);
     const [processing, setProcessing] = useState(false);
@@ -187,7 +190,7 @@ const PaymentPage = () => {
                 cardExpiration: formData.cardExpiration,
                 cardCvv: formData.cardCvv,
                 paymentMethod: formData.paymentMethod,
-                userId: 1
+                userId: currentUserId || 1
             };
 
             const response = await paymentService.processPayment(paymentData);

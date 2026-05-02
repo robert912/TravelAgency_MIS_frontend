@@ -69,7 +69,6 @@ export default function Navbar() {
                         <>
                             {keycloak.authenticated ? (
                                 <Box sx={{ display: "flex", alignItems: "center" }}>
-                                    {console.log(keycloak.tokenParsed)}
                                     <Button
                                         onClick={handleMenu}
                                         sx={{ color: "#777777", fontWeight: "bold", textTransform: 'none' }}
