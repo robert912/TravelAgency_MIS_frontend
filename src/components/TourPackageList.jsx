@@ -201,7 +201,7 @@ const TourPackageList = () => {
             `,
             icon: 'warning',
             showCancelButton: true,
-            confirmButtonColor: '#d33',
+            confirmButtonColor: pkg.active ? 'var(--error)' : 'var(--success)',
             cancelButtonColor: 'var(--primary)',
             confirmButtonText: pkg.active ? 'Sí, desactivar' : 'Sí, activar',
             cancelButtonText: 'Cancelar'

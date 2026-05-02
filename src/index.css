@@ -5,6 +5,12 @@
     --primary: #fa4f16;
     --primary-hover: #e04410;
     --secondary: #28a745;
+    --success: #28a745;
+    --success-hover: #218838;
+    --error: #dc3545;
+    --error-hover: #c82333;
+    --warning: #ffc107;
+    --warning-hover: #e0a800;
     --info: #1565C0;
     --info-hover: #1976d2;
     --cancelar: #dc3545;

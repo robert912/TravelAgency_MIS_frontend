@@ -14,6 +14,7 @@ import {
     Save as SaveIcon,
     Cancel as CancelIcon,
     Delete as DeleteIcon,
+    Check as CheckIcon,
     AttachMoney as MoneyIcon,
     People as PeopleIcon,
     Star as StarIcon,
@@ -910,10 +911,10 @@ const TourPackageAddEdit = () => {
 
                             {isEditMode && (
                                 <Button
-                                    variant="outlined"
-                                    color="error"
+                                    variant="contained"
+                                    color={formData.active ? "error" : "success"}
                                     onClick={handleToggleActive}
-                                    startIcon={<DeleteIcon />}
+                                    startIcon={formData.active ? <DeleteIcon /> : <CheckIcon />}
                                     disabled={saving}
                                     size="large"
                                 >
