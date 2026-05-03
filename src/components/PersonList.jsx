@@ -1,408 +1,586 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-    Box, Paper, Typography, Table, TableBody, TableCell, TableContainer,
-    TableHead, TableRow, TablePagination, IconButton, Chip, TextField,
-    InputAdornment, Button, Stack, Tooltip, Card, CardContent, Grid,
-    FormControl, InputLabel, Select, MenuItem, Dialog, DialogTitle,
-    DialogContent, DialogContentText, DialogActions, CircularProgress
+    Box, Button, Typography, Table, TableBody, TableCell,
+    TableContainer, TableHead, TableRow, Paper, Chip,
+    IconButton, TextField, InputAdornment, Menu, MenuItem,
+    Pagination, Stack, FormControl, InputLabel, Select,
+    Tooltip, TableSortLabel, Badge, Dialog, DialogTitle,
+    DialogContent, DialogActions, Grid, Divider, Rating,
+    Avatar, LinearProgress, CircularProgress, Tab, Tabs
 } from "@mui/material";
 import {
-    Add as AddIcon,
     Edit as EditIcon,
     Delete as DeleteIcon,
-    Search as SearchIcon,
-    Clear as ClearIcon,
     Visibility as ViewIcon,
-    CheckCircle as ActiveIcon,
-    Cancel as InactiveIcon,
+    Search as SearchIcon,
+    Close as CloseIcon,
+    ArrowBack as ArrowBackIcon,
     Person as PersonIcon,
     Email as EmailIcon,
     Phone as PhoneIcon,
     Badge as BadgeIcon,
     Public as PublicIcon,
-    PersonOff as PersonOffIcon
+    CheckCircle as CheckIcon,
+    Cancel as CancelIcon,
+    Refresh as RefreshIcon,
+    Add as AddIcon,
+    PersonAdd as PersonAddIcon,
+    VerifiedUser as VerifiedIcon,
+    Warning as WarningIcon,
+    Info as InfoIcon
 } from "@mui/icons-material";
 import Swal from 'sweetalert2';
 import personService from "../services/person.service";
 
 const PersonList = () => {
-    const navigate = useNavigate();
-    const [loading, setLoading] = useState(true);
     const [persons, setPersons] = useState([]);
     const [filteredPersons, setFilteredPersons] = useState([]);
-    const [page, setPage] = useState(0);
-    const [rowsPerPage, setRowsPerPage] = useState(10);
+    const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState("");
     const [statusFilter, setStatusFilter] = useState("all");
-    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    const [orderBy, setOrderBy] = useState("id");
+    const [order, setOrder] = useState("desc");
+    const [page, setPage] = useState(1);
+    const [rowsPerPage, setRowsPerPage] = useState(10);
+
+    // Estados para el modal
+    const [modalOpen, setModalOpen] = useState(false);
     const [selectedPerson, setSelectedPerson] = useState(null);
+    const [modalLoading, setModalLoading] = useState(false);
 
-    // Cargar datos
-    useEffect(() => {
-        fetchPersons();
-    }, []);
-
-    // Filtrar personas
-    useEffect(() => {
-        let filtered = [...persons];
-
-        // Filtro por búsqueda
-        if (searchTerm) {
-            filtered = filtered.filter(person =>
-                person.fullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                person.identification?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                person.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                person.phone?.toLowerCase().includes(searchTerm.toLowerCase())
-            );
-        }
-
-        // Filtro por estado
-        if (statusFilter !== "all") {
-            filtered = filtered.filter(person =>
-                statusFilter === "active" ? person.active === 1 : person.active === 0
-            );
-        }
-
-        setFilteredPersons(filtered);
-        setPage(0);
-    }, [searchTerm, statusFilter, persons]);
+    const navigate = useNavigate();
 
     const fetchPersons = async () => {
         setLoading(true);
         try {
             const response = await personService.getAll();
             const data = response.data?.data || response.data || [];
-            setPersons(data);
-            setFilteredPersons(data);
+            const personsArray = Array.isArray(data) ? data : [];
+            setPersons(personsArray);
+            setFilteredPersons(personsArray);
         } catch (error) {
-            console.error("Error cargando personas:", error);
+            console.error("Error al obtener personas", error);
             Swal.fire('Error', 'No se pudieron cargar las personas', 'error');
         } finally {
             setLoading(false);
         }
     };
 
-    const handleChangePage = (event, newPage) => {
-        setPage(newPage);
-    };
+    useEffect(() => {
+        fetchPersons();
+    }, []);
 
-    const handleChangeRowsPerPage = (event) => {
-        setRowsPerPage(parseInt(event.target.value, 10));
-        setPage(0);
-    };
+    // Filtrar y ordenar
+    useEffect(() => {
+        let result = [...persons];
 
-    const handleSearch = (event) => {
-        setSearchTerm(event.target.value);
-    };
-
-    const clearSearch = () => {
-        setSearchTerm("");
-    };
-
-    const handleEdit = (person) => {
-        navigate(`/admin/persons/edit/${person.id}`);
-    };
-
-    const handleView = (person) => {
-        navigate(`/admin/persons/view/${person.id}`);
-    };
-
-    const handleDeleteClick = (person) => {
-        setSelectedPerson(person);
-        setDeleteDialogOpen(true);
-    };
-
-    const handleDeleteConfirm = async () => {
-        if (!selectedPerson) return;
-
-        setLoading(true);
-        try {
-            await personService.delete(selectedPerson.id);
-            Swal.fire('¡Eliminado!', `La persona "${selectedPerson.fullName}" ha sido desactivada`, 'success');
-            fetchPersons();
-        } catch (error) {
-            console.error("Error eliminando persona:", error);
-            Swal.fire('Error', error.response?.data?.message || 'No se pudo eliminar la persona', 'error');
-        } finally {
-            setLoading(false);
-            setDeleteDialogOpen(false);
-            setSelectedPerson(null);
+        if (searchTerm) {
+            result = result.filter(person =>
+                person.fullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                person.identification?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                person.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                person.phone?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                person.id?.toString().includes(searchTerm)
+            );
         }
-    };
 
-    const handleToggleStatus = async (person) => {
-        const action = person.active === 1 ? "desactivar" : "activar";
-        const result = await Swal.fire({
-            title: `¿${action === "desactivar" ? "Desactivar" : "Activar"} persona?`,
-            text: `¿Estás seguro de que quieres ${action} a "${person.fullName}"?`,
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: action === "desactivar" ? '#d33' : 'var(--primary)',
-            confirmButtonText: `Sí, ${action}`,
-            cancelButtonText: 'Cancelar'
+        if (statusFilter !== "all") {
+            result = result.filter(person =>
+                statusFilter === "active" ? person.active === 1 : person.active === 0
+            );
+        }
+
+        result.sort((a, b) => {
+            let aVal = a[orderBy];
+            let bVal = b[orderBy];
+
+            if (typeof aVal === 'string') {
+                aVal = aVal?.toLowerCase() || '';
+                bVal = bVal?.toLowerCase() || '';
+            }
+
+            if (aVal < bVal) return order === "asc" ? -1 : 1;
+            if (aVal > bVal) return order === "asc" ? 1 : -1;
+            return 0;
         });
 
-        if (result.isConfirmed) {
-            setLoading(true);
-            try {
-                const updatedPerson = { ...person, active: person.active === 1 ? 0 : 1 };
-                await personService.update(updatedPerson);
-                Swal.fire('¡Completado!', `Persona ${action}da correctamente`, 'success');
-                fetchPersons();
-            } catch (error) {
-                Swal.fire('Error', 'No se pudo cambiar el estado de la persona', 'error');
-            } finally {
-                setLoading(false);
-            }
+        setFilteredPersons(result);
+        setPage(1);
+    }, [searchTerm, statusFilter, orderBy, order, persons]);
+
+    // Abrir modal con detalles de la persona
+    const handleViewDetails = async (person) => {
+        setSelectedPerson(person);
+        setModalOpen(true);
+        setModalLoading(true);
+
+        try {
+            const response = await personService.get(person.id);
+            const detailedData = response.data?.data || response.data;
+            setSelectedPerson(detailedData);
+        } catch (error) {
+            console.error("Error al cargar detalles completos", error);
+        } finally {
+            setModalLoading(false);
         }
     };
 
-    const getStatusChip = (active) => {
-        return active === 1 ? (
-            <Chip
-                label="ACTIVO"
-                size="small"
-                icon={<ActiveIcon sx={{ fontSize: 16 }} />}
-                sx={{ bgcolor: '#e8f5e9', color: '#2e7d32', fontWeight: 'bold' }}
-            />
-        ) : (
-            <Chip
-                label="INACTIVO"
-                size="small"
-                icon={<InactiveIcon sx={{ fontSize: 16 }} />}
-                sx={{ bgcolor: '#ffebee', color: '#c62828', fontWeight: 'bold' }}
-            />
-        );
+    const handleCloseModal = () => {
+        setModalOpen(false);
+        setSelectedPerson(null);
     };
 
-    if (loading && persons.length === 0) {
-        return (
-            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
-                <CircularProgress />
-            </Box>
-        );
-    }
+    const handleDelete = (person) => {
+        const action = person.active === 1 ? "desactivar" : "activar";
+        Swal.fire({
+            title: `¿${person.active === 1 ? 'Desactivar' : 'Activar'} persona?`,
+            html: `
+                <div style="text-align: left">
+                    <p><strong>${person.fullName}</strong></p>
+                    <p>Identificación: ${person.identification}</p>
+                    <p>Email: ${person.email}</p>
+                    <p>Estado actual: ${person.active === 1 ? 'Activo' : 'Inactivo'}</p>
+                </div>
+            `,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: person.active === 1 ? '#d33' : 'var(--success)',
+            cancelButtonColor: 'var(--primary)',
+            confirmButtonText: person.active === 1 ? 'Sí, desactivar' : 'Sí, activar',
+            cancelButtonText: 'Cancelar'
+        }).then(async (result) => {
+            if (result.isConfirmed) {
+                try {
+                    person.active = person.active === 1 ? 0 : 1;
+                    await personService.update(person);
+                    Swal.fire(
+                        '¡Completado!',
+                        `La persona ha sido ${person.active === 1 ? 'activada' : 'desactivada'} correctamente.`,
+                        'success'
+                    );
+                    fetchPersons();
+                    if (selectedPerson?.id === person.id) {
+                        handleCloseModal();
+                    }
+                } catch (error) {
+                    console.error("Error", error);
+                    Swal.fire('Error', 'Hubo un problema al cambiar el estado', 'error');
+                }
+            }
+        });
+    };
+
+    const handleRequestSort = (property) => {
+        const isAsc = orderBy === property && order === "asc";
+        setOrder(isAsc ? "desc" : "asc");
+        setOrderBy(property);
+    };
+
+    // Paginación
+    const paginatedPersons = filteredPersons.slice(
+        (page - 1) * rowsPerPage,
+        page * rowsPerPage
+    );
+
+    const totalPages = Math.ceil(filteredPersons.length / rowsPerPage);
+
+    const columns = [
+        { id: 'id', label: 'ID', width: 70, numeric: true },
+        { id: 'fullName', label: 'Nombre Completo', width: 200 },
+        { id: 'identification', label: 'Identificación', width: 130 },
+        { id: 'email', label: 'Email', width: 200 },
+        { id: 'phone', label: 'Teléfono', width: 120 },
+        { id: 'nationality', label: 'Nacionalidad', width: 100 },
+        { id: 'active', label: 'Estado', width: 100 },
+        { id: 'actions', label: 'Acciones', width: 150, align: 'center' }
+    ];
 
     return (
-        <Box sx={{ p: 3, bgcolor: '#f5f7fa', minHeight: '100vh' }}>
-            <Paper elevation={0} sx={{ borderRadius: 3, overflow: 'hidden' }}>
-                {/* Header */}
-                <Box sx={{
-                    background: 'linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%)',
-                    color: 'white',
-                    p: 4,
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    flexWrap: 'wrap',
-                    gap: 2
-                }}>
+        <Box sx={{ p: 3, bgcolor: '#f5f5f5', minHeight: '100vh' }}>
+            {/* Header y filtros */}
+            <Paper elevation={0} sx={{ p: 3, mb: 3, borderRadius: 2 }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
                     <Box>
-                        <Typography variant="overline" sx={{ opacity: 0.9, letterSpacing: 1.5 }}>
-                            GESTIÓN DE PERSONAS
+                        <Typography variant="h5" fontWeight="bold" gutterBottom>
+                            Administración de Personas
                         </Typography>
-                        <Typography variant="h4" fontWeight="bold">
-                            Administrador de Personas
-                        </Typography>
-                        <Typography variant="body2" sx={{ opacity: 0.8, mt: 0.5 }}>
-                            Total: {filteredPersons.length} personas | Activas: {persons.filter(p => p.active === 1).length}
+                        <Typography variant="body2" color="text.secondary">
+                            Gestiona todos los clientes y personas: {filteredPersons.length} registros encontrados
+                            {persons.length > 0 && (
+                                <span style={{ marginLeft: '8px' }}>
+                                    | Activos: {persons.filter(p => p.active === 1).length}
+                                </span>
+                            )}
                         </Typography>
                     </Box>
+                    <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+                        <Button variant="outlined" startIcon={<ArrowBackIcon />} onClick={() => navigate("/")} size="small">
+                            Volver
+                        </Button>
+                        <Button variant="outlined" startIcon={<RefreshIcon />} onClick={fetchPersons} size="small">
+                            Actualizar
+                        </Button>
+                        <Button
+                            variant="contained"
+                            startIcon={<PersonAddIcon />}
+                            onClick={() => navigate("/admin/persons/add")}
+                            sx={{ bgcolor: 'var(--primary)', '&:hover': { bgcolor: 'var(--primary-hover)' } }}
+                        >
+                            Nueva Persona
+                        </Button>
+                    </Box>
+                </Box>
+            </Paper>
 
-                    <Button
-                        variant="contained"
-                        startIcon={<AddIcon />}
-                        onClick={() => navigate('/admin/persons/new')}
-                        sx={{
-                            bgcolor: 'white',
-                            color: 'var(--primary)',
-                            '&:hover': { bgcolor: '#f5f5f5' }
+            {/* Filtros */}
+            <Paper elevation={0} sx={{ p: 2, mb: 3, borderRadius: 2 }}>
+                <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems="center">
+                    <TextField
+                        placeholder="Buscar por nombre, identificación, email o teléfono..."
+                        size="small"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        sx={{ flex: 2 }}
+                        InputProps={{
+                            startAdornment: (
+                                <InputAdornment position="start">
+                                    <SearchIcon fontSize="small" />
+                                </InputAdornment>
+                            ),
                         }}
-                    >
-                        Nueva Persona
-                    </Button>
-                </Box>
+                    />
 
-                {/* Filtros */}
-                <Box sx={{ p: 3, borderBottom: '1px solid #e2e8f0' }}>
-                    <Grid container spacing={2} alignItems="center">
-                        <Grid item xs={12} md={6}>
-                            <TextField
-                                fullWidth
-                                placeholder="Buscar por nombre, identificación, email o teléfono..."
-                                value={searchTerm}
-                                onChange={handleSearch}
-                                size="small"
-                                InputProps={{
-                                    startAdornment: (
-                                        <InputAdornment position="start">
-                                            <SearchIcon color="action" />
-                                        </InputAdornment>
-                                    ),
-                                    endAdornment: searchTerm && (
-                                        <InputAdornment position="end">
-                                            <IconButton size="small" onClick={clearSearch}>
-                                                <ClearIcon />
-                                            </IconButton>
-                                        </InputAdornment>
-                                    )
-                                }}
-                            />
-                        </Grid>
-                        <Grid item xs={12} md={3}>
-                            <FormControl fullWidth size="small">
-                                <InputLabel>Estado</InputLabel>
-                                <Select
-                                    value={statusFilter}
-                                    onChange={(e) => setStatusFilter(e.target.value)}
-                                    label="Estado"
-                                >
-                                    <MenuItem value="all">Todos</MenuItem>
-                                    <MenuItem value="active">Activos</MenuItem>
-                                    <MenuItem value="inactive">Inactivos</MenuItem>
-                                </Select>
-                            </FormControl>
-                        </Grid>
-                        <Grid item xs={12} md={3}>
-                            <Button
-                                fullWidth
-                                variant="outlined"
-                                onClick={() => {
-                                    setSearchTerm("");
-                                    setStatusFilter("all");
-                                }}
-                                startIcon={<ClearIcon />}
-                            >
-                                Limpiar filtros
-                            </Button>
-                        </Grid>
-                    </Grid>
-                </Box>
+                    <FormControl size="small" sx={{ minWidth: 150 }}>
+                        <InputLabel>Estado</InputLabel>
+                        <Select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} label="Estado">
+                            <MenuItem value="all">Todos</MenuItem>
+                            <MenuItem value="active">Activos</MenuItem>
+                            <MenuItem value="inactive">Inactivos</MenuItem>
+                        </Select>
+                    </FormControl>
 
-                {/* Tabla */}
-                <TableContainer>
-                    <Table>
-                        <TableHead sx={{ bgcolor: '#f8fafc' }}>
-                            <TableRow>
-                                <TableCell sx={{ fontWeight: 'bold' }}>ID</TableCell>
-                                <TableCell sx={{ fontWeight: 'bold' }}>Nombre Completo</TableCell>
-                                <TableCell sx={{ fontWeight: 'bold' }}>Identificación</TableCell>
-                                <TableCell sx={{ fontWeight: 'bold' }}>Email</TableCell>
-                                <TableCell sx={{ fontWeight: 'bold' }}>Teléfono</TableCell>
-                                <TableCell sx={{ fontWeight: 'bold' }}>Nacionalidad</TableCell>
-                                <TableCell sx={{ fontWeight: 'bold' }}>Estado</TableCell>
-                                <TableCell sx={{ fontWeight: 'bold' }} align="center">Acciones</TableCell>
+                    <FormControl size="small" sx={{ minWidth: 100 }}>
+                        <InputLabel>Mostrar</InputLabel>
+                        <Select value={rowsPerPage} onChange={(e) => setRowsPerPage(e.target.value)} label="Mostrar">
+                            <MenuItem value={10}>10</MenuItem>
+                            <MenuItem value={25}>25</MenuItem>
+                            <MenuItem value={50}>50</MenuItem>
+                            <MenuItem value={100}>100</MenuItem>
+                        </Select>
+                    </FormControl>
+                </Stack>
+            </Paper>
+
+            {/* Tabla */}
+            <Paper elevation={0} sx={{ borderRadius: 2, overflow: 'hidden' }}>
+                <TableContainer sx={{ overflowX: 'auto' }}>
+                    <Table stickyHeader size="medium">
+                        <TableHead>
+                            <TableRow sx={{ bgcolor: '#fafafa' }}>
+                                {columns.map((col) => (
+                                    <TableCell
+                                        key={col.id}
+                                        align={col.align || (col.numeric ? 'right' : 'left')}
+                                        sx={{ width: col.width, fontWeight: 'bold', bgcolor: '#fafafa' }}
+                                    >
+                                        {col.id !== 'actions' ? (
+                                            <TableSortLabel
+                                                active={orderBy === col.id}
+                                                direction={orderBy === col.id ? order : 'asc'}
+                                                onClick={() => handleRequestSort(col.id)}
+                                            >
+                                                {col.label}
+                                            </TableSortLabel>
+                                        ) : (
+                                            col.label
+                                        )}
+                                    </TableCell>
+                                ))}
                             </TableRow>
                         </TableHead>
                         <TableBody>
-                            {filteredPersons
-                                .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                                .map((person) => (
-                                    <TableRow key={person.id} hover>
+                            {loading ? (
+                                <TableRow>
+                                    <TableCell colSpan={columns.length} align="center" sx={{ py: 8 }}>
+                                        <LinearProgress sx={{ maxWidth: 400, mx: 'auto', mb: 2 }} />
+                                        <Typography>Cargando personas...</Typography>
+                                    </TableCell>
+                                </TableRow>
+                            ) : paginatedPersons.length === 0 ? (
+                                <TableRow>
+                                    <TableCell colSpan={columns.length} align="center" sx={{ py: 8 }}>
+                                        <Typography variant="h6" color="text.secondary" gutterBottom>
+                                            No hay personas que coincidan con los filtros
+                                        </Typography>
+                                        <Button variant="outlined" onClick={() => { setSearchTerm(""); setStatusFilter("all"); }} sx={{ mt: 2 }}>
+                                            Limpiar filtros
+                                        </Button>
+                                    </TableCell>
+                                </TableRow>
+                            ) : (
+                                paginatedPersons.map((person) => (
+                                    <TableRow
+                                        key={person.id}
+                                        hover
+                                        sx={{
+                                            '&:hover': { bgcolor: '#fafafa' },
+                                            opacity: person.active === 1 ? 1 : 0.6
+                                        }}
+                                    >
                                         <TableCell>{person.id}</TableCell>
                                         <TableCell>
                                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                                 <PersonIcon fontSize="small" color="action" />
                                                 <Typography variant="body2" fontWeight="500">
-                                                    {person.fullName}
+                                                    {person.fullName || 'Sin nombre'}
                                                 </Typography>
                                             </Box>
                                         </TableCell>
                                         <TableCell>
                                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                                                 <BadgeIcon fontSize="small" color="action" />
-                                                {person.identification}
+                                                {person.identification || '-'}
                                             </Box>
                                         </TableCell>
                                         <TableCell>
                                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                                                 <EmailIcon fontSize="small" color="action" />
-                                                {person.email}
+                                                {person.email || '-'}
                                             </Box>
                                         </TableCell>
                                         <TableCell>
-                                            {person.phone || '-'}
+                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                                <PhoneIcon fontSize="small" color="action" />
+                                                {person.phone || '-'}
+                                            </Box>
                                         </TableCell>
                                         <TableCell>
-                                            {person.nationality || '-'}
+                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                                <PublicIcon fontSize="small" color="action" />
+                                                {person.nationality || '-'}
+                                            </Box>
                                         </TableCell>
-                                        <TableCell>{getStatusChip(person.active)}</TableCell>
+                                        <TableCell>
+                                            <Chip
+                                                icon={person.active === 1 ? <CheckIcon /> : <CancelIcon />}
+                                                label={person.active === 1 ? "Activo" : "Inactivo"}
+                                                color={person.active === 1 ? "success" : "default"}
+                                                size="small"
+                                                variant="outlined"
+                                            />
+                                        </TableCell>
                                         <TableCell align="center">
                                             <Stack direction="row" spacing={1} justifyContent="center">
                                                 <Tooltip title="Ver detalles">
                                                     <IconButton
                                                         size="small"
-                                                        onClick={() => handleView(person)}
-                                                        sx={{ color: '#0288d1' }}
+                                                        color="info"
+                                                        onClick={() => handleViewDetails(person)}
                                                     >
-                                                        <ViewIcon />
+                                                        <ViewIcon fontSize="small" />
                                                     </IconButton>
                                                 </Tooltip>
                                                 <Tooltip title="Editar">
                                                     <IconButton
                                                         size="small"
-                                                        onClick={() => handleEdit(person)}
-                                                        sx={{ color: '#ed6c02' }}
+                                                        color="primary"
+                                                        onClick={() => navigate(`/admin/persons/edit/${person.id}`)}
                                                     >
-                                                        <EditIcon />
+                                                        <EditIcon fontSize="small" />
                                                     </IconButton>
                                                 </Tooltip>
                                                 <Tooltip title={person.active === 1 ? "Desactivar" : "Activar"}>
                                                     <IconButton
                                                         size="small"
-                                                        onClick={() => handleToggleStatus(person)}
-                                                        sx={{ color: person.active === 1 ? '#d32f2f' : '#2e7d32' }}
+                                                        color={person.active === 1 ? "error" : "success"}
+                                                        onClick={() => handleDelete(person)}
                                                     >
-                                                        {person.active === 1 ? <PersonOffIcon /> : <PersonIcon />}
+                                                        {person.active === 1 ? <DeleteIcon fontSize="small" /> : <CheckIcon fontSize="small" />}
                                                     </IconButton>
                                                 </Tooltip>
                                             </Stack>
                                         </TableCell>
                                     </TableRow>
-                                ))}
-                            {filteredPersons.length === 0 && (
-                                <TableRow>
-                                    <TableCell colSpan={8} align="center" sx={{ py: 8 }}>
-                                        <Typography variant="body1" color="text.secondary">
-                                            No se encontraron personas
-                                        </Typography>
-                                    </TableCell>
-                                </TableRow>
+                                ))
                             )}
                         </TableBody>
                     </Table>
                 </TableContainer>
 
-                {/* Paginación */}
-                <TablePagination
-                    rowsPerPageOptions={[5, 10, 25, 50]}
-                    component="div"
-                    count={filteredPersons.length}
-                    rowsPerPage={rowsPerPage}
-                    page={page}
-                    onPageChange={handleChangePage}
-                    onRowsPerPageChange={handleChangeRowsPerPage}
-                    labelRowsPerPage="Filas por página:"
-                    labelDisplayedRows={({ from, to, count }) => `${from}-${to} de ${count}`}
-                />
+                {filteredPersons.length > 0 && (
+                    <Box sx={{ p: 2, display: 'flex', justifyContent: 'flex-end' }}>
+                        <Pagination
+                            count={totalPages}
+                            page={page}
+                            onChange={(e, value) => setPage(value)}
+                            color="primary"
+                            showFirstButton
+                            showLastButton
+                        />
+                    </Box>
+                )}
             </Paper>
 
-            {/* Diálogo de confirmación para eliminar */}
-            <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
-                <DialogTitle>Confirmar eliminación</DialogTitle>
-                <DialogContent>
-                    <DialogContentText>
-                        ¿Estás seguro de que deseas desactivar a "{selectedPerson?.fullName}"?
-                        Esta acción puede revertirse posteriormente.
-                    </DialogContentText>
-                </DialogContent>
-                <DialogActions>
-                    <Button onClick={() => setDeleteDialogOpen(false)}>Cancelar</Button>
-                    <Button onClick={handleDeleteConfirm} color="error" variant="contained">
-                        Desactivar
-                    </Button>
-                </DialogActions>
+            {/* MODAL DE DETALLES */}
+            <Dialog
+                open={modalOpen}
+                onClose={handleCloseModal}
+                maxWidth="sm"
+                fullWidth
+                PaperProps={{
+                    sx: {
+                        borderRadius: 2,
+                        maxHeight: '85vh'
+                    }
+                }}
+            >
+                {modalLoading ? (
+                    <Box sx={{ p: 4, textAlign: 'center' }}>
+                        <CircularProgress size={40} />
+                        <Typography sx={{ mt: 2 }}>Cargando datos...</Typography>
+                    </Box>
+                ) : selectedPerson && (
+                    <>
+                        {/* Header */}
+                        <DialogTitle sx={{
+                            borderBottom: '1px solid',
+                            borderColor: 'divider',
+                            py: 2,
+                            px: 3,
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            bgcolor: '#fafafa'
+                        }}>
+                            <Box>
+                                <Typography variant="subtitle2" color="text.secondary">
+                                    Persona #{selectedPerson.id}
+                                </Typography>
+                                <Typography variant="h6" component="span" fontWeight="bold">
+                                    {selectedPerson.fullName}
+                                </Typography>
+                            </Box>
+                            <IconButton onClick={handleCloseModal} size="small">
+                                <CloseIcon />
+                            </IconButton>
+                        </DialogTitle>
+
+                        <DialogContent sx={{ p: 3 }}>
+                            <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
+                                <Avatar sx={{ width: 80, height: 80, bgcolor: 'var(--primary)' }}>
+                                    <PersonIcon sx={{ fontSize: 40 }} />
+                                </Avatar>
+                            </Box>
+
+                            <Grid container spacing={2}>
+                                <Grid item xs={12}>
+                                    <Divider sx={{ my: 1 }}>
+                                        <Chip label="Información Personal" size="small" />
+                                    </Divider>
+                                </Grid>
+
+                                <Grid item xs={12} sm={6}>
+                                    <Typography variant="caption" color="text.secondary">Nombre Completo</Typography>
+                                    <Typography variant="body1" fontWeight="500">
+                                        {selectedPerson.fullName || 'No especificado'}
+                                    </Typography>
+                                </Grid>
+
+                                <Grid item xs={12} sm={6}>
+                                    <Typography variant="caption" color="text.secondary">Identificación</Typography>
+                                    <Typography variant="body1" fontWeight="500">
+                                        {selectedPerson.identification || 'No especificada'}
+                                    </Typography>
+                                </Grid>
+
+                                <Grid item xs={12} sm={6}>
+                                    <Typography variant="caption" color="text.secondary">Correo Electrónico</Typography>
+                                    <Typography variant="body1">
+                                        {selectedPerson.email || 'No especificado'}
+                                    </Typography>
+                                </Grid>
+
+                                <Grid item xs={12} sm={6}>
+                                    <Typography variant="caption" color="text.secondary">Teléfono</Typography>
+                                    <Typography variant="body1">
+                                        {selectedPerson.phone || 'No especificado'}
+                                    </Typography>
+                                </Grid>
+
+                                <Grid item xs={12} sm={6}>
+                                    <Typography variant="caption" color="text.secondary">Nacionalidad</Typography>
+                                    <Typography variant="body1">
+                                        {selectedPerson.nationality || 'No especificada'}
+                                    </Typography>
+                                </Grid>
+
+                                <Grid item xs={12} sm={6}>
+                                    <Typography variant="caption" color="text.secondary">Estado</Typography>
+                                    <Chip
+                                        label={selectedPerson.active === 1 ? "Activo" : "Inactivo"}
+                                        color={selectedPerson.active === 1 ? "success" : "default"}
+                                        size="small"
+                                        sx={{ mt: 0.5 }}
+                                    />
+                                </Grid>
+
+                                <Grid item xs={12}>
+                                    <Divider sx={{ my: 1 }}>
+                                        <Chip label="Información del Sistema" size="small" />
+                                    </Divider>
+                                </Grid>
+
+                                {selectedPerson.createdAt && (
+                                    <Grid item xs={12} sm={6}>
+                                        <Typography variant="caption" color="text.secondary">Fecha de Creación</Typography>
+                                        <Typography variant="body2">
+                                            {new Date(selectedPerson.createdAt).toLocaleString()}
+                                        </Typography>
+                                    </Grid>
+                                )}
+
+                                {selectedPerson.updatedAt && (
+                                    <Grid item xs={12} sm={6}>
+                                        <Typography variant="caption" color="text.secondary">Última Modificación</Typography>
+                                        <Typography variant="body2">
+                                            {new Date(selectedPerson.updatedAt).toLocaleString()}
+                                        </Typography>
+                                    </Grid>
+                                )}
+                            </Grid>
+                        </DialogContent>
+
+                        {/* Acciones */}
+                        <DialogActions sx={{ p: 2, gap: 1, borderTop: '1px solid', borderColor: 'divider' }}>
+                            <Button variant="text" onClick={handleCloseModal}>
+                                Cerrar
+                            </Button>
+                            <Button
+                                variant="outlined"
+                                color="primary"
+                                onClick={() => {
+                                    handleCloseModal();
+                                    navigate(`/admin/persons/edit/${selectedPerson.id}`);
+                                }}
+                                startIcon={<EditIcon />}
+                            >
+                                Editar
+                            </Button>
+                            <Button
+                                variant="contained"
+                                color={selectedPerson.active === 1 ? "error" : "success"}
+                                onClick={() => {
+                                    handleCloseModal();
+                                    handleDelete(selectedPerson);
+                                }}
+                                startIcon={selectedPerson.active === 1 ? <DeleteIcon /> : <CheckIcon />}
+                            >
+                                {selectedPerson.active === 1 ? 'Desactivar' : 'Activar'}
+                            </Button>
+                        </DialogActions>
+                    </>
+                )}
             </Dialog>
         </Box>
     );

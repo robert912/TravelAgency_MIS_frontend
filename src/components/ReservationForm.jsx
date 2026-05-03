@@ -383,7 +383,7 @@ const ReservationForm = () => {
                                         value={formData.tourPackageId}
                                         onChange={handleChange}
                                         label="Paquete Turístico"
-                                        disabled={isViewMode}
+                                        disabled//={isViewMode}
                                     >
                                         <MenuItem value=""><em>Seleccione un paquete</em></MenuItem>
                                         {packages.map(pkg => (
