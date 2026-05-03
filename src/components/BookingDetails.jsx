@@ -33,7 +33,7 @@ import reservationService from "../services/reservation.service";
 import paymentService from "../services/payment.service";
 import Swal from 'sweetalert2';
 
-const ReservationDetails = () => {
+const BookingDetails = () => {
     const navigate = useNavigate();
     const { id } = useParams();
     const [loading, setLoading] = useState(true);
@@ -44,28 +44,28 @@ const ReservationDetails = () => {
     const [receiptOpen, setReceiptOpen] = useState(false);
 
     useEffect(() => {
-        loadReservationDetails();
+        loadBookingDetails();
     }, [id]);
 
-    const loadReservationDetails = async () => {
+    const loadBookingDetails = async () => {
         setLoading(true);
         try {
             // Cargar datos de la reserva
             const response = await reservationService.get(id);
             const data = response.data?.data || response.data;
             setReservation(data);
-            
+
             // Cargar pasajeros
             await loadPassengers();
-            
+
             // Cargar información de pago
             await loadPaymentInfo();
-            
+
             // Parsear descuentos
             if (data.discountDetails) {
                 try {
-                    const discounts = typeof data.discountDetails === 'string' 
-                        ? JSON.parse(data.discountDetails) 
+                    const discounts = typeof data.discountDetails === 'string'
+                        ? JSON.parse(data.discountDetails)
                         : data.discountDetails;
                     setDiscountDetails(discounts);
                 } catch (e) {
@@ -104,7 +104,7 @@ const ReservationDetails = () => {
     };
 
     const getStatusConfig = (status) => {
-        switch(status) {
+        switch (status) {
             case 'PENDIENTE':
                 return { color: 'warning', icon: <PendingIcon />, label: 'Pendiente', bg: '#fff3e0' };
             case 'PAGADA':
@@ -147,7 +147,7 @@ const ReservationDetails = () => {
             try {
                 await reservationService.changeStatus(reservation.id, 'CANCELADA');
                 Swal.fire('¡Cancelada!', 'La reserva ha sido cancelada', 'success');
-                loadReservationDetails();
+                loadBookingDetails();
             } catch (error) {
                 console.error("Error cancelando reserva:", error);
                 Swal.fire('Error', 'No se pudo cancelar la reserva', 'error');
@@ -250,7 +250,7 @@ const ReservationDetails = () => {
                                 Información del Paquete
                             </Typography>
                             <Divider sx={{ mb: 2 }} />
-                            
+
                             <Grid container spacing={2}>
                                 <Grid item xs={12}>
                                     <Typography variant="subtitle1" fontWeight="bold" color="primary">
@@ -297,7 +297,7 @@ const ReservationDetails = () => {
                                 Pasajeros ({passengers.length})
                             </Typography>
                             <Divider sx={{ mb: 2 }} />
-                            
+
                             {passengers.length > 0 ? (
                                 <TableContainer component={Paper} variant="outlined">
                                     <Table size="medium">
@@ -427,9 +427,9 @@ const ReservationDetails = () => {
 
                             <Divider sx={{ my: 2 }} />
 
-                            <Box sx={{ 
-                                display: 'flex', 
-                                justifyContent: 'space-between', 
+                            <Box sx={{
+                                display: 'flex',
+                                justifyContent: 'space-between',
                                 alignItems: 'center',
                                 p: 2,
                                 bgcolor: '#e3f2fd',
@@ -506,7 +506,7 @@ const ReservationDetails = () => {
                                     Información de Expiración
                                 </Typography>
                                 <Divider sx={{ mb: 2 }} />
-                                
+
                                 <Alert severity="warning">
                                     <Typography variant="body2">
                                         Esta reserva expira el <strong>{dayjs(reservation.expirationDate).format('DD/MM/YYYY HH:mm')}</strong>
@@ -522,10 +522,10 @@ const ReservationDetails = () => {
             </Container>
 
             {/* Diálogo del Comprobante */}
-            <Dialog 
-                open={receiptOpen} 
-                onClose={() => setReceiptOpen(false)} 
-                maxWidth="md" 
+            <Dialog
+                open={receiptOpen}
+                onClose={() => setReceiptOpen(false)}
+                maxWidth="md"
                 fullWidth
                 PaperProps={{
                     sx: {
@@ -538,16 +538,16 @@ const ReservationDetails = () => {
                     }
                 }}
             >
-                <DialogTitle sx={{ 
-                    bgcolor: 'var(--primary)', 
+                <DialogTitle sx={{
+                    bgcolor: 'var(--primary)',
                     color: 'white',
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center'
                 }}>
                     <Typography variant="h6">Comprobante de Reserva</Typography>
-                    <IconButton 
-                        onClick={() => setReceiptOpen(false)} 
+                    <IconButton
+                        onClick={() => setReceiptOpen(false)}
                         sx={{ color: 'white' }}
                         className="no-print"
                     >
@@ -673,7 +673,7 @@ const ReservationDetails = () => {
                     <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
                         DETALLE DE PAGO
                     </Typography>
-                    
+
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
                         <Typography variant="body2">Subtotal:</Typography>
                         <Typography variant="body2" fontWeight="bold">
@@ -723,9 +723,9 @@ const ReservationDetails = () => {
                                 <Grid item xs={6}>
                                     <Typography variant="caption" color="text.secondary">Método de pago</Typography>
                                     <Typography variant="body2">
-                                        {payment.paymentMethod === 'CREDIT_CARD' ? 'Tarjeta de Crédito' : 
-                                         payment.paymentMethod === 'DEBIT_CARD' ? 'Tarjeta de Débito' : 
-                                         payment.paymentMethod || "N/A"}
+                                        {payment.paymentMethod === 'CREDIT_CARD' ? 'Tarjeta de Crédito' :
+                                            payment.paymentMethod === 'DEBIT_CARD' ? 'Tarjeta de Débito' :
+                                                payment.paymentMethod || "N/A"}
                                     </Typography>
                                 </Grid>
                                 <Grid item xs={6}>
@@ -743,9 +743,9 @@ const ReservationDetails = () => {
                     <Divider sx={{ my: 2 }} />
 
                     {/* Monto total */}
-                    <Box sx={{ 
-                        display: 'flex', 
-                        justifyContent: 'space-between', 
+                    <Box sx={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
                         alignItems: 'center',
                         p: 2,
                         bgcolor: '#e3f2fd',
@@ -766,16 +766,16 @@ const ReservationDetails = () => {
                     </Box>
                 </DialogContent>
                 <DialogActions sx={{ p: 2, justifyContent: 'center', className: 'no-print' }}>
-                    <Button 
-                        variant="contained" 
+                    <Button
+                        variant="contained"
                         onClick={handlePrint}
                         startIcon={<PrintIcon />}
                         sx={{ bgcolor: '#1565c0' }}
                     >
                         Imprimir / Guardar PDF
                     </Button>
-                    <Button 
-                        variant="outlined" 
+                    <Button
+                        variant="outlined"
                         onClick={() => setReceiptOpen(false)}
                     >
                         Cerrar
@@ -808,4 +808,4 @@ const ReservationDetails = () => {
     );
 };
 
-export default ReservationDetails;
+export default BookingDetails;

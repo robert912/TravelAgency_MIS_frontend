@@ -25,7 +25,7 @@ import reservationService from "../services/reservation.service";
 import paymentService from "../services/payment.service";
 import Swal from 'sweetalert2';
 
-const MyReservations = () => {
+const MyBookings = () => {
     const navigate = useNavigate();
     const { keycloak } = useKeycloak();
     const [reservations, setReservations] = useState([]);
@@ -48,7 +48,7 @@ const MyReservations = () => {
             const response = await reservationService.getByPersonId(userId);
             const data = response.data?.data || response.data || [];
             setReservations(data);
-            
+
             for (const reservation of data) {
                 await loadPassengersForReservation(reservation.id);
             }
@@ -84,7 +84,7 @@ const MyReservations = () => {
     };
 
     const getStatusChip = (status) => {
-        switch(status) {
+        switch (status) {
             case 'PENDIENTE':
                 return <Chip label="Pendiente" color="warning" size="small" icon={<ScheduleIcon />} />;
             case 'PAGADA':
@@ -142,19 +142,19 @@ const MyReservations = () => {
         try {
             // Obtener información del pago
             const payment = await fetchPaymentInfo(reservation.id);
-            
+
             // Parsear descuentos
             let discounts = [];
             if (reservation.discountDetails) {
                 try {
-                    discounts = typeof reservation.discountDetails === 'string' 
-                        ? JSON.parse(reservation.discountDetails) 
+                    discounts = typeof reservation.discountDetails === 'string'
+                        ? JSON.parse(reservation.discountDetails)
                         : reservation.discountDetails;
                 } catch (e) {
                     discounts = [];
                 }
             }
-            
+
             setCurrentReceipt(reservation);
             setPaymentInfo(payment);
             setDiscountDetails(discounts);
@@ -204,8 +204,8 @@ const MyReservations = () => {
                         <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
                             Explora nuestros paquetes turísticos y comienza tu próxima aventura
                         </Typography>
-                        <Button 
-                            variant="contained" 
+                        <Button
+                            variant="contained"
                             onClick={() => navigate('/')}
                             sx={{
                                 bgcolor: 'var(--primary)',
@@ -221,16 +221,16 @@ const MyReservations = () => {
                             const passengers = passengersMap[reservation.id] || [];
                             const isReservationExpired = isExpired(reservation.expirationDate);
                             const showPaymentButton = reservation.status === 'PENDIENTE' && !isReservationExpired;
-                            
+
                             return (
                                 <Grid item xs={12} key={reservation.id}>
                                     <Card sx={{ borderRadius: 2 }}>
                                         <CardContent>
                                             {/* Cabecera de la reserva */}
-                                            <Box sx={{ 
-                                                display: 'flex', 
-                                                justifyContent: 'space-between', 
-                                                alignItems: 'flex-start', 
+                                            <Box sx={{
+                                                display: 'flex',
+                                                justifyContent: 'space-between',
+                                                alignItems: 'flex-start',
                                                 flexWrap: 'wrap',
                                                 mb: 2
                                             }}>
@@ -248,14 +248,14 @@ const MyReservations = () => {
                                                 <Box sx={{ textAlign: 'right' }}>
                                                     {getStatusChip(reservation.status)}
                                                     {reservation.status === 'PENDIENTE' && (
-                                                        <Typography 
-                                                            variant="caption" 
-                                                            color={isReservationExpired ? "error" : "warning"} 
-                                                            display="block" 
+                                                        <Typography
+                                                            variant="caption"
+                                                            color={isReservationExpired ? "error" : "warning"}
+                                                            display="block"
                                                             sx={{ mt: 1 }}
                                                         >
-                                                            {isReservationExpired 
-                                                                ? "Reserva expirada" 
+                                                            {isReservationExpired
+                                                                ? "Reserva expirada"
                                                                 : `Expira: ${dayjs(reservation.expirationDate).format('DD/MM/YYYY HH:mm')}`
                                                             }
                                                         </Typography>
@@ -303,7 +303,7 @@ const MyReservations = () => {
 
                                             {/* Lista de pasajeros (acordeón) */}
                                             {passengers.length > 0 && (
-                                                <Accordion 
+                                                <Accordion
                                                     sx={{ mt: 2, boxShadow: 'none', border: '1px solid #e2e8f0' }}
                                                     expanded={expandedReservation === reservation.id}
                                                     onChange={() => setExpandedReservation(
@@ -351,20 +351,20 @@ const MyReservations = () => {
                                             {/* Botones de acción */}
                                             <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
                                                 <Tooltip title="Ver detalles">
-                                                    <Button 
-                                                        size="small" 
+                                                    <Button
+                                                        size="small"
                                                         startIcon={<VisibilityIcon />}
                                                         onClick={() => handleViewDetails(reservation)}
                                                     >
                                                         Detalles
                                                     </Button>
                                                 </Tooltip>
-                                                
+
                                                 {showPaymentButton && (
                                                     <Tooltip title="Completar pago">
-                                                        <Button 
-                                                            size="small" 
-                                                            variant="contained" 
+                                                        <Button
+                                                            size="small"
+                                                            variant="contained"
                                                             color="primary"
                                                             startIcon={<PaymentIcon />}
                                                             onClick={() => navigate(`/payment/${reservation.id}`)}
@@ -373,12 +373,12 @@ const MyReservations = () => {
                                                         </Button>
                                                     </Tooltip>
                                                 )}
-                                                
+
                                                 {reservation.status === 'PENDIENTE' && !isReservationExpired && (
                                                     <Tooltip title="Cancelar reserva">
-                                                        <Button 
-                                                            size="small" 
-                                                            variant="outlined" 
+                                                        <Button
+                                                            size="small"
+                                                            variant="outlined"
                                                             color="error"
                                                             startIcon={<CancelIcon />}
                                                             onClick={() => handleCancelReservation(reservation)}
@@ -387,11 +387,11 @@ const MyReservations = () => {
                                                         </Button>
                                                     </Tooltip>
                                                 )}
-                                                
+
                                                 {reservation.status === 'PAGADA' && (
                                                     <Tooltip title="Ver comprobante">
-                                                        <Button 
-                                                            size="small" 
+                                                        <Button
+                                                            size="small"
                                                             variant="outlined"
                                                             startIcon={<ReceiptIcon />}
                                                             onClick={() => openReceipt(reservation)}
@@ -411,10 +411,10 @@ const MyReservations = () => {
             </Container>
 
             {/* Diálogo del Comprobante */}
-            <Dialog 
-                open={receiptOpen} 
-                onClose={() => setReceiptOpen(false)} 
-                maxWidth="md" 
+            <Dialog
+                open={receiptOpen}
+                onClose={() => setReceiptOpen(false)}
+                maxWidth="md"
                 fullWidth
                 PaperProps={{
                     sx: {
@@ -427,16 +427,16 @@ const MyReservations = () => {
                     }
                 }}
             >
-                <DialogTitle sx={{ 
-                    bgcolor: 'var(--primary)', 
+                <DialogTitle sx={{
+                    bgcolor: 'var(--primary)',
                     color: 'white',
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center'
                 }}>
                     <Typography variant="h6">Comprobante de Reserva</Typography>
-                    <IconButton 
-                        onClick={() => setReceiptOpen(false)} 
+                    <IconButton
+                        onClick={() => setReceiptOpen(false)}
                         sx={{ color: 'white' }}
                         className="no-print"
                     >
@@ -564,7 +564,7 @@ const MyReservations = () => {
                             <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
                                 DETALLE DE PAGO
                             </Typography>
-                            
+
                             {/* Subtotal */}
                             <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
                                 <Typography variant="body2">Subtotal:</Typography>
@@ -616,9 +616,9 @@ const MyReservations = () => {
                                         <Grid item xs={6}>
                                             <Typography variant="caption" color="text.secondary">Método de pago</Typography>
                                             <Typography variant="body2">
-                                                {paymentInfo.paymentMethod === 'CREDIT_CARD' ? 'Tarjeta de Crédito' : 
-                                                 paymentInfo.paymentMethod === 'DEBIT_CARD' ? 'Tarjeta de Débito' : 
-                                                 paymentInfo.paymentMethod || "N/A"}
+                                                {paymentInfo.paymentMethod === 'CREDIT_CARD' ? 'Tarjeta de Crédito' :
+                                                    paymentInfo.paymentMethod === 'DEBIT_CARD' ? 'Tarjeta de Débito' :
+                                                        paymentInfo.paymentMethod || "N/A"}
                                             </Typography>
                                         </Grid>
                                         <Grid item xs={6}>
@@ -636,9 +636,9 @@ const MyReservations = () => {
                             <Divider sx={{ my: 2 }} />
 
                             {/* Monto total */}
-                            <Box sx={{ 
-                                display: 'flex', 
-                                justifyContent: 'space-between', 
+                            <Box sx={{
+                                display: 'flex',
+                                justifyContent: 'space-between',
                                 alignItems: 'center',
                                 p: 2,
                                 bgcolor: '#e3f2fd',
@@ -661,16 +661,16 @@ const MyReservations = () => {
                     )}
                 </DialogContent>
                 <DialogActions sx={{ p: 2, justifyContent: 'center', className: 'no-print' }}>
-                    <Button 
-                        variant="contained" 
+                    <Button
+                        variant="contained"
                         onClick={handlePrint}
                         startIcon={<PrintIcon />}
                         sx={{ bgcolor: '#1565c0' }}
                     >
                         Imprimir / Guardar PDF
                     </Button>
-                    <Button 
-                        variant="outlined" 
+                    <Button
+                        variant="outlined"
                         onClick={() => setReceiptOpen(false)}
                     >
                         Cerrar
@@ -703,4 +703,4 @@ const MyReservations = () => {
     );
 };
 
-export default MyReservations;
+export default MyBookings;

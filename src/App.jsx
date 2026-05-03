@@ -22,8 +22,8 @@ import PersonAddEdit from './components/PersonAddEdit';
 import ReservationList from './components/ReservationList';
 import ReservationForm from './components/ReservationForm';
 import BookingPage from './components/BookingPage';
-import MyReservations from './components/MyReservations';
-import ReservationDetails from './components/ReservationDetails';
+import MyBookings from './components/MyBookings';
+import BookingDetails from './components/BookingDetails';
 import PaymentPage from './components/PaymentPage';
 import MyProfile from './components/MyProfile';
 import AuthSync from './components/AuthSync';
@@ -60,8 +60,8 @@ function App() {
 
                 {/* Rutas de Usuario */}
                 <Route path="/booking/:id" element={<PrivateRoute element={<BookingPage />} />} />
-                <Route path="/my-reservations" element={<PrivateRoute element={<MyReservations />} />} />
-                <Route path="/reservation-details/:id" element={<PrivateRoute element={<ReservationDetails />} />} />
+                <Route path="/my-reservations" element={<PrivateRoute element={<MyBookings />} />} />
+                <Route path="/reservation-details/:id" element={<PrivateRoute element={<BookingDetails />} />} />
                 <Route path="/payment/:id" element={<PrivateRoute element={<PaymentPage />} />} />
                 <Route path="/profile" element={<PrivateRoute element={<MyProfile />} />} />
 
