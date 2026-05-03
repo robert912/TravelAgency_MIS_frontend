@@ -218,9 +218,6 @@ const PersonList = () => {
                         <Button variant="outlined" startIcon={<ArrowBackIcon />} onClick={() => navigate("/")} size="small">
                             Volver
                         </Button>
-                        <Button variant="outlined" startIcon={<RefreshIcon />} onClick={fetchPersons} size="small">
-                            Actualizar
-                        </Button>
                         <Button
                             variant="contained"
                             startIcon={<PersonAddIcon />}

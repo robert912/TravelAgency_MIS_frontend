@@ -1,84 +1,75 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-    Box, Paper, Typography, Table, TableBody, TableCell, TableContainer,
-    TableHead, TableRow, TablePagination, IconButton, Chip, TextField,
-    InputAdornment, Button, Stack, Tooltip, Grid, FormControl,
-    InputLabel, Select, MenuItem, Dialog, DialogTitle, DialogContent,
-    DialogContentText, DialogActions, CircularProgress, Card, CardContent,
-    Accordion, AccordionSummary, AccordionDetails, Divider, Alert
+    Box, Button, Typography, Table, TableBody, TableCell,
+    TableContainer, TableHead, TableRow, Paper, Chip,
+    IconButton, TextField, InputAdornment, Menu, MenuItem,
+    Pagination, Stack, FormControl, InputLabel, Select,
+    Tooltip, TableSortLabel, Badge, Dialog, DialogTitle,
+    DialogContent, DialogActions, Grid, Divider, Rating,
+    Avatar, LinearProgress, CircularProgress, Tab, Tabs,
+    Accordion, AccordionSummary, AccordionDetails
 } from "@mui/material";
 import {
     Edit as EditIcon,
+    Delete as DeleteIcon,
+    Visibility as ViewIcon,
     Search as SearchIcon,
-    Clear as ClearIcon,
-    Visibility as VisibilityIcon,
-    CheckCircle as CheckCircleIcon,
-    Cancel as CancelIcon,
-    Pending as PendingIcon,
-    Schedule as ScheduleIcon,
+    Close as CloseIcon,
+    ArrowBack as ArrowBackIcon,
     Person as PersonIcon,
-    CardTravel as PackageIcon,
-    ExpandMore as ExpandMoreIcon,
+    Email as EmailIcon,
+    Phone as PhoneIcon,
+    Badge as BadgeIcon,
+    Public as PublicIcon,
+    CheckCircle as CheckIcon,
+    Cancel as CancelIcon,
+    Refresh as RefreshIcon,
+    Add as AddIcon,
     Receipt as ReceiptIcon,
     Print as PrintIcon,
-    Close as CloseIcon
+    Pending as PendingIcon,
+    Schedule as ScheduleIcon,
+    ExpandMore as ExpandMoreIcon,
+    CardTravel as PackageIcon,
+    AttachMoney as MoneyIcon,
+    Discount as DiscountIcon,
+    Info as InfoIcon
 } from "@mui/icons-material";
 import Swal from 'sweetalert2';
 import reservationService from "../services/reservation.service";
 import dayjs from 'dayjs';
-import relativeTime from 'dayjs/plugin/relativeTime';
 import 'dayjs/locale/es';
 
-dayjs.extend(relativeTime);
 dayjs.locale('es');
 
 const ReservationList = () => {
     const navigate = useNavigate();
-    const [loading, setLoading] = useState(true);
     const [reservations, setReservations] = useState([]);
     const [filteredReservations, setFilteredReservations] = useState([]);
-    const [page, setPage] = useState(0);
-    const [rowsPerPage, setRowsPerPage] = useState(10);
+    const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState("");
     const [statusFilter, setStatusFilter] = useState("all");
-    const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
-    const [selectedReservation, setSelectedReservation] = useState(null);
+    const [orderBy, setOrderBy] = useState("id");
+    const [order, setOrder] = useState("desc");
+    const [page, setPage] = useState(1);
+    const [rowsPerPage, setRowsPerPage] = useState(10);
     const [passengersMap, setPassengersMap] = useState({});
     const [expandedRow, setExpandedRow] = useState(null);
     const [receiptOpen, setReceiptOpen] = useState(false);
     const [currentReceipt, setCurrentReceipt] = useState(null);
 
+    // Estados para el modal
+    const [modalOpen, setModalOpen] = useState(false);
+    const [selectedReservation, setSelectedReservation] = useState(null);
+    const [modalLoading, setModalLoading] = useState(false);
+    const [modalTab, setModalTab] = useState(0);
+
     const statusColors = {
         PENDIENTE: { bg: '#fff3e0', color: '#e65100', icon: <PendingIcon sx={{ fontSize: 16 }} /> },
-        PAGADA: { bg: '#e8f5e9', color: '#2e7d32', icon: <CheckCircleIcon sx={{ fontSize: 16 }} /> },
+        PAGADA: { bg: '#e8f5e9', color: '#2e7d32', icon: <CheckIcon sx={{ fontSize: 16 }} /> },
         CANCELADA: { bg: '#ffebee', color: '#c62828', icon: <CancelIcon sx={{ fontSize: 16 }} /> },
         EXPIRADA: { bg: '#f5f5f5', color: '#757575', icon: <ScheduleIcon sx={{ fontSize: 16 }} /> }
-    };
-
-    useEffect(() => {
-        fetchReservations();
-    }, []);
-
-    const fetchReservations = async () => {
-        setLoading(true);
-        try {
-            const response = await reservationService.getAll();
-            const data = response.data?.data || response.data || [];
-            setReservations(data);
-            setFilteredReservations(data);
-
-            for (const reservation of data) {
-                await loadPassengersForReservation(reservation.id);
-            }
-
-            await checkAndUpdateExpiredReservations(data);
-        } catch (error) {
-            console.error("Error cargando reservas:", error);
-            Swal.fire('Error', 'No se pudieron cargar las reservas', 'error');
-        } finally {
-            setLoading(false);
-        }
     };
 
     const loadPassengersForReservation = async (reservationId) => {
@@ -89,6 +80,29 @@ const ReservationList = () => {
         } catch (error) {
             console.error(`Error cargando pasajeros para reserva ${reservationId}:`, error);
             setPassengersMap(prev => ({ ...prev, [reservationId]: [] }));
+        }
+    };
+
+    const fetchReservations = async () => {
+        setLoading(true);
+        try {
+            const response = await reservationService.getAll();
+            const data = response.data?.data || response.data || [];
+            const reservationsArray = Array.isArray(data) ? data : [];
+            setReservations(reservationsArray);
+            setFilteredReservations(reservationsArray);
+
+            // Cargar pasajeros para cada reserva
+            for (const reservation of reservationsArray) {
+                await loadPassengersForReservation(reservation.id);
+            }
+
+            await checkAndUpdateExpiredReservations(reservationsArray);
+        } catch (error) {
+            console.error("Error al obtener reservas", error);
+            Swal.fire('Error', 'No se pudieron cargar las reservas', 'error');
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -106,48 +120,65 @@ const ReservationList = () => {
                     console.error(`Error actualizando reserva ${reservation.id}:`, error);
                 }
             }
-
+            // Recargar después de actualizar expiradas
             if (expiredReservations.length > 0) {
-                Swal.fire({
-                    title: 'Reservas Expiradas',
-                    html: `${expiredReservations.length} reserva(s) han sido actualizadas a estado EXPIRADA`,
-                    icon: 'info',
-                    timer: 3000,
-                    showConfirmButton: false
-                });
                 fetchReservations();
             }
         }
     };
 
-    const handleChangePage = (event, newPage) => {
-        setPage(newPage);
-    };
+    useEffect(() => {
+        fetchReservations();
+    }, []);
 
-    const handleChangeRowsPerPage = (event) => {
-        setRowsPerPage(parseInt(event.target.value, 10));
-        setPage(0);
-    };
+    // Filtrar y ordenar
+    useEffect(() => {
+        let result = [...reservations];
 
-    const handleSearch = (event) => {
-        const value = event.target.value.toLowerCase();
-        setSearchTerm(value);
+        if (searchTerm) {
+            result = result.filter(res =>
+                res.id?.toString().includes(searchTerm) ||
+                res.person?.fullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                res.tourPackage?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                res.tourPackage?.destination?.toLowerCase().includes(searchTerm.toLowerCase())
+            );
+        }
 
-        const filtered = reservations.filter(res =>
-            res.id?.toString().includes(value) ||
-            res.person?.fullName?.toLowerCase().includes(value) ||
-            res.tourPackage?.name?.toLowerCase().includes(value) ||
-            res.tourPackage?.destination?.toLowerCase().includes(value)
-        );
+        if (statusFilter !== "all") {
+            result = result.filter(res => res.status === statusFilter);
+        }
 
-        setFilteredReservations(filtered);
-        setPage(0);
-    };
+        result.sort((a, b) => {
+            let aVal = a[orderBy];
+            let bVal = b[orderBy];
 
-    const clearSearch = () => {
-        setSearchTerm("");
-        setFilteredReservations(reservations);
-        setPage(0);
+            if (orderBy === "fullName") {
+                aVal = a.person?.fullName?.toLowerCase() || '';
+                bVal = b.person?.fullName?.toLowerCase() || '';
+            }
+            if (orderBy === "packageName") {
+                aVal = a.tourPackage?.name?.toLowerCase() || '';
+                bVal = b.tourPackage?.name?.toLowerCase() || '';
+            }
+
+            if (typeof aVal === 'string') {
+                aVal = aVal?.toLowerCase() || '';
+                bVal = bVal?.toLowerCase() || '';
+            }
+
+            if (aVal < bVal) return order === "asc" ? -1 : 1;
+            if (aVal > bVal) return order === "asc" ? 1 : -1;
+            return 0;
+        });
+
+        setFilteredReservations(result);
+        setPage(1);
+    }, [searchTerm, statusFilter, orderBy, order, reservations]);
+
+    const handleRequestSort = (property) => {
+        const isAsc = orderBy === property && order === "asc";
+        setOrder(isAsc ? "desc" : "asc");
+        setOrderBy(property);
     };
 
     const handleView = (reservation) => {
@@ -216,7 +247,7 @@ const ReservationList = () => {
         const style = statusColors[status] || statusColors.PENDIENTE;
         return (
             <Chip
-                label={status}
+                label={status === 'PENDIENTE' ? 'Pendiente' : status === 'PAGADA' ? 'Pagada' : status === 'CANCELADA' ? 'Cancelada' : 'Expirada'}
                 size="small"
                 icon={style.icon}
                 sx={{ bgcolor: style.bg, color: style.color, fontWeight: 'bold' }}
@@ -224,22 +255,13 @@ const ReservationList = () => {
         );
     };
 
-    const isExpired = (expirationDate) => {
-        return dayjs(expirationDate).isBefore(dayjs());
-    };
-
-    const getTotalPassengers = (reservationId) => {
-        return passengersMap[reservationId]?.length || 0;
-    };
-
     const getTotalAmount = (reservation) => {
         if (reservation.totalAmount) return reservation.totalAmount;
         const price = reservation.tourPackage?.price || 0;
-        const passengers = getTotalPassengers(reservation.id);
+        const passengers = passengersMap[reservation.id]?.length || reservation.passengersCount || 1;
         return price * passengers;
     };
 
-    // Parsear descuentos
     const parseDiscountDetails = (discountDetails) => {
         if (!discountDetails) return [];
         try {
@@ -252,170 +274,193 @@ const ReservationList = () => {
         }
     };
 
-    if (loading && reservations.length === 0) {
-        return (
-            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
-                <CircularProgress />
-            </Box>
-        );
-    }
+    const isExpired = (expirationDate) => {
+        return dayjs(expirationDate).isBefore(dayjs());
+    };
+
+    // Paginación
+    const paginatedReservations = filteredReservations.slice(
+        (page - 1) * rowsPerPage,
+        page * rowsPerPage
+    );
+
+    const totalPages = Math.ceil(filteredReservations.length / rowsPerPage);
+
+    const columns = [
+        { id: 'id', label: 'ID', width: 70, numeric: true },
+        { id: 'fullName', label: 'Cliente', width: 180 },
+        { id: 'packageName', label: 'Paquete', width: 200 },
+        { id: 'passengers', label: 'Pasajeros', width: 100, numeric: true },
+        { id: 'totalAmount', label: 'Total', width: 120, numeric: true },
+        { id: 'reservationDate', label: 'Fecha Reserva', width: 150 },
+        { id: 'expirationDate', label: 'Expiración', width: 150 },
+        { id: 'status', label: 'Estado', width: 110 },
+        { id: 'actions', label: 'Acciones', width: 180, align: 'center' }
+    ];
 
     return (
-        <Box sx={{ p: 3, bgcolor: '#f5f7fa', minHeight: '100vh' }}>
-            <Paper elevation={0} sx={{ borderRadius: 3, overflow: 'hidden' }}>
-                {/* Header */}
-                <Box sx={{
-                    background: 'linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%)',
-                    color: 'white',
-                    p: 4
-                }}>
-                    <Typography variant="overline" sx={{ opacity: 0.9, letterSpacing: 1.5 }}>
-                        GESTIÓN DE RESERVAS
-                    </Typography>
-                    <Typography variant="h4" fontWeight="bold">
-                        Administrador de Reservas
-                    </Typography>
-                    <Typography variant="body2" sx={{ opacity: 0.8, mt: 0.5 }}>
-                        Total: {filteredReservations.length} reservas
-                    </Typography>
+        <Box sx={{ p: 3, bgcolor: '#f5f5f5', minHeight: '100vh' }}>
+            {/* Header y filtros */}
+            <Paper elevation={0} sx={{ p: 3, mb: 3, borderRadius: 2 }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
+                    <Box>
+                        <Typography variant="h5" fontWeight="bold" gutterBottom>
+                            Administración de Reservas
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                            Gestiona todas las reservas del sistema: {filteredReservations.length} registros encontrados
+                            {reservations.length > 0 && (
+                                <span style={{ marginLeft: '8px' }}>
+                                    | Pendientes: {reservations.filter(r => r.status === 'PENDIENTE').length}
+                                </span>
+                            )}
+                        </Typography>
+                    </Box>
+                    <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+                        <Button variant="outlined" startIcon={<ArrowBackIcon />} onClick={() => navigate("/")} size="small">
+                            Volver
+                        </Button>
+                        <Button variant="outlined" startIcon={<RefreshIcon />} onClick={fetchReservations} size="small">
+                            Actualizar
+                        </Button>
+                    </Box>
                 </Box>
+            </Paper>
 
-                {/* Stats Cards */}
-                <Box sx={{ p: 3, borderBottom: '1px solid #e2e8f0' }}>
-                    <Grid container spacing={2}>
-                        <Grid item xs={6} sm={4} md={3}>
-                            <Card sx={{ bgcolor: '#fff3e0', cursor: 'pointer' }} onClick={() => setStatusFilter('PENDIENTE')}>
-                                <CardContent sx={{ textAlign: 'center', p: 2 }}>
-                                    <PendingIcon sx={{ color: '#e65100', fontSize: 30 }} />
-                                    <Typography variant="h6">
-                                        {reservations.filter(r => r.status === 'PENDIENTE').length}
-                                    </Typography>
-                                    <Typography variant="caption">Pendientes</Typography>
-                                </CardContent>
-                            </Card>
-                        </Grid>
-                        <Grid item xs={6} sm={4} md={3}>
-                            <Card sx={{ bgcolor: '#e8f5e9', cursor: 'pointer' }} onClick={() => setStatusFilter('PAGADA')}>
-                                <CardContent sx={{ textAlign: 'center', p: 2 }}>
-                                    <CheckCircleIcon sx={{ color: '#2e7d32', fontSize: 30 }} />
-                                    <Typography variant="h6">
-                                        {reservations.filter(r => r.status === 'PAGADA').length}
-                                    </Typography>
-                                    <Typography variant="caption">Pagadas</Typography>
-                                </CardContent>
-                            </Card>
-                        </Grid>
-                        <Grid item xs={6} sm={4} md={3}>
-                            <Card sx={{ bgcolor: '#ffebee', cursor: 'pointer' }} onClick={() => setStatusFilter('CANCELADA')}>
-                                <CardContent sx={{ textAlign: 'center', p: 2 }}>
-                                    <CancelIcon sx={{ color: '#c62828', fontSize: 30 }} />
-                                    <Typography variant="h6">
-                                        {reservations.filter(r => r.status === 'CANCELADA').length}
-                                    </Typography>
-                                    <Typography variant="caption">Canceladas</Typography>
-                                </CardContent>
-                            </Card>
-                        </Grid>
-                        <Grid item xs={6} sm={4} md={3}>
-                            <Card sx={{ bgcolor: '#f5f5f5', cursor: 'pointer' }} onClick={() => setStatusFilter('EXPIRADA')}>
-                                <CardContent sx={{ textAlign: 'center', p: 2 }}>
-                                    <ScheduleIcon sx={{ color: '#757575', fontSize: 30 }} />
-                                    <Typography variant="h6">
-                                        {reservations.filter(r => r.status === 'EXPIRADA').length}
-                                    </Typography>
-                                    <Typography variant="caption">Expiradas</Typography>
-                                </CardContent>
-                            </Card>
-                        </Grid>
-                    </Grid>
-                </Box>
+            {/* Stats Cards */}
+            <Grid container spacing={2} sx={{ mb: 3 }}>
+                <Grid item xs={6} sm={3}>
+                    <Paper sx={{ p: 2, textAlign: 'center', bgcolor: '#fff3e0', cursor: 'pointer' }} onClick={() => { setStatusFilter("PENDIENTE"); setPage(1); }}>
+                        <PendingIcon sx={{ color: '#e65100', fontSize: 30 }} />
+                        <Typography variant="h6">{reservations.filter(r => r.status === 'PENDIENTE').length}</Typography>
+                        <Typography variant="caption">Pendientes</Typography>
+                    </Paper>
+                </Grid>
+                <Grid item xs={6} sm={3}>
+                    <Paper sx={{ p: 2, textAlign: 'center', bgcolor: '#e8f5e9', cursor: 'pointer' }} onClick={() => { setStatusFilter("PAGADA"); setPage(1); }}>
+                        <CheckIcon sx={{ color: '#2e7d32', fontSize: 30 }} />
+                        <Typography variant="h6">{reservations.filter(r => r.status === 'PAGADA').length}</Typography>
+                        <Typography variant="caption">Pagadas</Typography>
+                    </Paper>
+                </Grid>
+                <Grid item xs={6} sm={3}>
+                    <Paper sx={{ p: 2, textAlign: 'center', bgcolor: '#ffebee', cursor: 'pointer' }} onClick={() => { setStatusFilter("CANCELADA"); setPage(1); }}>
+                        <CancelIcon sx={{ color: '#c62828', fontSize: 30 }} />
+                        <Typography variant="h6">{reservations.filter(r => r.status === 'CANCELADA').length}</Typography>
+                        <Typography variant="caption">Canceladas</Typography>
+                    </Paper>
+                </Grid>
+                <Grid item xs={6} sm={3}>
+                    <Paper sx={{ p: 2, textAlign: 'center', bgcolor: '#f5f5f5', cursor: 'pointer' }} onClick={() => { setStatusFilter("EXPIRADA"); setPage(1); }}>
+                        <ScheduleIcon sx={{ color: '#757575', fontSize: 30 }} />
+                        <Typography variant="h6">{reservations.filter(r => r.status === 'EXPIRADA').length}</Typography>
+                        <Typography variant="caption">Expiradas</Typography>
+                    </Paper>
+                </Grid>
+            </Grid>
 
-                {/* Filtros */}
-                <Box sx={{ p: 3, borderBottom: '1px solid #e2e8f0' }}>
-                    <Grid container spacing={2} alignItems="center">
-                        <Grid item xs={12} md={6}>
-                            <TextField
-                                fullWidth
-                                placeholder="Buscar por ID, cliente, paquete o destino..."
-                                value={searchTerm}
-                                onChange={handleSearch}
-                                size="small"
-                                InputProps={{
-                                    startAdornment: (
-                                        <InputAdornment position="start">
-                                            <SearchIcon color="action" />
-                                        </InputAdornment>
-                                    ),
-                                    endAdornment: searchTerm && (
-                                        <InputAdornment position="end">
-                                            <IconButton size="small" onClick={clearSearch}>
-                                                <ClearIcon />
-                                            </IconButton>
-                                        </InputAdornment>
-                                    )
-                                }}
-                            />
-                        </Grid>
-                        <Grid item xs={12} md={6}>
-                            <FormControl fullWidth size="small">
-                                <InputLabel>Estado</InputLabel>
-                                <Select
-                                    value={statusFilter}
-                                    onChange={(e) => {
-                                        setStatusFilter(e.target.value);
-                                        if (e.target.value === 'all') {
-                                            setFilteredReservations(reservations);
-                                        } else {
-                                            setFilteredReservations(reservations.filter(r => r.status === e.target.value));
-                                        }
-                                        setPage(0);
-                                    }}
-                                    label="Estado"
-                                >
-                                    <MenuItem value="all">Todos</MenuItem>
-                                    <MenuItem value="PENDIENTE">Pendientes</MenuItem>
-                                    <MenuItem value="PAGADA">Pagadas</MenuItem>
-                                    <MenuItem value="CANCELADA">Canceladas</MenuItem>
-                                    <MenuItem value="EXPIRADA">Expiradas</MenuItem>
-                                </Select>
-                            </FormControl>
-                        </Grid>
-                    </Grid>
-                </Box>
+            {/* Filtros */}
+            <Paper elevation={0} sx={{ p: 2, mb: 3, borderRadius: 2 }}>
+                <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems="center">
+                    <TextField
+                        placeholder="Buscar por ID, cliente, paquete o destino..."
+                        size="small"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        sx={{ flex: 2 }}
+                        InputProps={{
+                            startAdornment: (
+                                <InputAdornment position="start">
+                                    <SearchIcon fontSize="small" />
+                                </InputAdornment>
+                            ),
+                        }}
+                    />
 
-                {/* Tabla */}
-                <TableContainer>
-                    <Table>
-                        <TableHead sx={{ bgcolor: '#f8fafc' }}>
-                            <TableRow>
-                                <TableCell sx={{ fontWeight: 'bold' }}>ID</TableCell>
-                                <TableCell sx={{ fontWeight: 'bold' }}>Cliente</TableCell>
-                                <TableCell sx={{ fontWeight: 'bold' }}>Paquete</TableCell>
-                                <TableCell sx={{ fontWeight: 'bold' }}>Pasajeros</TableCell>
-                                <TableCell sx={{ fontWeight: 'bold' }}>Total</TableCell>
-                                <TableCell sx={{ fontWeight: 'bold' }}>Fecha Reserva</TableCell>
-                                <TableCell sx={{ fontWeight: 'bold' }}>Expiración</TableCell>
-                                <TableCell sx={{ fontWeight: 'bold' }}>Estado</TableCell>
-                                <TableCell sx={{ fontWeight: 'bold' }} align="center">Acciones</TableCell>
+                    <FormControl size="small" sx={{ minWidth: 150 }}>
+                        <InputLabel>Estado</InputLabel>
+                        <Select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} label="Estado">
+                            <MenuItem value="all">Todos</MenuItem>
+                            <MenuItem value="PENDIENTE">Pendientes</MenuItem>
+                            <MenuItem value="PAGADA">Pagadas</MenuItem>
+                            <MenuItem value="CANCELADA">Canceladas</MenuItem>
+                            <MenuItem value="EXPIRADA">Expiradas</MenuItem>
+                        </Select>
+                    </FormControl>
+
+                    <FormControl size="small" sx={{ minWidth: 100 }}>
+                        <InputLabel>Mostrar</InputLabel>
+                        <Select value={rowsPerPage} onChange={(e) => setRowsPerPage(e.target.value)} label="Mostrar">
+                            <MenuItem value={10}>10</MenuItem>
+                            <MenuItem value={25}>25</MenuItem>
+                            <MenuItem value={50}>50</MenuItem>
+                            <MenuItem value={100}>100</MenuItem>
+                        </Select>
+                    </FormControl>
+                </Stack>
+            </Paper>
+
+            {/* Tabla */}
+            <Paper elevation={0} sx={{ borderRadius: 2, overflow: 'hidden' }}>
+                <TableContainer sx={{ overflowX: 'auto' }}>
+                    <Table stickyHeader size="medium">
+                        <TableHead>
+                            <TableRow sx={{ bgcolor: '#fafafa' }}>
+                                {columns.map((col) => (
+                                    <TableCell
+                                        key={col.id}
+                                        align={col.align || (col.numeric ? 'right' : 'left')}
+                                        sx={{ width: col.width, fontWeight: 'bold', bgcolor: '#fafafa' }}
+                                    >
+                                        {col.id !== 'actions' ? (
+                                            <TableSortLabel
+                                                active={orderBy === col.id}
+                                                direction={orderBy === col.id ? order : 'asc'}
+                                                onClick={() => handleRequestSort(col.id)}
+                                            >
+                                                {col.label}
+                                            </TableSortLabel>
+                                        ) : (
+                                            col.label
+                                        )}
+                                    </TableCell>
+                                ))}
                             </TableRow>
                         </TableHead>
                         <TableBody>
-                            {filteredReservations
-                                .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                                .map((reservation) => {
+                            {loading ? (
+                                <TableRow>
+                                    <TableCell colSpan={columns.length} align="center" sx={{ py: 8 }}>
+                                        <LinearProgress sx={{ maxWidth: 400, mx: 'auto', mb: 2 }} />
+                                        <Typography>Cargando reservas...</Typography>
+                                    </TableCell>
+                                </TableRow>
+                            ) : paginatedReservations.length === 0 ? (
+                                <TableRow>
+                                    <TableCell colSpan={columns.length} align="center" sx={{ py: 8 }}>
+                                        <Typography variant="h6" color="text.secondary" gutterBottom>
+                                            No hay reservas que coincidan con los filtros
+                                        </Typography>
+                                        <Button variant="outlined" onClick={() => { setSearchTerm(""); setStatusFilter("all"); }} sx={{ mt: 2 }}>
+                                            Limpiar filtros
+                                        </Button>
+                                    </TableCell>
+                                </TableRow>
+                            ) : (
+                                paginatedReservations.map((reservation) => {
                                     const passengers = passengersMap[reservation.id] || [];
                                     const isReservationExpired = isExpired(reservation.expirationDate);
                                     const discountDetails = parseDiscountDetails(reservation.discountDetails);
 
                                     return (
-                                        <>
-                                            <TableRow key={reservation.id} hover>
+                                        <React.Fragment key={reservation.id}>
+                                            <TableRow hover>
                                                 <TableCell>#{reservation.id}</TableCell>
                                                 <TableCell>
                                                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                                         <PersonIcon fontSize="small" color="action" />
                                                         <Box>
-                                                            <Typography variant="body2">
+                                                            <Typography variant="body2" fontWeight="500">
                                                                 {reservation.person?.fullName || 'N/A'}
                                                             </Typography>
                                                             <Typography variant="caption" color="text.secondary">
@@ -426,7 +471,7 @@ const ReservationList = () => {
                                                 </TableCell>
                                                 <TableCell>
                                                     <Box>
-                                                        <Typography variant="body2">
+                                                        <Typography variant="body2" fontWeight="500">
                                                             {reservation.tourPackage?.name || 'N/A'}
                                                         </Typography>
                                                         <Typography variant="caption" color="text.secondary">
@@ -434,18 +479,18 @@ const ReservationList = () => {
                                                         </Typography>
                                                     </Box>
                                                 </TableCell>
-                                                <TableCell>
+                                                <TableCell align="center">
                                                     <Button
                                                         size="small"
                                                         variant="text"
                                                         onClick={() => setExpandedRow(expandedRow === reservation.id ? null : reservation.id)}
                                                         startIcon={<PersonIcon fontSize="small" />}
                                                     >
-                                                        {passengers.length} persona(s)
+                                                        {passengers.length || reservation.passengersCount || 1} persona(s)
                                                     </Button>
                                                 </TableCell>
-                                                <TableCell>
-                                                    <Typography variant="body2" fontWeight="bold" color="primary">
+                                                <TableCell align="right">
+                                                    <Typography fontWeight="bold" color="primary.main">
                                                         ${getTotalAmount(reservation).toLocaleString()}
                                                     </Typography>
                                                 </TableCell>
@@ -468,13 +513,13 @@ const ReservationList = () => {
                                                 <TableCell align="center">
                                                     <Stack direction="row" spacing={1} justifyContent="center">
                                                         <Tooltip title="Ver detalles">
-                                                            <IconButton size="small" onClick={() => handleView(reservation)}>
-                                                                <VisibilityIcon />
+                                                            <IconButton size="small" color="info" onClick={() => handleView(reservation)}>
+                                                                <ViewIcon fontSize="small" />
                                                             </IconButton>
                                                         </Tooltip>
                                                         <Tooltip title="Editar">
-                                                            <IconButton size="small" onClick={() => handleEdit(reservation)}>
-                                                                <EditIcon />
+                                                            <IconButton size="small" color="primary" onClick={() => handleEdit(reservation)}>
+                                                                <EditIcon fontSize="small" />
                                                             </IconButton>
                                                         </Tooltip>
                                                         {reservation.status === 'PENDIENTE' && !isReservationExpired && (
@@ -485,7 +530,7 @@ const ReservationList = () => {
                                                                         onClick={() => handleStatusChange(reservation, 'PAGADA')}
                                                                         sx={{ color: '#2e7d32' }}
                                                                     >
-                                                                        <CheckCircleIcon />
+                                                                        <CheckIcon fontSize="small" />
                                                                     </IconButton>
                                                                 </Tooltip>
                                                                 <Tooltip title="Cancelar reserva">
@@ -494,7 +539,7 @@ const ReservationList = () => {
                                                                         onClick={() => handleStatusChange(reservation, 'CANCELADA')}
                                                                         sx={{ color: '#d32f2f' }}
                                                                     >
-                                                                        <CancelIcon />
+                                                                        <CancelIcon fontSize="small" />
                                                                     </IconButton>
                                                                 </Tooltip>
                                                             </>
@@ -506,7 +551,7 @@ const ReservationList = () => {
                                                                     onClick={() => openReceipt(reservation)}
                                                                     sx={{ color: '#1565c0' }}
                                                                 >
-                                                                    <ReceiptIcon />
+                                                                    <ReceiptIcon fontSize="small" />
                                                                 </IconButton>
                                                             </Tooltip>
                                                         )}
@@ -521,40 +566,41 @@ const ReservationList = () => {
                                                         <Accordion expanded={true} sx={{ boxShadow: 'none', border: '1px solid #e2e8f0' }}>
                                                             <AccordionSummary expandIcon={<ExpandMoreIcon />}>
                                                                 <Typography variant="subtitle2">
-                                                                    Lista de pasajeros ({passengers.length})
+                                                                    Lista de pasajeros ({passengers.length || reservation.passengersCount || 1})
                                                                 </Typography>
                                                             </AccordionSummary>
                                                             <AccordionDetails>
                                                                 <Grid container spacing={2}>
-                                                                    {passengers.map((passenger, idx) => (
-                                                                        <Grid item xs={12} sm={6} md={4} key={idx}>
-                                                                            <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
-                                                                                <Typography variant="subtitle2" gutterBottom color="primary">
-                                                                                    Pasajero {idx + 1}
-                                                                                </Typography>
-                                                                                <Typography variant="body2">
-                                                                                    <strong>Nombre:</strong> {passenger.person?.fullName}
-                                                                                </Typography>
-                                                                                <Typography variant="body2">
-                                                                                    <strong>Identificación:</strong> {passenger.person?.identification}
-                                                                                </Typography>
-                                                                                <Typography variant="body2">
-                                                                                    <strong>Email:</strong> {passenger.person?.email}
-                                                                                </Typography>
-                                                                                {passenger.person?.phone && (
-                                                                                    <Typography variant="body2">
-                                                                                        <strong>Teléfono:</strong> {passenger.person?.phone}
+                                                                    {passengers.length > 0 ? (
+                                                                        passengers.map((passenger, idx) => (
+                                                                            <Grid item xs={12} sm={6} md={4} key={idx}>
+                                                                                <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
+                                                                                    <Typography variant="subtitle2" gutterBottom color="primary">
+                                                                                        Pasajero {idx + 1}
                                                                                     </Typography>
-                                                                                )}
-                                                                                {passenger.person?.nationality && (
                                                                                     <Typography variant="body2">
-                                                                                        <strong>Nacionalidad:</strong> {passenger.person?.nationality}
+                                                                                        <strong>Nombre:</strong> {passenger.person?.fullName}
                                                                                     </Typography>
-                                                                                )}
-                                                                            </Paper>
-                                                                        </Grid>
-                                                                    ))}
-                                                                    {passengers.length === 0 && (
+                                                                                    <Typography variant="body2">
+                                                                                        <strong>Identificación:</strong> {passenger.person?.identification}
+                                                                                    </Typography>
+                                                                                    <Typography variant="body2">
+                                                                                        <strong>Email:</strong> {passenger.person?.email}
+                                                                                    </Typography>
+                                                                                    {passenger.person?.phone && (
+                                                                                        <Typography variant="body2">
+                                                                                            <strong>Teléfono:</strong> {passenger.person?.phone}
+                                                                                        </Typography>
+                                                                                    )}
+                                                                                    {passenger.person?.nationality && (
+                                                                                        <Typography variant="body2">
+                                                                                            <strong>Nacionalidad:</strong> {passenger.person?.nationality}
+                                                                                        </Typography>
+                                                                                    )}
+                                                                                </Paper>
+                                                                            </Grid>
+                                                                        ))
+                                                                    ) : (
                                                                         <Grid item xs={12}>
                                                                             <Typography variant="body2" color="text.secondary" align="center">
                                                                                 No hay pasajeros registrados
@@ -567,61 +613,27 @@ const ReservationList = () => {
                                                     </TableCell>
                                                 </TableRow>
                                             )}
-                                        </>
+                                        </React.Fragment>
                                     );
-                                })}
-                            {filteredReservations.length === 0 && (
-                                <TableRow>
-                                    <TableCell colSpan={9} align="center" sx={{ py: 8 }}>
-                                        <Typography variant="body1" color="text.secondary">
-                                            No se encontraron reservas
-                                        </Typography>
-                                    </TableCell>
-                                </TableRow>
+                                })
                             )}
                         </TableBody>
                     </Table>
                 </TableContainer>
 
-                {/* Paginación */}
-                <TablePagination
-                    rowsPerPageOptions={[5, 10, 25, 50]}
-                    component="div"
-                    count={filteredReservations.length}
-                    rowsPerPage={rowsPerPage}
-                    page={page}
-                    onPageChange={handleChangePage}
-                    onRowsPerPageChange={handleChangeRowsPerPage}
-                    labelRowsPerPage="Filas por página:"
-                    labelDisplayedRows={({ from, to, count }) => `${from}-${to} de ${count}`}
-                />
+                {filteredReservations.length > 0 && (
+                    <Box sx={{ p: 2, display: 'flex', justifyContent: 'flex-end' }}>
+                        <Pagination
+                            count={totalPages}
+                            page={page}
+                            onChange={(e, value) => setPage(value)}
+                            color="primary"
+                            showFirstButton
+                            showLastButton
+                        />
+                    </Box>
+                )}
             </Paper>
-
-            {/* Diálogo de confirmación para cancelar */}
-            <Dialog open={cancelDialogOpen} onClose={() => setCancelDialogOpen(false)}>
-                <DialogTitle>Confirmar cancelación</DialogTitle>
-                <DialogContent>
-                    <DialogContentText>
-                        ¿Estás seguro de que deseas cancelar esta reserva?
-                        Esta acción no se puede deshacer.
-                    </DialogContentText>
-                </DialogContent>
-                <DialogActions>
-                    <Button onClick={() => setCancelDialogOpen(false)}>No, volver</Button>
-                    <Button
-                        onClick={() => {
-                            if (selectedReservation) {
-                                handleStatusChange(selectedReservation, 'CANCELADA');
-                                setCancelDialogOpen(false);
-                            }
-                        }}
-                        color="error"
-                        variant="contained"
-                    >
-                        Sí, cancelar
-                    </Button>
-                </DialogActions>
-            </Dialog>
 
             {/* Diálogo del Comprobante */}
             <Dialog
@@ -631,7 +643,7 @@ const ReservationList = () => {
                 fullWidth
                 PaperProps={{
                     sx: {
-                        borderRadius: 3,
+                        borderRadius: 2,
                         '@media print': {
                             margin: 0,
                             padding: 0,
@@ -640,26 +652,21 @@ const ReservationList = () => {
                     }
                 }}
             >
-                <DialogTitle sx={{
-                    bgcolor: 'var(--primary)',
+                <DialogTitle className="no-print" sx={{
+                    bgcolor: 'var(--info)',
                     color: 'white',
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center'
                 }}>
-                    <Typography variant="h6">Comprobante de Reserva</Typography>
-                    <IconButton
-                        onClick={() => setReceiptOpen(false)}
-                        sx={{ color: 'white' }}
-                        className="no-print"
-                    >
+                    <Typography sx={{ color: 'white' }} variant="h6">Comprobante de Reserva</Typography>
+                    <IconButton onClick={() => setReceiptOpen(false)} sx={{ color: 'white' }}>
                         <CloseIcon />
                     </IconButton>
                 </DialogTitle>
                 <DialogContent sx={{ p: 4 }} id="receipt-content">
                     {currentReceipt && (
                         <>
-                            {/* Encabezado */}
                             <Box sx={{ textAlign: 'center', mb: 3 }}>
                                 <Typography variant="h5" fontWeight="bold" color="primary">
                                     COMPROBANTE DE RESERVA
@@ -671,10 +678,7 @@ const ReservationList = () => {
 
                             <Divider sx={{ my: 2 }} />
 
-                            {/* Información de la reserva */}
-                            <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
-                                INFORMACIÓN DE LA RESERVA
-                            </Typography>
+                            <Typography variant="subtitle1" fontWeight="bold" gutterBottom>INFORMACIÓN DE LA RESERVA</Typography>
                             <Grid container spacing={2} sx={{ mb: 3 }}>
                                 <Grid item xs={6}>
                                     <Typography variant="caption" color="text.secondary">Número de Reserva</Typography>
@@ -682,7 +686,7 @@ const ReservationList = () => {
                                 </Grid>
                                 <Grid item xs={6}>
                                     <Typography variant="caption" color="text.secondary">Estado</Typography>
-                                    <Typography variant="body1">{getStatusChip(currentReceipt.status)}</Typography>
+                                    <Box>{getStatusChip(currentReceipt.status)}</Box>
                                 </Grid>
                                 <Grid item xs={6}>
                                     <Typography variant="caption" color="text.secondary">Fecha de Reserva</Typography>
@@ -692,10 +696,7 @@ const ReservationList = () => {
 
                             <Divider sx={{ my: 2 }} />
 
-                            {/* Información del cliente */}
-                            <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
-                                INFORMACIÓN DEL CLIENTE
-                            </Typography>
+                            <Typography variant="subtitle1" fontWeight="bold" gutterBottom>INFORMACIÓN DEL CLIENTE</Typography>
                             <Grid container spacing={2} sx={{ mb: 3 }}>
                                 <Grid item xs={12}>
                                     <Typography variant="caption" color="text.secondary">Nombre</Typography>
@@ -717,10 +718,7 @@ const ReservationList = () => {
 
                             <Divider sx={{ my: 2 }} />
 
-                            {/* Información del paquete */}
-                            <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
-                                INFORMACIÓN DEL PAQUETE
-                            </Typography>
+                            <Typography variant="subtitle1" fontWeight="bold" gutterBottom>INFORMACIÓN DEL PAQUETE</Typography>
                             <Grid container spacing={2} sx={{ mb: 3 }}>
                                 <Grid item xs={12}>
                                     <Typography variant="caption" color="text.secondary">Paquete</Typography>
@@ -742,7 +740,6 @@ const ReservationList = () => {
 
                             <Divider sx={{ my: 2 }} />
 
-                            {/* Lista de pasajeros */}
                             {passengersMap[currentReceipt.id]?.length > 0 && (
                                 <>
                                     <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
@@ -775,30 +772,20 @@ const ReservationList = () => {
 
                             <Divider sx={{ my: 2 }} />
 
-                            {/* Detalle de precios y descuentos */}
-                            <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
-                                DETALLE DE PAGO
-                            </Typography>
+                            <Typography variant="subtitle1" fontWeight="bold" gutterBottom>DETALLE DE PAGO</Typography>
                             <Box sx={{ mb: 3 }}>
                                 <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
                                     <Typography variant="body2">Subtotal ({currentReceipt.passengersCount || 1} personas):</Typography>
                                     <Typography variant="body2">${(currentReceipt.subtotal || 0).toLocaleString()}</Typography>
                                 </Box>
 
-                                {/* Descuentos aplicados */}
-                                {currentReceipt.discountDetails && parseDiscountDetails(currentReceipt.discountDetails).length > 0 && (
+                                {parseDiscountDetails(currentReceipt.discountDetails).length > 0 && (
                                     <>
-                                        <Typography variant="subtitle2" gutterBottom sx={{ mt: 2 }}>
-                                            Descuentos aplicados:
-                                        </Typography>
+                                        <Typography variant="subtitle2" gutterBottom sx={{ mt: 2 }}>Descuentos aplicados:</Typography>
                                         {parseDiscountDetails(currentReceipt.discountDetails).map((discount, idx) => (
                                             <Box key={idx} sx={{ display: 'flex', justifyContent: 'space-between', mb: 1, ml: 2 }}>
-                                                <Typography variant="body2" color="success.main">
-                                                    {discount.name} - {discount.description}
-                                                </Typography>
-                                                <Typography variant="body2" color="success.main">
-                                                    -${Math.abs(discount.amount).toLocaleString()}
-                                                </Typography>
+                                                <Typography variant="body2" color="success.main">{discount.name}</Typography>
+                                                <Typography variant="body2" color="success.main">-${Math.abs(discount.amount).toLocaleString()}</Typography>
                                             </Box>
                                         ))}
                                         <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 1, mb: 1 }}>
@@ -812,24 +799,14 @@ const ReservationList = () => {
 
                                 <Divider sx={{ my: 2 }} />
 
-                                <Box sx={{
-                                    display: 'flex',
-                                    justifyContent: 'space-between',
-                                    alignItems: 'center',
-                                    p: 2,
-                                    bgcolor: '#e3f2fd',
-                                    borderRadius: 2
-                                }}>
-                                    <Typography variant="h6" fontWeight="bold">
-                                        TOTAL PAGADO
-                                    </Typography>
+                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: 2, bgcolor: '#e3f2fd', borderRadius: 2 }}>
+                                    <Typography variant="h6" fontWeight="bold">TOTAL PAGADO</Typography>
                                     <Typography variant="h5" color="primary" fontWeight="bold">
                                         ${(currentReceipt.totalAmount || getTotalAmount(currentReceipt)).toLocaleString()}
                                     </Typography>
                                 </Box>
                             </Box>
 
-                            {/* Pie de página */}
                             <Box sx={{ textAlign: 'center', mt: 3, pt: 2, borderTop: '1px dashed #ccc' }}>
                                 <Typography variant="caption" color="text.secondary">
                                     Este documento es un comprobante de reserva. Para cualquier consulta, contacte a nuestro servicio al cliente.
@@ -838,43 +815,20 @@ const ReservationList = () => {
                         </>
                     )}
                 </DialogContent>
-                <DialogActions sx={{ p: 2, justifyContent: 'center', className: 'no-print' }}>
-                    <Button
-                        variant="contained"
-                        onClick={handlePrint}
-                        startIcon={<PrintIcon />}
-                        sx={{ bgcolor: '#1565c0' }}
-                    >
+                <DialogActions className="no-print" sx={{ p: 2, justifyContent: 'center' }}>
+                    <Button variant="contained" onClick={handlePrint} startIcon={<PrintIcon />} sx={{ bgcolor: '#1565c0' }}>
                         Imprimir / Guardar PDF
                     </Button>
-                    <Button
-                        variant="outlined"
-                        onClick={() => setReceiptOpen(false)}
-                    >
-                        Cerrar
-                    </Button>
+                    <Button variant="outlined" onClick={() => setReceiptOpen(false)}>Cerrar</Button>
                 </DialogActions>
             </Dialog>
 
-            {/* Estilos para impresión */}
             <style jsx global>{`
                 @media print {
-                    .no-print {
-                        display: none !important;
-                    }
-                    body {
-                        background: white;
-                        margin: 0;
-                        padding: 0;
-                    }
-                    .MuiDialog-paper {
-                        margin: 0 !important;
-                        padding: 0 !important;
-                        box-shadow: none !important;
-                    }
-                    #receipt-content {
-                        padding: 20px !important;
-                    }
+                    .no-print { display: none !important; }
+                    body { background: white; margin: 0; padding: 0; }
+                    .MuiDialog-paper { margin: 0 !important; padding: 0 !important; box-shadow: none !important; }
+                    #receipt-content { padding: 20px !important; }
                 }
             `}</style>
         </Box>

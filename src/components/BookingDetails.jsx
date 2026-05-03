@@ -538,18 +538,17 @@ const BookingDetails = () => {
                     }
                 }}
             >
-                <DialogTitle sx={{
-                    bgcolor: 'var(--primary)',
+                <DialogTitle className="no-print" sx={{
+                    bgcolor: 'var(--info)',
                     color: 'white',
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center'
                 }}>
-                    <Typography variant="h6">Comprobante de Reserva</Typography>
+                    <Typography sx={{ color: 'white' }} variant="h6">Comprobante de Reserva</Typography>
                     <IconButton
                         onClick={() => setReceiptOpen(false)}
                         sx={{ color: 'white' }}
-                        className="no-print"
                     >
                         <CloseIcon />
                     </IconButton>
