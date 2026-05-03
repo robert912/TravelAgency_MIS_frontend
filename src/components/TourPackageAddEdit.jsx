@@ -1,4 +1,3 @@
-// components/admin/PackageForm.jsx
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import tourPackageService from "../services/tourPackage.service";
@@ -45,6 +44,7 @@ import restrictionService from "../services/restriction.service";
 import tourPackageConditionService from "../services/tourPackageCondition.service";
 import tourPackageRestrictionService from "../services/tourPackageRestriction.service";
 import tourPackageServiceService from "../services/tourPackageService.service";
+import reservationService from "../services/reservation.service"; // NUEVO: Importar servicio de reservas
 
 // Secciones del formulario
 const FormSection = ({ icon: Icon, title, children }) => (
@@ -224,6 +224,10 @@ const TourPackageAddEdit = () => {
     const [restrictions, setRestrictions] = useState([]);
     const [loadingSelects, setLoadingSelects] = useState(true);
 
+    // Estado para validación de cupos y fechas
+    const [reservedSlots, setReservedSlots] = useState(0);
+    const [originalDates, setOriginalDates] = useState({ startDate: "", endDate: "" });
+
     const [formData, setFormData] = useState({
         name: "", destination: "", description: "", seasonId: "",
         categoryId: "", travelTypeId: "", price: "", startDate: "",
@@ -275,6 +279,9 @@ const TourPackageAddEdit = () => {
             const packageData = response.data?.data || response.data;
 
             if (packageData) {
+                const sDate = packageData.startDate?.split('T')[0] || "";
+                const eDate = packageData.endDate?.split('T')[0] || "";
+
                 setFormData({
                     name: packageData.name || "",
                     destination: packageData.destination || "",
@@ -283,8 +290,8 @@ const TourPackageAddEdit = () => {
                     categoryId: packageData.category?.id || "",
                     travelTypeId: packageData.travelType?.id || "",
                     price: packageData.price || "",
-                    startDate: packageData.startDate?.split('T')[0] || "",
-                    endDate: packageData.endDate?.split('T')[0] || "",
+                    startDate: sDate,
+                    endDate: eDate,
                     totalSlots: packageData.totalSlots || "",
                     status: packageData.status || "DISPONIBLE",
                     stars: packageData.stars || 0,
@@ -297,6 +304,20 @@ const TourPackageAddEdit = () => {
                     conditionIds: packageData.conditions?.map(c => c.condition?.id || c.id) || [],
                     restrictionIds: packageData.restrictions?.map(r => r.restriction?.id || r.id) || []
                 });
+
+                setOriginalDates({ startDate: sDate, endDate: eDate });
+
+                // Verificar si hay reservas usando el endpoint de disponibilidad
+                try {
+                    const availRes = await reservationService.checkAvailability(id);
+                    const availData = availRes.data?.data || availRes.data;
+                    const total = availData.totalSlots || 0;
+                    const available = availData.availableSlots || 0;
+                    const rSlots = total - available;
+                    setReservedSlots(rSlots > 0 ? rSlots : 0);
+                } catch (e) {
+                    console.error("Error checkAvailability", e);
+                }
             }
         } catch (error) {
             console.error("Error al cargar el paquete", error);
@@ -373,6 +394,19 @@ const TourPackageAddEdit = () => {
         if (formData.startDate && formData.endDate &&
             new Date(formData.startDate) > new Date(formData.endDate)) {
             newErrors.endDate = "La fecha de fin debe ser posterior a la fecha de inicio";
+        }
+
+        // Validaciones críticas si hay reservas
+        if (isEditMode && reservedSlots > 0) {
+            if (Number(formData.totalSlots) < reservedSlots) {
+                newErrors.totalSlots = `No puede ser menor a los cupos ya reservados (${reservedSlots})`;
+                // Swal.fire('Error de validación', `El paquete ya tiene ${reservedSlots} reservas registradas. El cupo total no puede ser menor a esa cantidad para mantener la consistencia.`, 'error');
+            }
+            if (formData.startDate !== originalDates.startDate || formData.endDate !== originalDates.endDate) {
+                newErrors.startDate = "No modificable con reservas";
+                newErrors.endDate = "No modificable con reservas";
+                // Swal.fire('Error de validación', `No puedes modificar las fechas de un paquete que ya tiene reservas registradas.`, 'error');
+            }
         }
 
         setErrors(newErrors);
@@ -705,10 +739,11 @@ const TourPackageAddEdit = () => {
                                         value={formData.totalSlots}
                                         onChange={handleChange}
                                         error={!!errors.totalSlots}
-                                        helperText={errors.totalSlots}
+                                        helperText={errors.totalSlots || (isEditMode && reservedSlots > 0 ? `Mínimo permitido: ${reservedSlots} (ya reservados)` : "")}
                                         required
                                         InputProps={{
-                                            startAdornment: <InputAdornment position="start"><PeopleIcon color="action" /></InputAdornment>
+                                            startAdornment: <InputAdornment position="start"><PeopleIcon color="action" /></InputAdornment>,
+                                            inputProps: { min: isEditMode && reservedSlots > 0 ? reservedSlots : 1 }
                                         }}
                                     />
                                 </Grid>
@@ -722,8 +757,9 @@ const TourPackageAddEdit = () => {
                                         value={formData.startDate}
                                         onChange={handleChange}
                                         error={!!errors.startDate}
-                                        helperText={errors.startDate}
+                                        helperText={errors.startDate || (isEditMode && reservedSlots > 0 ? "No modificable (tiene reservas)" : "")}
                                         required
+                                        disabled={isEditMode && reservedSlots > 0}
                                         slotProps={{
                                             inputLabel: { shrink: true },
                                             input: {
@@ -746,8 +782,9 @@ const TourPackageAddEdit = () => {
                                         value={formData.endDate}
                                         onChange={handleChange}
                                         error={!!errors.endDate}
-                                        helperText={errors.endDate}
+                                        helperText={errors.endDate || (isEditMode && reservedSlots > 0 ? "No modificable (tiene reservas)" : "")}
                                         required
+                                        disabled={isEditMode && reservedSlots > 0}
                                         InputLabelProps={{ shrink: true }}
                                     />
                                 </Grid>
