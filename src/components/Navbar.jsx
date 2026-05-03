@@ -92,7 +92,7 @@ export default function Navbar() {
                                         onClose={handleClose}
                                     >
                                         <MenuItem onClick={goToProfile}>Mi Perfil</MenuItem>
-                                        <MenuItem onClick={() => keycloak.logout({ redirectUri: window.location.origin })}>Logout</MenuItem>
+                                        <MenuItem onClick={() => { localStorage.removeItem(`person_id_${keycloak.subject}`); keycloak.logout({ redirectUri: window.location.origin }); }}>Logout</MenuItem>
                                     </Menu>
                                 </Box>
 
