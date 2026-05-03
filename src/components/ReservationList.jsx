@@ -320,9 +320,6 @@ const ReservationList = () => {
                         <Button variant="outlined" startIcon={<ArrowBackIcon />} onClick={() => navigate("/")} size="small">
                             Volver
                         </Button>
-                        <Button variant="outlined" startIcon={<RefreshIcon />} onClick={fetchReservations} size="small">
-                            Actualizar
-                        </Button>
                     </Box>
                 </Box>
             </Paper>

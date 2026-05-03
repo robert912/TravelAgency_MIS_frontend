@@ -3,7 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import tourPackageService from "../services/tourPackage.service";
 import SearchIcon from "@mui/icons-material/Search";
 import {
-    Box, Paper, Typography, TextField, Button, Grid,
+    Box, Container, Paper, Typography, TextField, Button, Grid,
     FormControl, InputLabel, Select, MenuItem,
     Divider, CircularProgress, Stack, Chip,
     InputAdornment, Skeleton, Alert, IconButton, Tooltip,
@@ -14,6 +14,7 @@ import {
     Cancel as CancelIcon,
     Delete as DeleteIcon,
     Check as CheckIcon,
+    ArrowBack as ArrowBackIcon,
     AttachMoney as MoneyIcon,
     People as PeopleIcon,
     Star as StarIcon,
@@ -44,7 +45,7 @@ import restrictionService from "../services/restriction.service";
 import tourPackageConditionService from "../services/tourPackageCondition.service";
 import tourPackageRestrictionService from "../services/tourPackageRestriction.service";
 import tourPackageServiceService from "../services/tourPackageService.service";
-import reservationService from "../services/reservation.service"; // NUEVO: Importar servicio de reservas
+import reservationService from "../services/reservation.service";
 
 // Secciones del formulario
 const FormSection = ({ icon: Icon, title, children }) => (
@@ -399,13 +400,11 @@ const TourPackageAddEdit = () => {
         // Validaciones críticas si hay reservas
         if (isEditMode && reservedSlots > 0) {
             if (Number(formData.totalSlots) < reservedSlots) {
-                newErrors.totalSlots = `No puede ser menor a los cupos ya reservados (${reservedSlots})`;
-                // Swal.fire('Error de validación', `El paquete ya tiene ${reservedSlots} reservas registradas. El cupo total no puede ser menor a esa cantidad para mantener la consistencia.`, 'error');
+                newErrors.totalSlots = `No puede ser menor a los cupos reservados (${reservedSlots})`;
             }
             if (formData.startDate !== originalDates.startDate || formData.endDate !== originalDates.endDate) {
                 newErrors.startDate = "No modificable con reservas";
                 newErrors.endDate = "No modificable con reservas";
-                // Swal.fire('Error de validación', `No puedes modificar las fechas de un paquete que ya tiene reservas registradas.`, 'error');
             }
         }
 
@@ -439,7 +438,6 @@ const TourPackageAddEdit = () => {
         const userId = 1;
         const results = [];
 
-        // Sincronizar condiciones
         if (formData.conditionIds !== undefined) {
             try {
                 await tourPackageConditionService.syncConditions(packageId, formData.conditionIds, userId);
@@ -450,7 +448,6 @@ const TourPackageAddEdit = () => {
             }
         }
 
-        // Sincronizar restricciones
         if (formData.restrictionIds !== undefined) {
             try {
                 await tourPackageRestrictionService.syncRestrictions(packageId, formData.restrictionIds, userId);
@@ -461,7 +458,6 @@ const TourPackageAddEdit = () => {
             }
         }
 
-        // Sincronizar servicios
         if (formData.serviceIds !== undefined) {
             try {
                 await tourPackageServiceService.syncServices(packageId, formData.serviceIds, userId);
@@ -472,7 +468,6 @@ const TourPackageAddEdit = () => {
             }
         }
 
-        // Verificar si hubo errores
         const failed = results.filter(r => !r.success);
         if (failed.length > 0) {
             throw new Error(`Error sincronizando: ${failed.map(f => f.type).join(', ')}`);
@@ -496,40 +491,24 @@ const TourPackageAddEdit = () => {
             let packageId;
 
             if (isEditMode) {
-                // 1. Actualizar paquete existente
                 await tourPackageService.update(packageData);
                 packageId = Number(id);
-
-                // 2. Sincronizar relaciones
                 await syncPackageRelations(packageId);
-
                 Swal.fire('¡Actualizado!', 'El paquete ha sido actualizado correctamente', 'success');
             } else {
-                // 1. Crear nuevo paquete
                 const response = await tourPackageService.create(packageData);
                 packageId = response.data?.data?.id || response.data?.id;
-
-                if (!packageId) {
-                    throw new Error('No se pudo obtener el ID del paquete creado');
-                }
-
-                // 2. Sincronizar relaciones
+                if (!packageId) throw new Error('No se pudo obtener el ID del paquete creado');
                 await syncPackageRelations(packageId);
-
                 Swal.fire('¡Creado!', 'El paquete ha sido creado correctamente', 'success');
             }
 
             navigate('/admin/packages');
         } catch (error) {
             console.error("Error al guardar", error);
-
             let errorMessage = 'Hubo un problema al guardar el paquete';
-            if (error.response?.data?.message) {
-                errorMessage = error.response.data.message;
-            } else if (error.message) {
-                errorMessage = error.message;
-            }
-
+            if (error.response?.data?.message) errorMessage = error.response.data.message;
+            else if (error.message) errorMessage = error.message;
             Swal.fire('Error', errorMessage, 'error');
         } finally {
             setSaving(false);
@@ -553,10 +532,8 @@ const TourPackageAddEdit = () => {
             try {
                 const packageData = buildPackageData();
                 packageData.active = formData.active ? 0 : 1;
-
                 await tourPackageService.update(packageData);
                 setFormData(prev => ({ ...prev, active: !prev.active }));
-
                 Swal.fire('¡Completado!', `Paquete ${formData.active ? 'desactivado' : 'activado'} correctamente`, 'success');
             } catch (error) {
                 Swal.fire('Error', 'No se pudo cambiar el estado del paquete', 'error');
@@ -568,416 +545,422 @@ const TourPackageAddEdit = () => {
 
     if (loading || loadingSelects) {
         return (
-            <Box sx={{ p: 3, bgcolor: '#f5f7fa', minHeight: '100vh' }}>
-                <Paper sx={{ p: 4, maxWidth: 1200, mx: 'auto' }}>
-                    <Stack spacing={3}>
-                        <Skeleton variant="rectangular" height={60} animation="wave" />
-                        <Skeleton variant="rectangular" height={400} animation="wave" />
-                    </Stack>
-                </Paper>
+            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
+                <CircularProgress />
             </Box>
         );
     }
 
     return (
         <Box sx={{ p: 3, bgcolor: '#f5f7fa', minHeight: '100vh' }}>
-            <Paper elevation={0} sx={{ borderRadius: 3, maxWidth: 1200, mx: 'auto', overflow: 'hidden' }}>
-                {/* Header */}
-                <Box sx={{
-                    background: 'linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%)',
-                    color: 'white',
-                    p: 4,
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    flexWrap: 'wrap',
-                    gap: 2
-                }}>
-                    <Box>
-                        <Typography variant="overline" sx={{ opacity: 0.9, letterSpacing: 1.5 }}>
-                            {isEditMode ? 'EDITAR REGISTRO' : 'NUEVO REGISTRO'}
-                        </Typography>
-                        <Typography variant="h4" fontWeight="bold">
-                            {isEditMode ? 'Editar Paquete Turístico' : 'Crear Paquete Turístico'}
-                        </Typography>
-                        {isEditMode && (
-                            <Typography variant="body2" sx={{ opacity: 0.8, mt: 0.5 }}>
-                                ID: {id}
+            <Container maxWidth="lg">
+                <Paper sx={{ borderRadius: 3, overflow: 'hidden' }}>
+                    {/* Header con gradiente */}
+                    <Box sx={{
+                        background: 'linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%)',
+                        color: 'white',
+                        p: 4,
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        flexWrap: 'wrap',
+                        gap: 2
+                    }}>
+                        <Box>
+                            <Typography variant="overline" sx={{ opacity: 0.9, letterSpacing: 1.5 }}>
+                                {isEditMode ? 'EDITAR REGISTRO' : 'NUEVO REGISTRO'}
                             </Typography>
+                            <Typography variant="h4" fontWeight="bold">
+                                {isEditMode ? 'Editar Paquete Turístico' : 'Crear Paquete Turístico'}
+                            </Typography>
+                            {isEditMode && (
+                                <Typography variant="body2" sx={{ opacity: 0.8, mt: 0.5 }}>
+                                    ID: {id}
+                                </Typography>
+                            )}
+                        </Box>
+
+                        {isEditMode && (
+                            <Chip
+                                label={formData.active ? "ACTIVO" : "INACTIVO"}
+                                onClick={handleToggleActive}
+                                sx={{
+                                    cursor: 'pointer',
+                                    fontWeight: 'bold',
+                                    bgcolor: formData.active ? '#4caf50' : '#9e9e9e',
+                                    color: 'white',
+                                    '&:hover': { bgcolor: formData.active ? '#388e3c' : '#757575' }
+                                }}
+                            />
                         )}
                     </Box>
 
-                    {isEditMode && (
-                        <Chip
-                            label={formData.active ? "ACTIVO" : "INACTIVO"}
-                            onClick={handleToggleActive}
-                            sx={{
-                                cursor: 'pointer',
-                                fontWeight: 'bold',
-                                bgcolor: formData.active ? 'rgba(76, 175, 80, 0.9)' : 'rgba(158, 158, 158, 0.9)',
-                                color: 'white',
-                                '&:hover': { bgcolor: formData.active ? 'rgb(76, 175, 80)' : 'rgb(117, 117, 117)' }
-                            }}
-                        />
-                    )}
-                </Box>
+                    <form onSubmit={handleSubmit}>
+                        <Box sx={{ p: 4 }}>
+                            {/* Alertas de advertencia por reservas existentes */}
+                            {isEditMode && reservedSlots > 0 && (
+                                <Alert severity="warning" sx={{ mb: 3 }}>
+                                    <Typography variant="body2">
+                                        Este paquete ya tiene <strong>{reservedSlots}</strong> reserva(s) registrada(s).
+                                    </Typography>
+                                    <Typography variant="caption">
+                                        Los cupos totales no pueden ser menores a esta cantidad. Las fechas no son modificables.
+                                    </Typography>
+                                </Alert>
+                            )}
 
-                <form onSubmit={handleSubmit}>
-                    <Box sx={{ p: 4 }}>
-                        <Grid container spacing={2}>
-                            {/* Información Básica */}
-                            <FormSection icon={DescriptionIcon} title="Información Básica">
-                                <Grid item xs={12} md={6}>
-                                    <TextField
-                                        fullWidth
-                                        label="Nombre del Paquete"
-                                        name="name"
-                                        value={formData.name}
-                                        onChange={handleChange}
-                                        error={!!errors.name}
-                                        helperText={errors.name}
-                                        required
-                                    />
-                                </Grid>
-
-                                <Grid item xs={12} md={6}>
-                                    <TextField
-                                        fullWidth
-                                        label="Destino"
-                                        name="destination"
-                                        value={formData.destination}
-                                        onChange={handleChange}
-                                        error={!!errors.destination}
-                                        helperText={errors.destination}
-                                        required
-                                        InputProps={{
-                                            startAdornment: <InputAdornment position="start"><LocationIcon color="action" /></InputAdornment>
-                                        }}
-                                    />
-                                </Grid>
-
-                                <Grid item xs={12}>
-                                    <TextField
-                                        fullWidth
-                                        label="Descripción"
-                                        name="description"
-                                        value={formData.description}
-                                        onChange={handleChange}
-                                        error={!!errors.description}
-                                        helperText={errors.description}
-                                        multiline
-                                        rows={4}
-                                        required
-                                    />
-                                </Grid>
-                            </FormSection>
-
-                            {/* Clasificación */}
-                            <FormSection icon={CategoryIcon} title="Clasificación">
-                                <Grid item xs={12} md={4}>
-                                    <FormControl fullWidth error={!!errors.seasonId} required>
-                                        <InputLabel>Temporada</InputLabel>
-                                        <Select name="seasonId" value={formData.seasonId} onChange={handleChange} label="Temporada">
-                                            <MenuItem value=""><em>Seleccione una temporada</em></MenuItem>
-                                            {seasons.map(season => (
-                                                <MenuItem key={season.id} value={season.id}>{season.name}</MenuItem>
-                                            ))}
-                                        </Select>
-                                    </FormControl>
-                                </Grid>
-
-                                <Grid item xs={12} md={4}>
-                                    <FormControl fullWidth error={!!errors.categoryId} required>
-                                        <InputLabel>Categoría</InputLabel>
-                                        <Select name="categoryId" value={formData.categoryId} onChange={handleChange} label="Categoría">
-                                            <MenuItem value=""><em>Seleccione una categoría</em></MenuItem>
-                                            {categories.map(category => (
-                                                <MenuItem key={category.id} value={category.id}>{category.name}</MenuItem>
-                                            ))}
-                                        </Select>
-                                    </FormControl>
-                                </Grid>
-
-                                <Grid item xs={12} md={4}>
-                                    <FormControl fullWidth error={!!errors.travelTypeId} required>
-                                        <InputLabel>Tipo de Viaje</InputLabel>
-                                        <Select name="travelTypeId" value={formData.travelTypeId} onChange={handleChange} label="Tipo de Viaje">
-                                            <MenuItem value=""><em>Seleccione un tipo</em></MenuItem>
-                                            {travelTypes.map(type => (
-                                                <MenuItem key={type.id} value={type.id}>{type.name}</MenuItem>
-                                            ))}
-                                        </Select>
-                                    </FormControl>
-                                </Grid>
-                            </FormSection>
-
-                            {/* Precios y Fechas */}
-                            <FormSection icon={MoneyIcon} title="Precios y Fechas">
-                                <Grid item xs={12} md={3}>
-                                    <TextField
-                                        fullWidth
-                                        label="Precio"
-                                        name="price"
-                                        type="number"
-                                        value={formData.price}
-                                        onChange={handleChange}
-                                        error={!!errors.price}
-                                        helperText={errors.price}
-                                        required
-                                        InputProps={{
-                                            startAdornment: <InputAdornment position="start">$</InputAdornment>
-                                        }}
-                                    />
-                                </Grid>
-
-                                <Grid item xs={12} md={3}>
-                                    <TextField
-                                        fullWidth
-                                        label="Cupos totales"
-                                        name="totalSlots"
-                                        type="number"
-                                        value={formData.totalSlots}
-                                        onChange={handleChange}
-                                        error={!!errors.totalSlots}
-                                        helperText={errors.totalSlots || (isEditMode && reservedSlots > 0 ? `Mínimo permitido: ${reservedSlots} (ya reservados)` : "")}
-                                        required
-                                        InputProps={{
-                                            startAdornment: <InputAdornment position="start"><PeopleIcon color="action" /></InputAdornment>,
-                                            inputProps: { min: isEditMode && reservedSlots > 0 ? reservedSlots : 1 }
-                                        }}
-                                    />
-                                </Grid>
-
-                                <Grid item xs={12} md={3}>
-                                    <TextField
-                                        fullWidth
-                                        label="Fecha de inicio"
-                                        name="startDate"
-                                        type="date"
-                                        value={formData.startDate}
-                                        onChange={handleChange}
-                                        error={!!errors.startDate}
-                                        helperText={errors.startDate || (isEditMode && reservedSlots > 0 ? "No modificable (tiene reservas)" : "")}
-                                        required
-                                        disabled={isEditMode && reservedSlots > 0}
-                                        slotProps={{
-                                            inputLabel: { shrink: true },
-                                            input: {
-                                                startAdornment: (
-                                                    <InputAdornment position="start">
-                                                        <CalendarIcon color="action" />
-                                                    </InputAdornment>
-                                                )
-                                            }
-                                        }}
-                                    />
-                                </Grid>
-
-                                <Grid item xs={12} md={3}>
-                                    <TextField
-                                        fullWidth
-                                        label="Fecha de fin"
-                                        name="endDate"
-                                        type="date"
-                                        value={formData.endDate}
-                                        onChange={handleChange}
-                                        error={!!errors.endDate}
-                                        helperText={errors.endDate || (isEditMode && reservedSlots > 0 ? "No modificable (tiene reservas)" : "")}
-                                        required
-                                        disabled={isEditMode && reservedSlots > 0}
-                                        InputLabelProps={{ shrink: true }}
-                                    />
-                                </Grid>
-                            </FormSection>
-
-                            {/* Estado y Calificación */}
-                            <FormSection icon={StarIcon} title="Estado y Calificación">
-                                <Grid item xs={12} md={6}>
-                                    <FormControl fullWidth>
-                                        <InputLabel>Estado del paquete</InputLabel>
-                                        <Select
-                                            name="status"
-                                            value={formData.status}
+                            <Grid container spacing={2}>
+                                {/* Información Básica */}
+                                <FormSection icon={DescriptionIcon} title="Información Básica">
+                                    <Grid item xs={12} md={6}>
+                                        <TextField
+                                            fullWidth
+                                            label="Nombre del Paquete"
+                                            name="name"
+                                            value={formData.name}
                                             onChange={handleChange}
-                                            label="Estado del paquete"
-                                        >
-                                            <MenuItem value="DISPONIBLE">Disponible</MenuItem>
-                                            <MenuItem value="AGOTADO">Agotado</MenuItem>
-                                            <MenuItem value="NO_VIGENTE">No Vigente</MenuItem>
-                                            <MenuItem value="CANCELADO">Cancelado</MenuItem>
-                                        </Select>
-                                    </FormControl>
+                                            error={!!errors.name}
+                                            helperText={errors.name}
+                                            required
+                                        />
+                                    </Grid>
 
-                                    {/* Mostrar alerta según el estado */}
+                                    <Grid item xs={12} md={6}>
+                                        <TextField
+                                            fullWidth
+                                            label="Destino"
+                                            name="destination"
+                                            value={formData.destination}
+                                            onChange={handleChange}
+                                            error={!!errors.destination}
+                                            helperText={errors.destination}
+                                            required
+                                            InputProps={{
+                                                startAdornment: <InputAdornment position="start"><LocationIcon color="action" /></InputAdornment>
+                                            }}
+                                        />
+                                    </Grid>
+
+                                    <Grid item xs={12}>
+                                        <TextField
+                                            fullWidth
+                                            label="Descripción"
+                                            name="description"
+                                            value={formData.description}
+                                            onChange={handleChange}
+                                            error={!!errors.description}
+                                            helperText={errors.description}
+                                            multiline
+                                            rows={4}
+                                            required
+                                        />
+                                    </Grid>
+                                </FormSection>
+
+                                {/* Clasificación */}
+                                <FormSection icon={CategoryIcon} title="Clasificación">
+                                    <Grid item xs={12} md={4}>
+                                        <FormControl fullWidth error={!!errors.seasonId} required>
+                                            <InputLabel>Temporada</InputLabel>
+                                            <Select name="seasonId" value={formData.seasonId} onChange={handleChange} label="Temporada">
+                                                <MenuItem value=""><em>Seleccione una temporada</em></MenuItem>
+                                                {seasons.map(season => (
+                                                    <MenuItem key={season.id} value={season.id}>{season.name}</MenuItem>
+                                                ))}
+                                            </Select>
+                                        </FormControl>
+                                    </Grid>
+
+                                    <Grid item xs={12} md={4}>
+                                        <FormControl fullWidth error={!!errors.categoryId} required>
+                                            <InputLabel>Categoría</InputLabel>
+                                            <Select name="categoryId" value={formData.categoryId} onChange={handleChange} label="Categoría">
+                                                <MenuItem value=""><em>Seleccione una categoría</em></MenuItem>
+                                                {categories.map(category => (
+                                                    <MenuItem key={category.id} value={category.id}>{category.name}</MenuItem>
+                                                ))}
+                                            </Select>
+                                        </FormControl>
+                                    </Grid>
+
+                                    <Grid item xs={12} md={4}>
+                                        <FormControl fullWidth error={!!errors.travelTypeId} required>
+                                            <InputLabel>Tipo de Viaje</InputLabel>
+                                            <Select name="travelTypeId" value={formData.travelTypeId} onChange={handleChange} label="Tipo de Viaje">
+                                                <MenuItem value=""><em>Seleccione un tipo</em></MenuItem>
+                                                {travelTypes.map(type => (
+                                                    <MenuItem key={type.id} value={type.id}>{type.name}</MenuItem>
+                                                ))}
+                                            </Select>
+                                        </FormControl>
+                                    </Grid>
+                                </FormSection>
+
+                                {/* Precios y Fechas */}
+                                <FormSection icon={MoneyIcon} title="Precios y Fechas">
+                                    <Grid item xs={12} md={3}>
+                                        <TextField
+                                            fullWidth
+                                            label="Precio"
+                                            name="price"
+                                            type="number"
+                                            value={formData.price}
+                                            onChange={handleChange}
+                                            error={!!errors.price}
+                                            helperText={errors.price}
+                                            required
+                                            InputProps={{
+                                                startAdornment: <InputAdornment position="start">$</InputAdornment>
+                                            }}
+                                        />
+                                    </Grid>
+
+                                    <Grid item xs={12} md={3}>
+                                        <TextField
+                                            fullWidth
+                                            label="Cupos totales"
+                                            name="totalSlots"
+                                            type="number"
+                                            value={formData.totalSlots}
+                                            onChange={handleChange}
+                                            error={!!errors.totalSlots}
+                                            helperText={errors.totalSlots || (isEditMode && reservedSlots > 0 ? `Mínimo permitido: ${reservedSlots} (ya reservados)` : "")}
+                                            required
+                                            InputProps={{
+                                                startAdornment: <InputAdornment position="start"><PeopleIcon color="action" /></InputAdornment>,
+                                                inputProps: { min: isEditMode && reservedSlots > 0 ? reservedSlots : 1 }
+                                            }}
+                                        />
+                                    </Grid>
+
+                                    <Grid item xs={12} md={3}>
+                                        <TextField
+                                            fullWidth
+                                            label="Fecha de inicio"
+                                            name="startDate"
+                                            type="date"
+                                            value={formData.startDate}
+                                            onChange={handleChange}
+                                            error={!!errors.startDate}
+                                            helperText={errors.startDate || (isEditMode && reservedSlots > 0 ? "No modificable (tiene reservas)" : "")}
+                                            required
+                                            disabled={isEditMode && reservedSlots > 0}
+                                            slotProps={{
+                                                inputLabel: { shrink: true },
+                                                input: {
+                                                    startAdornment: (
+                                                        <InputAdornment position="start">
+                                                            <CalendarIcon color="action" />
+                                                        </InputAdornment>
+                                                    )
+                                                }
+                                            }}
+                                        />
+                                    </Grid>
+
+                                    <Grid item xs={12} md={3}>
+                                        <TextField
+                                            fullWidth
+                                            label="Fecha de fin"
+                                            name="endDate"
+                                            type="date"
+                                            value={formData.endDate}
+                                            onChange={handleChange}
+                                            error={!!errors.endDate}
+                                            helperText={errors.endDate || (isEditMode && reservedSlots > 0 ? "No modificable (tiene reservas)" : "")}
+                                            required
+                                            disabled={isEditMode && reservedSlots > 0}
+                                            InputLabelProps={{ shrink: true }}
+                                        />
+                                    </Grid>
+                                </FormSection>
+
+                                {/* Estado y Calificación */}
+                                <FormSection icon={StarIcon} title="Estado y Calificación">
+                                    <Grid item xs={12} md={6}>
+                                        <FormControl fullWidth>
+                                            <InputLabel>Estado del paquete</InputLabel>
+                                            <Select
+                                                name="status"
+                                                value={formData.status}
+                                                onChange={handleChange}
+                                                label="Estado del paquete"
+                                            >
+                                                <MenuItem value="DISPONIBLE">Disponible</MenuItem>
+                                                <MenuItem value="AGOTADO">Agotado</MenuItem>
+                                                <MenuItem value="NO_VIGENTE">No Vigente</MenuItem>
+                                                <MenuItem value="CANCELADO">Cancelado</MenuItem>
+                                            </Select>
+                                        </FormControl>
+                                    </Grid>
+
+                                    <Grid item xs={12} md={6}>
+                                        <TextField
+                                            fullWidth
+                                            label="Calificación (0-5 estrellas)"
+                                            name="stars"
+                                            type="number"
+                                            value={formData.stars}
+                                            onChange={handleChange}
+                                            slotProps={{
+                                                htmlInput: { min: 0, max: 5, step: 1 }
+                                            }}
+                                            InputProps={{
+                                                startAdornment: <InputAdornment position="start"><StarIcon color="action" /></InputAdornment>
+                                            }}
+                                            helperText="Valor entre 0 y 5"
+                                        />
+                                    </Grid>
+
                                     {formData.status === "AGOTADO" && (
-                                        <Alert severity="warning" sx={{ mt: 1 }}>
-                                            <Typography variant="caption">
-                                                ⚠️ Este paquete está agotado. Se actualizará automáticamente cuando haya cupos disponibles.
-                                            </Typography>
-                                        </Alert>
+                                        <Grid item xs={12}>
+                                            <Alert severity="warning" sx={{ mt: 1 }}>
+                                                <Typography variant="caption">
+                                                    ⚠️ Este paquete está agotado. Se actualizará automáticamente cuando haya cupos disponibles.
+                                                </Typography>
+                                            </Alert>
+                                        </Grid>
                                     )}
 
                                     {formData.status === "NO_VIGENTE" && (
-                                        <Alert severity="info" sx={{ mt: 1 }}>
-                                            <Typography variant="caption">
-                                                📅 Este paquete no está vigente porque la fecha de finalización ya pasó.
-                                            </Typography>
-                                        </Alert>
+                                        <Grid item xs={12}>
+                                            <Alert severity="info" sx={{ mt: 1 }}>
+                                                <Typography variant="caption">
+                                                    📅 Este paquete no está vigente porque la fecha de finalización ya pasó.
+                                                </Typography>
+                                            </Alert>
+                                        </Grid>
                                     )}
 
                                     {formData.status === "CANCELADO" && (
-                                        <Alert severity="error" sx={{ mt: 1 }}>
-                                            <Typography variant="caption">
-                                                ❌ Este paquete está cancelado. No se actualizará automáticamente.
-                                            </Typography>
-                                        </Alert>
+                                        <Grid item xs={12}>
+                                            <Alert severity="error" sx={{ mt: 1 }}>
+                                                <Typography variant="caption">
+                                                    ❌ Este paquete está cancelado. No se actualizará automáticamente.
+                                                </Typography>
+                                            </Alert>
+                                        </Grid>
                                     )}
+                                </FormSection>
 
-                                    {formData.status === "DISPONIBLE" && (
-                                        <Alert severity="success" sx={{ mt: 1 }}>
-                                            <Typography variant="caption">
-                                                ✅ Este paquete está disponible.
-                                            </Typography>
-                                        </Alert>
-                                    )}
-                                </Grid>
-
-                                <Grid item xs={12} md={6}>
-                                    <TextField
-                                        fullWidth
-                                        label="Calificación (0-5 estrellas)"
-                                        name="stars"
-                                        type="number"
-                                        value={formData.stars}
-                                        onChange={handleChange}
-                                        slotProps={{
-                                            htmlInput: { min: 0, max: 5, step: 1 }
-                                        }}
-                                        InputProps={{
-                                            startAdornment: <InputAdornment position="start"><StarIcon color="action" /></InputAdornment>
-                                        }}
-                                        helperText="Valor entre 0 y 5"
-                                    />
-                                </Grid>
-                            </FormSection>
-
-                            {/* Servicios - Selector Profesional */}
-                            <Grid item xs={12}>
-                                <Box sx={{ mt: 3, mb: 2 }}>
-                                    <Typography variant="h6" fontWeight="600" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                        <ServiceIcon sx={{ color: 'var(--primary)' }} />
-                                        Servicios y Beneficios
-                                    </Typography>
-                                    <Divider sx={{ mt: 1, mb: 2 }} />
-                                </Box>
-
-                                <ProfessionalSelector
-                                    title="Servicios Incluidos"
-                                    items={services}
-                                    selectedIds={formData.serviceIds}
-                                    onAdd={handleAddService}
-                                    onRemove={handleRemoveService}
-                                    icon={ServiceIcon}
-                                    placeholder="Buscar servicios..."
-                                    emptyText="No hay servicios seleccionados"
-                                    chipColor="primary"
-                                />
-                            </Grid>
-
-                            {/* Condiciones - Selector Profesional */}
-                            <Grid item xs={12}>
-                                <ProfessionalSelector
-                                    title="Condiciones"
-                                    items={conditions}
-                                    selectedIds={formData.conditionIds}
-                                    onAdd={handleAddCondition}
-                                    onRemove={handleRemoveCondition}
-                                    icon={ConditionIcon}
-                                    placeholder="Buscar condiciones..."
-                                    emptyText="No hay condiciones seleccionadas"
-                                    chipColor="success"
-                                />
-                            </Grid>
-
-                            {/* Restricciones - Selector Profesional */}
-                            <Grid item xs={12}>
-                                <ProfessionalSelector
-                                    title="Restricciones"
-                                    items={restrictions}
-                                    selectedIds={formData.restrictionIds}
-                                    onAdd={handleAddRestriction}
-                                    onRemove={handleRemoveRestriction}
-                                    icon={RestrictionIcon}
-                                    placeholder="Buscar restricciones..."
-                                    emptyText="No hay restricciones seleccionadas"
-                                    chipColor="error"
-                                />
-                            </Grid>
-
-                            {/* Contenido Adicional */}
-                            <FormSection icon={ImageIcon} title="Contenido Adicional">
+                                {/* Servicios */}
                                 <Grid item xs={12}>
-                                    <TextField
-                                        fullWidth
-                                        label="URL de la imagen principal"
-                                        name="imageUrl"
-                                        value={formData.imageUrl}
-                                        onChange={handleChange}
-                                        placeholder="https://ejemplo.com/imagen.jpg"
-                                        InputProps={{
-                                            startAdornment: <InputAdornment position="start"><ImageIcon color="action" /></InputAdornment>
-                                        }}
-                                        helperText="Ingrese una URL válida para la imagen del paquete"
+                                    <Box sx={{ mt: 3, mb: 2 }}>
+                                        <Typography variant="h6" fontWeight="600" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                            <ServiceIcon sx={{ color: 'var(--primary)' }} />
+                                            Servicios y Beneficios
+                                        </Typography>
+                                        <Divider sx={{ mt: 1, mb: 2 }} />
+                                    </Box>
+
+                                    <ProfessionalSelector
+                                        title="Servicios Incluidos"
+                                        items={services}
+                                        selectedIds={formData.serviceIds}
+                                        onAdd={handleAddService}
+                                        onRemove={handleRemoveService}
+                                        icon={ServiceIcon}
+                                        placeholder="Buscar servicios..."
+                                        emptyText="No hay servicios seleccionados"
+                                        chipColor="primary"
                                     />
                                 </Grid>
-                            </FormSection>
-                        </Grid>
 
-                        <Divider sx={{ my: 4 }} />
+                                {/* Condiciones */}
+                                <Grid item xs={12}>
+                                    <ProfessionalSelector
+                                        title="Condiciones"
+                                        items={conditions}
+                                        selectedIds={formData.conditionIds}
+                                        onAdd={handleAddCondition}
+                                        onRemove={handleRemoveCondition}
+                                        icon={ConditionIcon}
+                                        placeholder="Buscar condiciones..."
+                                        emptyText="No hay condiciones seleccionadas"
+                                        chipColor="success"
+                                    />
+                                </Grid>
 
-                        {/* Botones de acción */}
-                        <Stack direction="row" spacing={2} justifyContent="flex-end">
-                            <Button
-                                variant="outlined"
-                                onClick={() => navigate('/admin/packages')}
-                                startIcon={<CancelIcon />}
-                                size="large"
-                            >
-                                Cancelar
-                            </Button>
+                                {/* Restricciones */}
+                                <Grid item xs={12}>
+                                    <ProfessionalSelector
+                                        title="Restricciones"
+                                        items={restrictions}
+                                        selectedIds={formData.restrictionIds}
+                                        onAdd={handleAddRestriction}
+                                        onRemove={handleRemoveRestriction}
+                                        icon={RestrictionIcon}
+                                        placeholder="Buscar restricciones..."
+                                        emptyText="No hay restricciones seleccionadas"
+                                        chipColor="error"
+                                    />
+                                </Grid>
 
-                            {isEditMode && (
+                                {/* Contenido Adicional */}
+                                <FormSection icon={ImageIcon} title="Contenido Adicional">
+                                    <Grid item xs={12}>
+                                        <TextField
+                                            fullWidth
+                                            label="URL de la imagen principal"
+                                            name="imageUrl"
+                                            value={formData.imageUrl}
+                                            onChange={handleChange}
+                                            placeholder="https://ejemplo.com/imagen.jpg"
+                                            InputProps={{
+                                                startAdornment: <InputAdornment position="start"><ImageIcon color="action" /></InputAdornment>
+                                            }}
+                                            helperText="Ingrese una URL válida para la imagen del paquete"
+                                        />
+                                    </Grid>
+                                </FormSection>
+                            </Grid>
+
+                            <Divider sx={{ my: 4 }} />
+
+                            {/* Botones de acción */}
+                            <Stack direction="row" spacing={2} justifyContent="flex-end">
                                 <Button
-                                    variant="contained"
-                                    color={formData.active ? "error" : "success"}
-                                    onClick={handleToggleActive}
-                                    startIcon={formData.active ? <DeleteIcon /> : <CheckIcon />}
-                                    disabled={saving}
+                                    variant="outlined"
+                                    onClick={() => navigate('/admin/packages')}
+                                    startIcon={<CancelIcon />}
                                     size="large"
                                 >
-                                    {formData.active ? 'Desactivar' : 'Activar'}
+                                    Cancelar
                                 </Button>
-                            )}
 
-                            <Button
-                                type="submit"
-                                variant="contained"
-                                disabled={saving}
-                                startIcon={saving ? <CircularProgress size={24} /> : <SaveIcon />}
-                                sx={{
-                                    bgcolor: 'var(--primary)',
-                                    '&:hover': { bgcolor: 'var(--primary-hover)' },
-                                    minWidth: 140,
-                                    py: 1.2
-                                }}
-                                size="large"
-                            >
-                                {saving ? 'Guardando...' : (isEditMode ? 'Actualizar' : 'Crear')}
-                            </Button>
-                        </Stack>
-                    </Box>
-                </form>
-            </Paper>
+                                {isEditMode && (
+                                    <Button
+                                        variant="contained"
+                                        color={formData.active ? "error" : "success"}
+                                        onClick={handleToggleActive}
+                                        startIcon={formData.active ? <DeleteIcon /> : <CheckIcon />}
+                                        disabled={saving}
+                                        size="large"
+                                    >
+                                        {formData.active ? 'Desactivar' : 'Activar'}
+                                    </Button>
+                                )}
+
+                                <Button
+                                    type="submit"
+                                    variant="contained"
+                                    disabled={saving}
+                                    startIcon={saving ? <CircularProgress size={24} /> : <SaveIcon />}
+                                    sx={{
+                                        bgcolor: 'var(--primary)',
+                                        '&:hover': { bgcolor: 'var(--primary-hover)' },
+                                        minWidth: 140,
+                                        py: 1.2
+                                    }}
+                                    size="large"
+                                >
+                                    {saving ? 'Guardando...' : (isEditMode ? 'Actualizar' : 'Crear')}
+                                </Button>
+                            </Stack>
+                        </Box>
+                    </form>
+                </Paper>
+            </Container>
         </Box>
     );
 };

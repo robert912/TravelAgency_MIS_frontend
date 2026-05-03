@@ -311,15 +311,6 @@ const ReservationForm = () => {
     return (
         <Box sx={{ p: 3, bgcolor: '#f5f7fa', minHeight: '100vh' }}>
             <Container maxWidth="lg">
-                {/* Botón volver */}
-                <Button
-                    startIcon={<ArrowBackIcon />}
-                    onClick={() => navigate('/admin/reservations')}
-                    sx={{ mb: 3 }}
-                >
-                    Volver a Reservas
-                </Button>
-
                 <Paper sx={{ borderRadius: 3, overflow: 'hidden' }}>
                     {/* Header con gradiente */}
                     <Box sx={{
