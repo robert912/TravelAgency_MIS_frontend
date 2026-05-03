@@ -75,12 +75,15 @@ const ReservationForm = () => {
     };
 
     useEffect(() => {
-        loadSelectData();
-        if (isEditMode || isViewMode) {
-            fetchReservationData();
-            fetchPassengers();
-            fetchPaymentInfo();
-        }
+        const init = async () => {
+            await loadSelectData();
+            if (isEditMode || isViewMode) {
+                fetchReservationData();
+                fetchPassengers();
+                fetchPaymentInfo();
+            }
+        };
+        init();
     }, [id]);
 
     const loadSelectData = async () => {
@@ -124,6 +127,28 @@ const ReservationForm = () => {
                     discountAmount: reservationData.discountAmount || 0,
                     solicitudes: reservationData.solicitudes || ""
                 });
+
+                // Asegurar que la persona de la reserva esté en la lista aunque esté inactiva
+                if (reservationData.person) {
+                    setPersons(prev => {
+                        const exists = prev.some(p => p.id === reservationData.person.id);
+                        if (!exists) {
+                            return [...prev, reservationData.person];
+                        }
+                        return prev;
+                    });
+                }
+
+                // Asegurar que el paquete de la reserva esté en la lista aunque esté inactivo
+                if (reservationData.tourPackage) {
+                    setPackages(prev => {
+                        const exists = prev.some(p => p.id === reservationData.tourPackage.id);
+                        if (!exists) {
+                            return [...prev, reservationData.tourPackage];
+                        }
+                        return prev;
+                    });
+                }
 
                 // Parsear descuentos
                 if (reservationData.discountDetails) {
@@ -335,8 +360,12 @@ const ReservationForm = () => {
                                     >
                                         <MenuItem value=""><em>Seleccione un cliente</em></MenuItem>
                                         {persons.map(person => (
-                                            <MenuItem key={person.id} value={person.id}>
-                                                {person.fullName} - {person.identification}
+                                            <MenuItem
+                                                key={person.id}
+                                                value={person.id}
+                                                disabled={person.active === 0 || person.active === false}
+                                            >
+                                                {person.fullName} - {person.identification} {(!person.active || person.active === 0) && "(Inactivo)"}
                                             </MenuItem>
                                         ))}
                                     </Select>
@@ -358,8 +387,12 @@ const ReservationForm = () => {
                                     >
                                         <MenuItem value=""><em>Seleccione un paquete</em></MenuItem>
                                         {packages.map(pkg => (
-                                            <MenuItem key={pkg.id} value={pkg.id}>
-                                                {pkg.name} - {pkg.destination} - ${pkg.price?.toLocaleString()}
+                                            <MenuItem
+                                                key={pkg.id}
+                                                value={pkg.id}
+                                                disabled={pkg.active === 0 || pkg.active === false}
+                                            >
+                                                {pkg.name} - {pkg.destination} - ${pkg.price?.toLocaleString()} {(!pkg.active || pkg.active === 0) && "(Inactivo)"}
                                             </MenuItem>
                                         ))}
                                     </Select>
