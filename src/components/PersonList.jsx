@@ -224,7 +224,7 @@ const PersonList = () => {
                         <Button
                             variant="contained"
                             startIcon={<PersonAddIcon />}
-                            onClick={() => navigate("/admin/persons/add")}
+                            onClick={() => navigate("/admin/persons/new")}
                             sx={{ bgcolor: 'var(--primary)', '&:hover': { bgcolor: 'var(--primary-hover)' } }}
                         >
                             Nueva Persona
@@ -375,19 +375,19 @@ const PersonList = () => {
                                                 <Tooltip title="Ver detalles">
                                                     <IconButton
                                                         size="small"
-                                                        color="info"
-                                                        onClick={() => handleViewDetails(person)}
+                                                        onClick={() => navigate(`/admin/persons/view/${person.id}`)}
+                                                        sx={{ color: '#0288d1' }}
                                                     >
-                                                        <ViewIcon fontSize="small" />
+                                                        <ViewIcon />
                                                     </IconButton>
                                                 </Tooltip>
                                                 <Tooltip title="Editar">
                                                     <IconButton
                                                         size="small"
-                                                        color="primary"
                                                         onClick={() => navigate(`/admin/persons/edit/${person.id}`)}
+                                                        sx={{ color: '#ed6c02' }}
                                                     >
-                                                        <EditIcon fontSize="small" />
+                                                        <EditIcon />
                                                     </IconButton>
                                                 </Tooltip>
                                                 <Tooltip title={person.active === 1 ? "Desactivar" : "Activar"}>
@@ -421,167 +421,6 @@ const PersonList = () => {
                     </Box>
                 )}
             </Paper>
-
-            {/* MODAL DE DETALLES */}
-            <Dialog
-                open={modalOpen}
-                onClose={handleCloseModal}
-                maxWidth="sm"
-                fullWidth
-                PaperProps={{
-                    sx: {
-                        borderRadius: 2,
-                        maxHeight: '85vh'
-                    }
-                }}
-            >
-                {modalLoading ? (
-                    <Box sx={{ p: 4, textAlign: 'center' }}>
-                        <CircularProgress size={40} />
-                        <Typography sx={{ mt: 2 }}>Cargando datos...</Typography>
-                    </Box>
-                ) : selectedPerson && (
-                    <>
-                        {/* Header */}
-                        <DialogTitle sx={{
-                            borderBottom: '1px solid',
-                            borderColor: 'divider',
-                            py: 2,
-                            px: 3,
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                            bgcolor: '#fafafa'
-                        }}>
-                            <Box>
-                                <Typography variant="subtitle2" color="text.secondary">
-                                    Persona #{selectedPerson.id}
-                                </Typography>
-                                <Typography variant="h6" component="span" fontWeight="bold">
-                                    {selectedPerson.fullName}
-                                </Typography>
-                            </Box>
-                            <IconButton onClick={handleCloseModal} size="small">
-                                <CloseIcon />
-                            </IconButton>
-                        </DialogTitle>
-
-                        <DialogContent sx={{ p: 3 }}>
-                            <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
-                                <Avatar sx={{ width: 80, height: 80, bgcolor: 'var(--primary)' }}>
-                                    <PersonIcon sx={{ fontSize: 40 }} />
-                                </Avatar>
-                            </Box>
-
-                            <Grid container spacing={2}>
-                                <Grid item xs={12}>
-                                    <Divider sx={{ my: 1 }}>
-                                        <Chip label="Información Personal" size="small" />
-                                    </Divider>
-                                </Grid>
-
-                                <Grid item xs={12} sm={6}>
-                                    <Typography variant="caption" color="text.secondary">Nombre Completo</Typography>
-                                    <Typography variant="body1" fontWeight="500">
-                                        {selectedPerson.fullName || 'No especificado'}
-                                    </Typography>
-                                </Grid>
-
-                                <Grid item xs={12} sm={6}>
-                                    <Typography variant="caption" color="text.secondary">Identificación</Typography>
-                                    <Typography variant="body1" fontWeight="500">
-                                        {selectedPerson.identification || 'No especificada'}
-                                    </Typography>
-                                </Grid>
-
-                                <Grid item xs={12} sm={6}>
-                                    <Typography variant="caption" color="text.secondary">Correo Electrónico</Typography>
-                                    <Typography variant="body1">
-                                        {selectedPerson.email || 'No especificado'}
-                                    </Typography>
-                                </Grid>
-
-                                <Grid item xs={12} sm={6}>
-                                    <Typography variant="caption" color="text.secondary">Teléfono</Typography>
-                                    <Typography variant="body1">
-                                        {selectedPerson.phone || 'No especificado'}
-                                    </Typography>
-                                </Grid>
-
-                                <Grid item xs={12} sm={6}>
-                                    <Typography variant="caption" color="text.secondary">Nacionalidad</Typography>
-                                    <Typography variant="body1">
-                                        {selectedPerson.nationality || 'No especificada'}
-                                    </Typography>
-                                </Grid>
-
-                                <Grid item xs={12} sm={6}>
-                                    <Typography variant="caption" color="text.secondary">Estado</Typography>
-                                    <Chip
-                                        label={selectedPerson.active === 1 ? "Activo" : "Inactivo"}
-                                        color={selectedPerson.active === 1 ? "success" : "default"}
-                                        size="small"
-                                        sx={{ mt: 0.5 }}
-                                    />
-                                </Grid>
-
-                                <Grid item xs={12}>
-                                    <Divider sx={{ my: 1 }}>
-                                        <Chip label="Información del Sistema" size="small" />
-                                    </Divider>
-                                </Grid>
-
-                                {selectedPerson.createdAt && (
-                                    <Grid item xs={12} sm={6}>
-                                        <Typography variant="caption" color="text.secondary">Fecha de Creación</Typography>
-                                        <Typography variant="body2">
-                                            {new Date(selectedPerson.createdAt).toLocaleString()}
-                                        </Typography>
-                                    </Grid>
-                                )}
-
-                                {selectedPerson.updatedAt && (
-                                    <Grid item xs={12} sm={6}>
-                                        <Typography variant="caption" color="text.secondary">Última Modificación</Typography>
-                                        <Typography variant="body2">
-                                            {new Date(selectedPerson.updatedAt).toLocaleString()}
-                                        </Typography>
-                                    </Grid>
-                                )}
-                            </Grid>
-                        </DialogContent>
-
-                        {/* Acciones */}
-                        <DialogActions sx={{ p: 2, gap: 1, borderTop: '1px solid', borderColor: 'divider' }}>
-                            <Button variant="text" onClick={handleCloseModal}>
-                                Cerrar
-                            </Button>
-                            <Button
-                                variant="outlined"
-                                color="primary"
-                                onClick={() => {
-                                    handleCloseModal();
-                                    navigate(`/admin/persons/edit/${selectedPerson.id}`);
-                                }}
-                                startIcon={<EditIcon />}
-                            >
-                                Editar
-                            </Button>
-                            <Button
-                                variant="contained"
-                                color={selectedPerson.active === 1 ? "error" : "success"}
-                                onClick={() => {
-                                    handleCloseModal();
-                                    handleDelete(selectedPerson);
-                                }}
-                                startIcon={selectedPerson.active === 1 ? <DeleteIcon /> : <CheckIcon />}
-                            >
-                                {selectedPerson.active === 1 ? 'Desactivar' : 'Activar'}
-                            </Button>
-                        </DialogActions>
-                    </>
-                )}
-            </Dialog>
         </Box>
     );
 };
