@@ -20,7 +20,7 @@ import ServiceAddEdit from './components/ServiceAddEdit';
 import PersonList from './components/PersonList';
 import PersonAddEdit from './components/PersonAddEdit';
 import ReservationList from './components/ReservationList';
-import ReservationForm from './components/ReservationForm';
+import ReservationAddEdit from './components/ReservationAddEdit';
 import BookingPage from './components/BookingPage';
 import MyBookings from './components/MyBookings';
 import BookingDetails from './components/BookingDetails';
@@ -92,9 +92,9 @@ function App() {
                 <Route path="/admin/persons/edit/:id" element={<PrivateRoute element={<PersonAddEdit />} rolesAllowed={['Admin']} />} />
                 <Route path="/admin/persons/view/:id" element={<PrivateRoute element={<PersonAddEdit />} rolesAllowed={['Admin']} />} />
                 <Route path="/admin/reservations/" element={<PrivateRoute element={<ReservationList />} rolesAllowed={['Admin']} />} />
-                <Route path="/admin/reservations/new" element={<PrivateRoute element={<ReservationForm />} rolesAllowed={['Admin']} />} />
-                <Route path="/admin/reservations/edit/:id" element={<PrivateRoute element={<ReservationForm />} rolesAllowed={['Admin']} />} />
-                <Route path="/admin/reservations/view/:id" element={<PrivateRoute element={<ReservationForm />} rolesAllowed={['Admin']} />} />
+                <Route path="/admin/reservations/new" element={<PrivateRoute element={<ReservationAddEdit />} rolesAllowed={['Admin']} />} />
+                <Route path="/admin/reservations/edit/:id" element={<PrivateRoute element={<ReservationAddEdit />} rolesAllowed={['Admin']} />} />
+                <Route path="/admin/reservations/view/:id" element={<PrivateRoute element={<ReservationAddEdit />} rolesAllowed={['Admin']} />} />
 
 
                 <Route path="*" element={<NotFound />} />

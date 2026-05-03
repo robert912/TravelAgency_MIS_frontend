@@ -42,7 +42,7 @@ import paymentService from "../services/payment.service";
 import dayjs from 'dayjs';
 import { useKeycloak } from '@react-keycloak/web';
 
-const ReservationForm = () => {
+const ReservationAddEdit = () => {
     const navigate = useNavigate();
     const { id } = useParams();
     const { keycloak } = useKeycloak();
@@ -368,7 +368,7 @@ const ReservationForm = () => {
                                                         <span>{person.fullName}</span>
                                                         <span style={{ color: '#666', fontSize: '0.85em' }}>({person.identification})</span>
                                                         {(!person.active || person.active === 0) && (
-                                                            <Chip label="Inactivo" size="small" color="error" />
+                                                            <Chip label="Inactivo" size="small" />
                                                         )}
                                                     </Box>
                                                 </MenuItem>
@@ -862,4 +862,4 @@ const ReservationForm = () => {
     );
 };
 
-export default ReservationForm;
+export default ReservationAddEdit;
