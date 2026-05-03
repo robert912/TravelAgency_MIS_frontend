@@ -2,11 +2,13 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from "react-router-dom";
 import '../App.css'
 import tourPackageService from '../services/tourPackage.service'
+import travelTypeService from '../services/travelType.service'
 import Swal from 'sweetalert2'
 
 const Home = () => {
 
     const [packages, setPackages] = useState([])
+    const [travelTypes, setTravelTypes] = useState([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState(null)
     const navigate = useNavigate();
@@ -14,6 +16,7 @@ const Home = () => {
     // Estado del buscador
     const [filters, setFilters] = useState({
         destination: '',
+        minPrice: '',
         maxPrice: '',
         startDate: '',
         endDate: '',
@@ -51,6 +54,16 @@ const Home = () => {
 
     useEffect(() => {
         fetchPackages();
+        const fetchTravelTypes = async () => {
+            try {
+                const response = await travelTypeService.getAllActive();
+                const data = response.data?.data || response.data || [];
+                setTravelTypes(data);
+            } catch (err) {
+                console.error("Error fetching travel types:", err);
+            }
+        };
+        fetchTravelTypes();
     }, [])
 
     const handleSearch = async (e) => {
@@ -89,6 +102,7 @@ const Home = () => {
     const clearFilters = () => {
         setFilters({
             destination: '',
+            minPrice: '',
             maxPrice: '',
             startDate: '',
             endDate: '',
@@ -139,14 +153,26 @@ const Home = () => {
                             </div>
 
                             <div className="search-group">
-                                <label>Precio Máximo</label>
-                                <input
-                                    type="number"
-                                    name="maxPrice"
-                                    placeholder="$ Máximo"
-                                    value={filters.maxPrice}
-                                    onChange={handleChange}
-                                />
+                                <label>Rango de Precio</label>
+                                <div className="date-inputs">
+                                    <input
+                                        type="number"
+                                        name="minPrice"
+                                        placeholder="$ Mín"
+                                        value={filters.minPrice}
+                                        onChange={handleChange}
+                                        min="0"
+                                    />
+                                    <span>-</span>
+                                    <input
+                                        type="number"
+                                        name="maxPrice"
+                                        placeholder="$ Máx"
+                                        value={filters.maxPrice}
+                                        onChange={handleChange}
+                                        min="0"
+                                    />
+                                </div>
                             </div>
 
                             <div className="search-group">
@@ -155,15 +181,19 @@ const Home = () => {
                                     <input
                                         type="date"
                                         name="startDate"
+                                        title="Fecha Mínima"
                                         value={filters.startDate}
                                         onChange={handleChange}
+                                        min={new Date().toISOString().split('T')[0]}
                                     />
                                     <span>-</span>
                                     <input
                                         type="date"
                                         name="endDate"
+                                        title="Fecha Máxima"
                                         value={filters.endDate}
                                         onChange={handleChange}
+                                        min={filters.startDate || new Date().toISOString().split('T')[0]}
                                     />
                                 </div>
                             </div>
@@ -172,10 +202,9 @@ const Home = () => {
                                 <label>Experiencia</label>
                                 <select name="travelTypeId" value={filters.travelTypeId} onChange={handleChange}>
                                     <option value="">Cualquiera</option>
-                                    <option value="1">Aventura</option>
-                                    <option value="2">Relax</option>
-                                    <option value="3">Cultural</option>
-                                    <option value="4">Familiar</option>
+                                    {travelTypes.map(type => (
+                                        <option key={type.id} value={type.id}>{type.name}</option>
+                                    ))}
                                 </select>
                             </div>
 
@@ -184,7 +213,7 @@ const Home = () => {
                                     <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
                                     Buscar
                                 </button>
-                                {(filters.destination || filters.maxPrice || filters.startDate || filters.travelTypeId) && (
+                                {(filters.destination || filters.minPrice || filters.maxPrice || filters.startDate || filters.endDate || filters.travelTypeId) && (
                                     <button type="button" className="clear-btn" onClick={clearFilters}>Limpiar</button>
                                 )}
                             </div>
