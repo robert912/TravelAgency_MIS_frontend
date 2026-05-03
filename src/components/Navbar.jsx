@@ -59,7 +59,17 @@ export default function Navbar() {
                             <MenuIcon />
                         </IconButton>
 
-                        <Typography variant="h4" sx={{ fontWeight: "bold" }}>
+                        <Typography variant="h4" sx={{
+                            fontWeight: "bold",
+                            fontSize: {
+                                xs: "1.2rem",   // móviles
+                                sm: "1.5rem",   // tablets
+                                md: "2rem"      // desktop
+                            },
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "4px"
+                        }}>
                             Travel<span className="primary">Agency</span><ConnectingAirportsIcon />
                         </Typography>
                     </Box>
