@@ -155,12 +155,14 @@ export default function Navbar() {
                                         transformOrigin={{ vertical: 'top', horizontal: 'right' }}
                                         open={Boolean(anchorEl)}
                                         onClose={handleClose}
-                                        PaperProps={{
-                                            sx: {
-                                                mt: 1,
-                                                minWidth: 200,
-                                                borderRadius: 2,
-                                                boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
+                                        slotProps={{
+                                            paper: {
+                                                sx: {
+                                                    mt: 1,
+                                                    minWidth: 200,
+                                                    borderRadius: 2,
+                                                    boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
+                                                }
                                             }
                                         }}
                                     >

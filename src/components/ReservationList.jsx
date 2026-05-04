@@ -326,28 +326,28 @@ const ReservationList = () => {
 
             {/* Stats Cards */}
             <Grid container spacing={2} sx={{ mb: 3 }}>
-                <Grid item xs={6} sm={3}>
+                <Grid xs={6} sm={3}>
                     <Paper sx={{ p: 2, textAlign: 'center', bgcolor: '#fff3e0', cursor: 'pointer' }} onClick={() => { setStatusFilter("PENDIENTE"); setPage(1); }}>
                         <PendingIcon sx={{ color: '#e65100', fontSize: 30 }} />
                         <Typography variant="h6">{reservations.filter(r => r.status === 'PENDIENTE').length}</Typography>
                         <Typography variant="caption">Pendientes</Typography>
                     </Paper>
                 </Grid>
-                <Grid item xs={6} sm={3}>
+                <Grid xs={6} sm={3}>
                     <Paper sx={{ p: 2, textAlign: 'center', bgcolor: '#e8f5e9', cursor: 'pointer' }} onClick={() => { setStatusFilter("PAGADA"); setPage(1); }}>
                         <CheckIcon sx={{ color: '#2e7d32', fontSize: 30 }} />
                         <Typography variant="h6">{reservations.filter(r => r.status === 'PAGADA').length}</Typography>
                         <Typography variant="caption">Pagadas</Typography>
                     </Paper>
                 </Grid>
-                <Grid item xs={6} sm={3}>
+                <Grid xs={6} sm={3}>
                     <Paper sx={{ p: 2, textAlign: 'center', bgcolor: '#ffebee', cursor: 'pointer' }} onClick={() => { setStatusFilter("CANCELADA"); setPage(1); }}>
                         <CancelIcon sx={{ color: '#c62828', fontSize: 30 }} />
                         <Typography variant="h6">{reservations.filter(r => r.status === 'CANCELADA').length}</Typography>
                         <Typography variant="caption">Canceladas</Typography>
                     </Paper>
                 </Grid>
-                <Grid item xs={6} sm={3}>
+                <Grid xs={6} sm={3}>
                     <Paper sx={{ p: 2, textAlign: 'center', bgcolor: '#f5f5f5', cursor: 'pointer' }} onClick={() => { setStatusFilter("EXPIRADA"); setPage(1); }}>
                         <ScheduleIcon sx={{ color: '#757575', fontSize: 30 }} />
                         <Typography variant="h6">{reservations.filter(r => r.status === 'EXPIRADA').length}</Typography>
@@ -446,7 +446,7 @@ const ReservationList = () => {
                             ) : (
                                 paginatedReservations.map((reservation) => {
                                     const passengers = passengersMap[reservation.id] || [];
-                                    const isReservationExpired = isExpired(reservation.expirationDate);
+                                    const isReservationExpired = reservation.status === 'EXPIRADA' || (isExpired(reservation.expirationDate) && reservation.status === 'PENDIENTE');
                                     const discountDetails = parseDiscountDetails(reservation.discountDetails);
 
                                     return (
@@ -570,7 +570,7 @@ const ReservationList = () => {
                                                                 <Grid container spacing={2}>
                                                                     {passengers.length > 0 ? (
                                                                         passengers.map((passenger, idx) => (
-                                                                            <Grid item xs={12} sm={6} md={4} key={idx}>
+                                                                            <Grid xs={12} sm={6} md={4} key={idx}>
                                                                                 <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
                                                                                     <Typography variant="subtitle2" gutterBottom color="primary">
                                                                                         Pasajero {idx + 1}
@@ -598,7 +598,7 @@ const ReservationList = () => {
                                                                             </Grid>
                                                                         ))
                                                                     ) : (
-                                                                        <Grid item xs={12}>
+                                                                        <Grid xs={12}>
                                                                             <Typography variant="body2" color="text.secondary" align="center">
                                                                                 No hay pasajeros registrados
                                                                             </Typography>
@@ -677,15 +677,15 @@ const ReservationList = () => {
 
                             <Typography variant="subtitle1" fontWeight="bold" gutterBottom>INFORMACIÓN DE LA RESERVA</Typography>
                             <Grid container spacing={2} sx={{ mb: 3 }}>
-                                <Grid item xs={6}>
+                                <Grid xs={6}>
                                     <Typography variant="caption" color="text.secondary">Número de Reserva</Typography>
                                     <Typography variant="body1" fontWeight="bold">#{currentReceipt.id}</Typography>
                                 </Grid>
-                                <Grid item xs={6}>
+                                <Grid xs={6}>
                                     <Typography variant="caption" color="text.secondary">Estado</Typography>
                                     <Box>{getStatusChip(currentReceipt.status)}</Box>
                                 </Grid>
-                                <Grid item xs={6}>
+                                <Grid xs={6}>
                                     <Typography variant="caption" color="text.secondary">Fecha de Reserva</Typography>
                                     <Typography variant="body2">{dayjs(currentReceipt.reservationDate).format('DD/MM/YYYY HH:mm')}</Typography>
                                 </Grid>
@@ -695,19 +695,19 @@ const ReservationList = () => {
 
                             <Typography variant="subtitle1" fontWeight="bold" gutterBottom>INFORMACIÓN DEL CLIENTE</Typography>
                             <Grid container spacing={2} sx={{ mb: 3 }}>
-                                <Grid item xs={12}>
+                                <Grid xs={12}>
                                     <Typography variant="caption" color="text.secondary">Nombre</Typography>
                                     <Typography variant="body2">{currentReceipt.person?.fullName || "N/A"}</Typography>
                                 </Grid>
-                                <Grid item xs={6}>
+                                <Grid xs={6}>
                                     <Typography variant="caption" color="text.secondary">Identificación</Typography>
                                     <Typography variant="body2">{currentReceipt.person?.identification || "N/A"}</Typography>
                                 </Grid>
-                                <Grid item xs={6}>
+                                <Grid xs={6}>
                                     <Typography variant="caption" color="text.secondary">Email</Typography>
                                     <Typography variant="body2">{currentReceipt.person?.email || "N/A"}</Typography>
                                 </Grid>
-                                <Grid item xs={12}>
+                                <Grid xs={12}>
                                     <Typography variant="caption" color="text.secondary">Teléfono</Typography>
                                     <Typography variant="body2">{currentReceipt.person?.phone || "N/A"}</Typography>
                                 </Grid>
@@ -717,19 +717,19 @@ const ReservationList = () => {
 
                             <Typography variant="subtitle1" fontWeight="bold" gutterBottom>INFORMACIÓN DEL PAQUETE</Typography>
                             <Grid container spacing={2} sx={{ mb: 3 }}>
-                                <Grid item xs={12}>
+                                <Grid xs={12}>
                                     <Typography variant="caption" color="text.secondary">Paquete</Typography>
                                     <Typography variant="body2">{currentReceipt.tourPackage?.name || "N/A"}</Typography>
                                 </Grid>
-                                <Grid item xs={12}>
+                                <Grid xs={12}>
                                     <Typography variant="caption" color="text.secondary">Destino</Typography>
                                     <Typography variant="body2">{currentReceipt.tourPackage?.destination || "N/A"}</Typography>
                                 </Grid>
-                                <Grid item xs={6}>
+                                <Grid xs={6}>
                                     <Typography variant="caption" color="text.secondary">Fecha Ida</Typography>
                                     <Typography variant="body2">{currentReceipt.tourPackage?.startDate || "N/A"}</Typography>
                                 </Grid>
-                                <Grid item xs={6}>
+                                <Grid xs={6}>
                                     <Typography variant="caption" color="text.secondary">Fecha Vuelta</Typography>
                                     <Typography variant="body2">{currentReceipt.tourPackage?.endDate || "N/A"}</Typography>
                                 </Grid>

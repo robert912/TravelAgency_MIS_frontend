@@ -166,7 +166,7 @@ const MyProfile = () => {
                     <Box sx={{ p: 4 }}>
                         <Grid container spacing={3}>
                             {/* Nombre Completo */}
-                            <Grid item xs={12}>
+                            <Grid xs={12}>
                                 <TextField
                                     fullWidth
                                     label="Nombre Completo"
@@ -187,7 +187,7 @@ const MyProfile = () => {
                             </Grid>
 
                             {/* Identificación */}
-                            <Grid item xs={12} md={6}>
+                            <Grid xs={12} md={6}>
                                 <TextField
                                     fullWidth
                                     label="Identificación"
@@ -209,7 +209,7 @@ const MyProfile = () => {
                             </Grid>
 
                             {/* Email */}
-                            <Grid item xs={12} md={6}>
+                            <Grid xs={12} md={6}>
                                 <TextField
                                     fullWidth
                                     label="Email"
@@ -232,7 +232,7 @@ const MyProfile = () => {
                             </Grid>
 
                             {/* Teléfono */}
-                            <Grid item xs={12} md={6}>
+                            <Grid xs={12} md={6}>
                                 <TextField
                                     fullWidth
                                     label="Teléfono"
@@ -252,7 +252,7 @@ const MyProfile = () => {
                             </Grid>
 
                             {/* Nacionalidad */}
-                            <Grid item xs={12} md={6}>
+                            <Grid xs={12} md={6}>
                                 <TextField
                                     fullWidth
                                     label="País / Nacionalidad"

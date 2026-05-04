@@ -335,7 +335,7 @@ const ReservationAddEdit = () => {
                         <Box sx={{ p: 4 }}>
                             <Grid container spacing={3}>
                                 {/* Alerta de estado actual */}
-                                <Grid item xs={12}>
+                                <Grid xs={12}>
                                     <Alert
                                         severity={formData.status === 'PENDIENTE' ? 'warning' :
                                             formData.status === 'PAGADA' ? 'success' :
@@ -350,7 +350,7 @@ const ReservationAddEdit = () => {
                                 </Grid>
 
                                 {/* Cliente */}
-                                <Grid item xs={12} md={6}>
+                                <Grid xs={12} md={6}>
                                     <FormControl fullWidth error={!!errors.personId} required>
                                         <InputLabel>Cliente</InputLabel>
                                         <Select
@@ -381,7 +381,7 @@ const ReservationAddEdit = () => {
                                 </Grid>
 
                                 {/* Paquete */}
-                                <Grid item xs={12} md={6}>
+                                <Grid xs={12} md={6}>
                                     <FormControl fullWidth error={!!errors.tourPackageId} required>
                                         <InputLabel>Paquete Turístico</InputLabel>
                                         <Select
@@ -413,7 +413,7 @@ const ReservationAddEdit = () => {
 
                                 {/* Estado (solo visible en edición) */}
                                 {(isEditMode || isViewMode) && (
-                                    <Grid item xs={12} md={6}>
+                                    <Grid xs={12} md={6}>
                                         <FormControl fullWidth>
                                             <InputLabel>Estado</InputLabel>
                                             <Select
@@ -433,7 +433,7 @@ const ReservationAddEdit = () => {
                                 )}
 
                                 {/* Solicitudes especiales */}
-                                <Grid item xs={12}>
+                                <Grid xs={12}>
                                     <TextField
                                         fullWidth
                                         label="Solicitudes especiales"
@@ -450,7 +450,7 @@ const ReservationAddEdit = () => {
 
                                 {/* Lista de pasajeros */}
                                 {passengers.length > 0 && (
-                                    <Grid item xs={12}>
+                                    <Grid xs={12}>
                                         <Paper variant="outlined" sx={{ p: 2 }}>
                                             <Typography variant="subtitle1" fontWeight="bold" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                                 <PeopleIcon color="primary" />
@@ -492,7 +492,7 @@ const ReservationAddEdit = () => {
 
                                 {/* Resumen de precios (solo vista/edición) */}
                                 {(isEditMode || isViewMode) && formData.totalAmount > 0 && (
-                                    <Grid item xs={12}>
+                                    <Grid xs={12}>
                                         <Paper sx={{ p: 2, bgcolor: '#f8fafc' }}>
                                             <Typography variant="subtitle1" fontWeight="bold" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                                 <MoneyIcon color="primary" />
@@ -545,7 +545,7 @@ const ReservationAddEdit = () => {
 
                                 {/* Información de pago (si está pagada) */}
                                 {paymentInfo && (
-                                    <Grid item xs={12}>
+                                    <Grid xs={12}>
                                         <Paper sx={{ p: 2, bgcolor: '#e8f5e9' }}>
                                             <Typography variant="subtitle1" fontWeight="bold" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                                 <PaymentIcon color="success" />
@@ -553,22 +553,22 @@ const ReservationAddEdit = () => {
                                             </Typography>
                                             <Divider sx={{ mb: 2 }} />
                                             <Grid container spacing={2}>
-                                                <Grid item xs={12} sm={6}>
+                                                <Grid xs={12} sm={6}>
                                                     <Typography variant="caption" color="text.secondary">ID Transacción</Typography>
                                                     <Typography variant="body2">{paymentInfo.transactionId || "N/A"}</Typography>
                                                 </Grid>
-                                                <Grid item xs={12} sm={6}>
+                                                <Grid xs={12} sm={6}>
                                                     <Typography variant="caption" color="text.secondary">Método de pago</Typography>
                                                     <Typography variant="body2">
                                                         {paymentInfo.paymentMethod === 'CREDIT_CARD' ? 'Tarjeta de Crédito' :
                                                             paymentInfo.paymentMethod === 'DEBIT_CARD' ? 'Tarjeta de Débito' : paymentInfo.paymentMethod || "N/A"}
                                                     </Typography>
                                                 </Grid>
-                                                <Grid item xs={12} sm={6}>
+                                                <Grid xs={12} sm={6}>
                                                     <Typography variant="caption" color="text.secondary">Tarjeta</Typography>
                                                     <Typography variant="body2">{paymentInfo.cardNumber || "****"}</Typography>
                                                 </Grid>
-                                                <Grid item xs={12} sm={6}>
+                                                <Grid xs={12} sm={6}>
                                                     <Typography variant="caption" color="text.secondary">Fecha de pago</Typography>
                                                     <Typography variant="body2">{dayjs(paymentInfo.createdAt).format('DD/MM/YYYY HH:mm')}</Typography>
                                                 </Grid>
@@ -579,7 +579,7 @@ const ReservationAddEdit = () => {
 
                                 {/* Información de expiración (si está pendiente) */}
                                 {formData.status === 'PENDIENTE' && formData.expirationDate && (
-                                    <Grid item xs={12}>
+                                    <Grid xs={12}>
                                         <Alert severity="warning" sx={{ bgcolor: '#fff3e0' }}>
                                             <Typography variant="body2">
                                                 Esta reserva expira el <strong>{dayjs(formData.expirationDate).format('DD/MM/YYYY HH:mm')}</strong>
@@ -681,15 +681,15 @@ const ReservationAddEdit = () => {
 
                         <Typography variant="subtitle1" fontWeight="bold" gutterBottom>INFORMACIÓN DE LA RESERVA</Typography>
                         <Grid container spacing={2} sx={{ mb: 3 }}>
-                            <Grid item xs={6}>
+                            <Grid xs={6}>
                                 <Typography variant="caption" color="text.secondary">Número de Reserva</Typography>
                                 <Typography variant="body1" fontWeight="bold">#{id}</Typography>
                             </Grid>
-                            <Grid item xs={6}>
+                            <Grid xs={6}>
                                 <Typography variant="caption" color="text.secondary">Estado</Typography>
                                 <Box>{getStatusChip(formData.status)}</Box>
                             </Grid>
-                            <Grid item xs={6}>
+                            <Grid xs={6}>
                                 <Typography variant="caption" color="text.secondary">Fecha de Reserva</Typography>
                                 <Typography variant="body2">{dayjs(formData.reservationDate).format('DD/MM/YYYY HH:mm')}</Typography>
                             </Grid>
@@ -699,19 +699,19 @@ const ReservationAddEdit = () => {
 
                         <Typography variant="subtitle1" fontWeight="bold" gutterBottom>INFORMACIÓN DEL CLIENTE</Typography>
                         <Grid container spacing={2} sx={{ mb: 3 }}>
-                            <Grid item xs={12}>
+                            <Grid xs={12}>
                                 <Typography variant="caption" color="text.secondary">Nombre</Typography>
                                 <Typography variant="body2">{selectedPerson?.fullName || "N/A"}</Typography>
                             </Grid>
-                            <Grid item xs={6}>
+                            <Grid xs={6}>
                                 <Typography variant="caption" color="text.secondary">Identificación</Typography>
                                 <Typography variant="body2">{selectedPerson?.identification || "N/A"}</Typography>
                             </Grid>
-                            <Grid item xs={6}>
+                            <Grid xs={6}>
                                 <Typography variant="caption" color="text.secondary">Email</Typography>
                                 <Typography variant="body2">{selectedPerson?.email || "N/A"}</Typography>
                             </Grid>
-                            <Grid item xs={12}>
+                            <Grid xs={12}>
                                 <Typography variant="caption" color="text.secondary">Teléfono</Typography>
                                 <Typography variant="body2">{selectedPerson?.phone || "N/A"}</Typography>
                             </Grid>
@@ -721,19 +721,19 @@ const ReservationAddEdit = () => {
 
                         <Typography variant="subtitle1" fontWeight="bold" gutterBottom>INFORMACIÓN DEL PAQUETE</Typography>
                         <Grid container spacing={2} sx={{ mb: 3 }}>
-                            <Grid item xs={12}>
+                            <Grid xs={12}>
                                 <Typography variant="caption" color="text.secondary">Paquete</Typography>
                                 <Typography variant="body2">{selectedPackage?.name || "N/A"}</Typography>
                             </Grid>
-                            <Grid item xs={12}>
+                            <Grid xs={12}>
                                 <Typography variant="caption" color="text.secondary">Destino</Typography>
                                 <Typography variant="body2">{selectedPackage?.destination || "N/A"}</Typography>
                             </Grid>
-                            <Grid item xs={6}>
+                            <Grid xs={6}>
                                 <Typography variant="caption" color="text.secondary">Fecha Ida</Typography>
                                 <Typography variant="body2">{selectedPackage?.startDate || "N/A"}</Typography>
                             </Grid>
-                            <Grid item xs={6}>
+                            <Grid xs={6}>
                                 <Typography variant="caption" color="text.secondary">Fecha Vuelta</Typography>
                                 <Typography variant="body2">{selectedPackage?.endDate || "N/A"}</Typography>
                             </Grid>
@@ -796,22 +796,22 @@ const ReservationAddEdit = () => {
                             <Box sx={{ mb: 3 }}>
                                 <Typography variant="subtitle2" gutterBottom>Información de la transacción:</Typography>
                                 <Grid container spacing={1}>
-                                    <Grid item xs={12}>
+                                    <Grid xs={12}>
                                         <Typography variant="caption" color="text.secondary">ID Transacción</Typography>
                                         <Typography variant="body2">{paymentInfo.transactionId || "N/A"}</Typography>
                                     </Grid>
-                                    <Grid item xs={6}>
+                                    <Grid xs={6}>
                                         <Typography variant="caption" color="text.secondary">Método de pago</Typography>
                                         <Typography variant="body2">
                                             {paymentInfo.paymentMethod === 'CREDIT_CARD' ? 'Tarjeta de Crédito' :
                                                 paymentInfo.paymentMethod === 'DEBIT_CARD' ? 'Tarjeta de Débito' : paymentInfo.paymentMethod || "N/A"}
                                         </Typography>
                                     </Grid>
-                                    <Grid item xs={6}>
+                                    <Grid xs={6}>
                                         <Typography variant="caption" color="text.secondary">Tarjeta</Typography>
                                         <Typography variant="body2">{paymentInfo.cardNumber || "****"}</Typography>
                                     </Grid>
-                                    <Grid item xs={12}>
+                                    <Grid xs={12}>
                                         <Typography variant="caption" color="text.secondary">Fecha de pago</Typography>
                                         <Typography variant="body2">{dayjs(paymentInfo.createdAt).format('DD/MM/YYYY HH:mm')}</Typography>
                                     </Grid>

@@ -40,7 +40,7 @@ const reservationService = {
 
     // Cambiar estado de reserva
     changeStatus: (id, status) => {
-        return httpClient.patch(`${API_URL}/${id}/status`, null, { params: { status } });
+        return httpClient.put(`${API_URL}/${id}/status`, null, { params: { status } });
     },
 
     // Obtener reservas por persona

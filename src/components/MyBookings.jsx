@@ -219,11 +219,11 @@ const MyBookings = () => {
                     <Grid container spacing={3}>
                         {reservations.map((reservation) => {
                             const passengers = passengersMap[reservation.id] || [];
-                            const isReservationExpired = isExpired(reservation.expirationDate);
+                            const isReservationExpired = reservation.status === 'EXPIRADA' || (isExpired(reservation.expirationDate) && reservation.status === 'PENDIENTE');
                             const showPaymentButton = reservation.status === 'PENDIENTE' && !isReservationExpired;
 
                             return (
-                                <Grid item xs={12} key={reservation.id}>
+                                <Grid xs={12} key={reservation.id}>
                                     <Card sx={{ borderRadius: 2 }}>
                                         <CardContent>
                                             {/* Cabecera de la reserva */}
@@ -267,7 +267,7 @@ const MyBookings = () => {
 
                                             {/* Detalles de la reserva */}
                                             <Grid container spacing={2} sx={{ mb: 2 }}>
-                                                <Grid item xs={6} sm={3}>
+                                                <Grid xs={6} sm={3}>
                                                     <Typography variant="caption" color="text.secondary">
                                                         Fecha de reserva
                                                     </Typography>
@@ -275,7 +275,7 @@ const MyBookings = () => {
                                                         {dayjs(reservation.reservationDate).format('DD/MM/YYYY HH:mm')}
                                                     </Typography>
                                                 </Grid>
-                                                <Grid item xs={6} sm={3}>
+                                                <Grid xs={6} sm={3}>
                                                     <Typography variant="caption" color="text.secondary">
                                                         Pasajeros
                                                     </Typography>
@@ -283,7 +283,7 @@ const MyBookings = () => {
                                                         {passengers.length} persona(s)
                                                     </Typography>
                                                 </Grid>
-                                                <Grid item xs={6} sm={3}>
+                                                <Grid xs={6} sm={3}>
                                                     <Typography variant="caption" color="text.secondary">
                                                         Fecha de viaje
                                                     </Typography>
@@ -291,7 +291,7 @@ const MyBookings = () => {
                                                         {reservation.tourPackage?.startDate} - {reservation.tourPackage?.endDate}
                                                     </Typography>
                                                 </Grid>
-                                                <Grid item xs={6} sm={3}>
+                                                <Grid xs={6} sm={3}>
                                                     <Typography variant="caption" color="text.secondary">
                                                         Total
                                                     </Typography>
@@ -319,7 +319,7 @@ const MyBookings = () => {
                                                     <AccordionDetails>
                                                         <Grid container spacing={2}>
                                                             {passengers.map((passenger, index) => (
-                                                                <Grid item xs={12} sm={6} md={4} key={index}>
+                                                                <Grid xs={12} sm={6} md={4} key={index}>
                                                                     <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
                                                                         <Typography variant="subtitle2" gutterBottom>
                                                                             Pasajero {index + 1}
@@ -462,15 +462,15 @@ const MyBookings = () => {
                                 INFORMACIÓN DE LA RESERVA
                             </Typography>
                             <Grid container spacing={2} sx={{ mb: 3 }}>
-                                <Grid item xs={6}>
+                                <Grid xs={6}>
                                     <Typography variant="caption" color="text.secondary">Número de Reserva</Typography>
                                     <Typography variant="body1" fontWeight="bold">#{currentReceipt.id}</Typography>
                                 </Grid>
-                                <Grid item xs={6}>
+                                <Grid xs={6}>
                                     <Typography variant="caption" color="text.secondary">Estado</Typography>
                                     <Typography variant="body1">{statusColors[currentReceipt.status]?.label}</Typography>
                                 </Grid>
-                                <Grid item xs={6}>
+                                <Grid xs={6}>
                                     <Typography variant="caption" color="text.secondary">Fecha de Reserva</Typography>
                                     <Typography variant="body2">{dayjs(currentReceipt.reservationDate).format('DD/MM/YYYY HH:mm')}</Typography>
                                 </Grid>
@@ -483,19 +483,19 @@ const MyBookings = () => {
                                 INFORMACIÓN DEL CLIENTE
                             </Typography>
                             <Grid container spacing={2} sx={{ mb: 3 }}>
-                                <Grid item xs={12}>
+                                <Grid xs={12}>
                                     <Typography variant="caption" color="text.secondary">Nombre</Typography>
                                     <Typography variant="body2">{currentReceipt.person?.fullName || "N/A"}</Typography>
                                 </Grid>
-                                <Grid item xs={6}>
+                                <Grid xs={6}>
                                     <Typography variant="caption" color="text.secondary">Identificación</Typography>
                                     <Typography variant="body2">{currentReceipt.person?.identification || "N/A"}</Typography>
                                 </Grid>
-                                <Grid item xs={6}>
+                                <Grid xs={6}>
                                     <Typography variant="caption" color="text.secondary">Email</Typography>
                                     <Typography variant="body2">{currentReceipt.person?.email || "N/A"}</Typography>
                                 </Grid>
-                                <Grid item xs={12}>
+                                <Grid xs={12}>
                                     <Typography variant="caption" color="text.secondary">Teléfono</Typography>
                                     <Typography variant="body2">{currentReceipt.person?.phone || "N/A"}</Typography>
                                 </Grid>
@@ -508,19 +508,19 @@ const MyBookings = () => {
                                 INFORMACIÓN DEL PAQUETE
                             </Typography>
                             <Grid container spacing={2} sx={{ mb: 3 }}>
-                                <Grid item xs={12}>
+                                <Grid xs={12}>
                                     <Typography variant="caption" color="text.secondary">Paquete</Typography>
                                     <Typography variant="body2">{currentReceipt.tourPackage?.name || "N/A"}</Typography>
                                 </Grid>
-                                <Grid item xs={12}>
+                                <Grid xs={12}>
                                     <Typography variant="caption" color="text.secondary">Destino</Typography>
                                     <Typography variant="body2">{currentReceipt.tourPackage?.destination || "N/A"}</Typography>
                                 </Grid>
-                                <Grid item xs={6}>
+                                <Grid xs={6}>
                                     <Typography variant="caption" color="text.secondary">Fecha Ida</Typography>
                                     <Typography variant="body2">{currentReceipt.tourPackage?.startDate || "N/A"}</Typography>
                                 </Grid>
-                                <Grid item xs={6}>
+                                <Grid xs={6}>
                                     <Typography variant="caption" color="text.secondary">Fecha Vuelta</Typography>
                                     <Typography variant="body2">{currentReceipt.tourPackage?.endDate || "N/A"}</Typography>
                                 </Grid>
@@ -608,11 +608,11 @@ const MyBookings = () => {
                                         Información de la transacción:
                                     </Typography>
                                     <Grid container spacing={1}>
-                                        <Grid item xs={12}>
+                                        <Grid xs={12}>
                                             <Typography variant="caption" color="text.secondary">ID de Transacción</Typography>
                                             <Typography variant="body2">{paymentInfo.transactionId || "N/A"}</Typography>
                                         </Grid>
-                                        <Grid item xs={6}>
+                                        <Grid xs={6}>
                                             <Typography variant="caption" color="text.secondary">Método de pago</Typography>
                                             <Typography variant="body2">
                                                 {paymentInfo.paymentMethod === 'CREDIT_CARD' ? 'Tarjeta de Crédito' :
@@ -620,11 +620,11 @@ const MyBookings = () => {
                                                         paymentInfo.paymentMethod || "N/A"}
                                             </Typography>
                                         </Grid>
-                                        <Grid item xs={6}>
+                                        <Grid xs={6}>
                                             <Typography variant="caption" color="text.secondary">Tarjeta</Typography>
                                             <Typography variant="body2">{paymentInfo.cardNumber || "****"}</Typography>
                                         </Grid>
-                                        <Grid item xs={12}>
+                                        <Grid xs={12}>
                                             <Typography variant="caption" color="text.secondary">Fecha de pago</Typography>
                                             <Typography variant="body2">{dayjs(paymentInfo.createdAt).format('DD/MM/YYYY HH:mm')}</Typography>
                                         </Grid>
@@ -678,7 +678,7 @@ const MyBookings = () => {
             </Dialog>
 
             {/* Estilos para impresión */}
-            <style jsx global>{`
+            <style>{`
                 @media print {
                     .no-print {
                         display: none !important;

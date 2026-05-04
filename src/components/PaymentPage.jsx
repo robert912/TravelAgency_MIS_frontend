@@ -279,7 +279,7 @@ const PaymentPage = () => {
                                         Detalles de la reserva
                                     </Typography>
                                     <Grid container spacing={2}>
-                                        <Grid item xs={12} sm={6}>
+                                        <Grid xs={12} sm={6}>
                                             <Typography variant="caption" color="text.secondary">
                                                 Número de reserva
                                             </Typography>
@@ -287,7 +287,7 @@ const PaymentPage = () => {
                                                 #{reservation.id}
                                             </Typography>
                                         </Grid>
-                                        <Grid item xs={12} sm={6}>
+                                        <Grid xs={12} sm={6}>
                                             <Typography variant="caption" color="text.secondary">
                                                 Estado
                                             </Typography>
@@ -295,7 +295,7 @@ const PaymentPage = () => {
                                                 {reservation.status}
                                             </Typography>
                                         </Grid>
-                                        <Grid item xs={12}>
+                                        <Grid xs={12}>
                                             <Typography variant="caption" color="text.secondary">
                                                 Paquete
                                             </Typography>
@@ -303,7 +303,7 @@ const PaymentPage = () => {
                                                 {reservation.tourPackage?.name}
                                             </Typography>
                                         </Grid>
-                                        <Grid item xs={12}>
+                                        <Grid xs={12}>
                                             <Typography variant="caption" color="text.secondary">
                                                 Pasajeros
                                             </Typography>
@@ -314,7 +314,7 @@ const PaymentPage = () => {
 
                                         {/* Mostrar descuentos si existen */}
                                         {discountDetails.length > 0 && (
-                                            <Grid item xs={12}>
+                                            <Grid xs={12}>
                                                 <Divider sx={{ my: 1 }} />
                                                 <Typography variant="subtitle2" gutterBottom>
                                                     Descuentos aplicados
@@ -330,7 +330,7 @@ const PaymentPage = () => {
                                             </Grid>
                                         )}
 
-                                        <Grid item xs={12}>
+                                        <Grid xs={12}>
                                             <Divider sx={{ my: 1 }} />
                                             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                                 <Typography variant="subtitle1" fontWeight="bold">
@@ -373,7 +373,7 @@ const PaymentPage = () => {
                             <Divider sx={{ mb: 3 }} />
 
                             <Grid container spacing={3}>
-                                <Grid item xs={12}>
+                                <Grid xs={12}>
                                     <FormControl component="fieldset">
                                         <FormLabel component="legend">Método de pago</FormLabel>
                                         <RadioGroup
@@ -396,7 +396,7 @@ const PaymentPage = () => {
                                     </FormControl>
                                 </Grid>
 
-                                <Grid item xs={12}>
+                                <Grid xs={12}>
                                     <TextField
                                         fullWidth
                                         label="Número de tarjeta"
@@ -414,7 +414,7 @@ const PaymentPage = () => {
                                     />
                                 </Grid>
 
-                                <Grid item xs={12}>
+                                <Grid xs={12}>
                                     <TextField
                                         fullWidth
                                         label="Nombre del titular"
@@ -427,7 +427,7 @@ const PaymentPage = () => {
                                     />
                                 </Grid>
 
-                                <Grid item xs={12} sm={6}>
+                                <Grid xs={12} sm={6}>
                                     <TextField
                                         fullWidth
                                         label="Fecha de expiración"
@@ -439,7 +439,7 @@ const PaymentPage = () => {
                                     />
                                 </Grid>
 
-                                <Grid item xs={12} sm={6}>
+                                <Grid xs={12} sm={6}>
                                     <TextField
                                         fullWidth
                                         label="CVV"
@@ -477,13 +477,13 @@ const PaymentPage = () => {
                                         Detalles de la transacción
                                     </Typography>
                                     <Grid container spacing={2}>
-                                        <Grid item xs={6}>
+                                        <Grid xs={6}>
                                             <Typography variant="caption" color="text.secondary">
                                                 Reserva
                                             </Typography>
                                             <Typography variant="body2">#{reservation.id}</Typography>
                                         </Grid>
-                                        <Grid item xs={6}>
+                                        <Grid xs={6}>
                                             <Typography variant="caption" color="text.secondary">
                                                 Método de pago
                                             </Typography>
@@ -491,7 +491,7 @@ const PaymentPage = () => {
                                                 {formData.paymentMethod === 'CREDIT_CARD' ? 'Tarjeta de Crédito' : 'Tarjeta de Débito'}
                                             </Typography>
                                         </Grid>
-                                        <Grid item xs={6}>
+                                        <Grid xs={6}>
                                             <Typography variant="caption" color="text.secondary">
                                                 Tarjeta
                                             </Typography>
@@ -499,7 +499,7 @@ const PaymentPage = () => {
                                                 **** {formData.cardNumber.slice(-4)}
                                             </Typography>
                                         </Grid>
-                                        <Grid item xs={6}>
+                                        <Grid xs={6}>
                                             <Typography variant="caption" color="text.secondary">
                                                 Titular
                                             </Typography>
@@ -507,7 +507,7 @@ const PaymentPage = () => {
                                                 {formData.cardHolderName}
                                             </Typography>
                                         </Grid>
-                                        <Grid item xs={12}>
+                                        <Grid xs={12}>
                                             <Divider sx={{ my: 1 }} />
                                             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                                 <Typography variant="subtitle1" fontWeight="bold">

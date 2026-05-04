@@ -663,7 +663,7 @@ const BookingPage = () => {
                 </Stepper>
 
                 <Grid container spacing={3}>
-                    <Grid item xs={12} md={8}>
+                    <Grid xs={12} md={8}>
                         <Paper sx={{ p: 3, borderRadius: 3 }}>
                             {activeStep === 0 && (
                                 <Box>
@@ -673,7 +673,7 @@ const BookingPage = () => {
                                     <Divider sx={{ mb: 3 }} />
 
                                     <Grid container spacing={3}>
-                                        <Grid item xs={12} sm={6}>
+                                        <Grid xs={12} sm={6}>
                                             <TextField
                                                 fullWidth
                                                 label="Número de pasajeros"
@@ -754,7 +754,7 @@ const BookingPage = () => {
                                             />
                                         </Grid>
 
-                                        <Grid item xs={12}>
+                                        <Grid xs={12}>
                                             <TextField
                                                 fullWidth
                                                 label="Solicitudes especiales (opcional)"
@@ -868,7 +868,7 @@ const BookingPage = () => {
                                                     <Box sx={{ mt: 2 }}>
                                                         {passenger.isEditing ? (
                                                             <Grid container spacing={2}>
-                                                                <Grid item xs={12}>
+                                                                <Grid xs={12}>
                                                                     <TextField
                                                                         fullWidth
                                                                         label="Número de identificación (RUT/DNI/Pasaporte)"
@@ -899,7 +899,7 @@ const BookingPage = () => {
                                                                         helperText="Ingresa RUT/DNI para buscar automáticamente"
                                                                     />
                                                                 </Grid>
-                                                                <Grid item xs={12}>
+                                                                <Grid xs={12}>
                                                                     <TextField
                                                                         fullWidth
                                                                         label="Nombre completo"
@@ -908,7 +908,7 @@ const BookingPage = () => {
                                                                         required
                                                                     />
                                                                 </Grid>
-                                                                <Grid item xs={12} sm={6}>
+                                                                <Grid xs={12} sm={6}>
                                                                     <TextField
                                                                         fullWidth
                                                                         label="Correo electrónico"
@@ -918,7 +918,7 @@ const BookingPage = () => {
                                                                         required
                                                                     />
                                                                 </Grid>
-                                                                <Grid item xs={12} sm={6}>
+                                                                <Grid xs={12} sm={6}>
                                                                     <TextField
                                                                         fullWidth
                                                                         label="Teléfono"
@@ -926,7 +926,7 @@ const BookingPage = () => {
                                                                         onChange={(e) => handlePassengerFieldChange(index, 'phone', e.target.value)}
                                                                     />
                                                                 </Grid>
-                                                                <Grid item xs={12}>
+                                                                <Grid xs={12}>
                                                                     <TextField
                                                                         fullWidth
                                                                         label="Nacionalidad"
@@ -934,7 +934,7 @@ const BookingPage = () => {
                                                                         onChange={(e) => handlePassengerFieldChange(index, 'nationality', e.target.value)}
                                                                     />
                                                                 </Grid>
-                                                                <Grid item xs={12}>
+                                                                <Grid xs={12}>
                                                                     <Button
                                                                         variant="contained"
                                                                         onClick={() => handleSavePassenger(index)}
@@ -948,23 +948,23 @@ const BookingPage = () => {
                                                         ) : (
                                                             <Box sx={{ p: 1 }}>
                                                                 <Grid container spacing={2}>
-                                                                    <Grid item xs={12} sm={6}>
+                                                                    <Grid xs={12} sm={6}>
                                                                         <Typography variant="caption" color="text.secondary">Nombre completo</Typography>
                                                                         <Typography variant="body2">{passenger.fullName}</Typography>
                                                                     </Grid>
-                                                                    <Grid item xs={12} sm={6}>
+                                                                    <Grid xs={12} sm={6}>
                                                                         <Typography variant="caption" color="text.secondary">Identificación</Typography>
                                                                         <Typography variant="body2">{passenger.identification}</Typography>
                                                                     </Grid>
-                                                                    <Grid item xs={12} sm={6}>
+                                                                    <Grid xs={12} sm={6}>
                                                                         <Typography variant="caption" color="text.secondary">Email</Typography>
                                                                         <Typography variant="body2">{passenger.email}</Typography>
                                                                     </Grid>
-                                                                    <Grid item xs={12} sm={6}>
+                                                                    <Grid xs={12} sm={6}>
                                                                         <Typography variant="caption" color="text.secondary">Teléfono</Typography>
                                                                         <Typography variant="body2">{passenger.phone || 'No especificado'}</Typography>
                                                                     </Grid>
-                                                                    <Grid item xs={12}>
+                                                                    <Grid xs={12}>
                                                                         <Typography variant="caption" color="text.secondary">Nacionalidad</Typography>
                                                                         <Typography variant="body2">{passenger.nationality || 'No especificada'}</Typography>
                                                                     </Grid>
@@ -990,19 +990,19 @@ const BookingPage = () => {
                                         Detalles del viaje
                                     </Typography>
                                     <Grid container spacing={2} sx={{ mb: 3 }}>
-                                        <Grid item xs={6}>
+                                        <Grid xs={6}>
                                             <Typography variant="body2" color="text.secondary">Paquete:</Typography>
                                             <Typography variant="body1">{packageData?.name}</Typography>
                                         </Grid>
-                                        <Grid item xs={6}>
+                                        <Grid xs={6}>
                                             <Typography variant="body2" color="text.secondary">Destino:</Typography>
                                             <Typography variant="body1">{packageData?.destination}</Typography>
                                         </Grid>
-                                        <Grid item xs={6}>
+                                        <Grid xs={6}>
                                             <Typography variant="body2" color="text.secondary">Fecha inicio:</Typography>
                                             <Typography variant="body1">{packageData?.startDate}</Typography>
                                         </Grid>
-                                        <Grid item xs={6}>
+                                        <Grid xs={6}>
                                             <Typography variant="body2" color="text.secondary">Pasajeros:</Typography>
                                             <Typography variant="body1">{formData.passengers} personas</Typography>
                                         </Grid>
@@ -1069,7 +1069,7 @@ const BookingPage = () => {
                         </Paper>
                     </Grid>
 
-                    <Grid item xs={12} md={4}>
+                    <Grid xs={12} md={4}>
                         <Paper sx={{ p: 3, borderRadius: 3, position: 'sticky', top: 20 }}>
                             <Typography variant="h6" gutterBottom>
                                 Resumen de precios

@@ -57,3 +57,23 @@ npm install sweetalert2 #alertas personalizadas
 ```bash
     ./kc.bat start-dev --http-port=9090
 ```
+Activar Email como username:
+Realm settings -> Login -> Check Email as username
+
+Activar el Registro:
+Realm settings -> Login -> Check User registration
+
+Crear el atributo "Identificación":
+Realm settings -> User Profile -> Create attribute -> configura atributos -> check User y Admins
+
+recuperas el atributo "Identificación" en tu App:
+Cliente scope -> profile -> Mappers -> Add Mappers -> By configuration -> User Attribute.
+
+Spanish:
+Realm settings -> Localization -> Locales -> Enabled Internationalization -> Select locales Spanish
+
+Login block 5 intentos:
+Realm settings -> Security defense -> Brute force detection -> Activar y configurar -> Reiniciar servicio
+
+Password mas seguras:
+Authentication -> Policies -> Password Policy -> (Minimum Length: 8, Uppercase Characters: 1, Lowercase Characters:1)

@@ -105,7 +105,7 @@ const PersonAddEdit = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        
+
         if (isViewMode) {
             navigate('/admin/persons');
             return;
@@ -133,14 +133,14 @@ const PersonAddEdit = () => {
             navigate('/admin/persons');
         } catch (error) {
             console.error("Error al guardar", error);
-            
+
             let errorMessage = 'Hubo un problema al guardar la persona';
             if (error.response?.data?.message) {
                 errorMessage = error.response.data.message;
             } else if (error.response?.data?.errors) {
                 errorMessage = Object.values(error.response.data.errors).join(', ');
             }
-            
+
             Swal.fire('Error', errorMessage, 'error');
         } finally {
             setSaving(false);
@@ -208,7 +208,7 @@ const PersonAddEdit = () => {
                     <Box sx={{ p: 4 }}>
                         <Grid container spacing={3}>
                             {/* Nombre Completo */}
-                            <Grid item xs={12}>
+                            <Grid xs={12}>
                                 <TextField
                                     fullWidth
                                     label="Nombre Completo"
@@ -230,7 +230,7 @@ const PersonAddEdit = () => {
                             </Grid>
 
                             {/* Identificación */}
-                            <Grid item xs={12} md={6}>
+                            <Grid xs={12} md={6}>
                                 <TextField
                                     fullWidth
                                     label="Identificación"
@@ -252,7 +252,7 @@ const PersonAddEdit = () => {
                             </Grid>
 
                             {/* Email */}
-                            <Grid item xs={12} md={6}>
+                            <Grid xs={12} md={6}>
                                 <TextField
                                     fullWidth
                                     label="Email"
@@ -275,7 +275,7 @@ const PersonAddEdit = () => {
                             </Grid>
 
                             {/* Teléfono */}
-                            <Grid item xs={12} md={6}>
+                            <Grid xs={12} md={6}>
                                 <TextField
                                     fullWidth
                                     label="Teléfono"
@@ -296,7 +296,7 @@ const PersonAddEdit = () => {
                             </Grid>
 
                             {/* Nacionalidad */}
-                            <Grid item xs={12} md={6}>
+                            <Grid xs={12} md={6}>
                                 <TextField
                                     fullWidth
                                     label="Nacionalidad"
@@ -316,14 +316,14 @@ const PersonAddEdit = () => {
 
                             {/* Estado (solo visible en edición/visualización) */}
                             {(isEditMode || isViewMode) && (
-                                <Grid item xs={12}>
+                                <Grid xs={12}>
                                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                                         <Typography variant="subtitle2" color="text.secondary">
                                             Estado actual:
                                         </Typography>
                                         {console.log(formData.active)}
                                         <Chip
-                        
+
                                             label={formData.active === 1 ? "ACTIVO" : "INACTIVO"}
                                             sx={{
                                                 bgcolor: formData.active === 1 ? '#e8f5e9' : '#ffebee',

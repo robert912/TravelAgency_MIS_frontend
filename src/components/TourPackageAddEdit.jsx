@@ -49,7 +49,7 @@ import reservationService from "../services/reservation.service";
 
 // Secciones del formulario
 const FormSection = ({ icon: Icon, title, children }) => (
-    <Grid item xs={12}>
+    <Grid xs={12}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2, mt: 3 }}>
             <Icon sx={{ color: 'var(--primary)' }} />
             <Typography variant="h6" fontWeight="600">
@@ -612,7 +612,7 @@ const TourPackageAddEdit = () => {
                             <Grid container spacing={2}>
                                 {/* Información Básica */}
                                 <FormSection icon={DescriptionIcon} title="Información Básica">
-                                    <Grid item xs={12} md={6}>
+                                    <Grid xs={12} md={6}>
                                         <TextField
                                             fullWidth
                                             label="Nombre del Paquete"
@@ -625,7 +625,7 @@ const TourPackageAddEdit = () => {
                                         />
                                     </Grid>
 
-                                    <Grid item xs={12} md={6}>
+                                    <Grid xs={12} md={6}>
                                         <TextField
                                             fullWidth
                                             label="Destino"
@@ -641,7 +641,7 @@ const TourPackageAddEdit = () => {
                                         />
                                     </Grid>
 
-                                    <Grid item xs={12}>
+                                    <Grid xs={12}>
                                         <TextField
                                             fullWidth
                                             label="Descripción"
@@ -659,7 +659,7 @@ const TourPackageAddEdit = () => {
 
                                 {/* Clasificación */}
                                 <FormSection icon={CategoryIcon} title="Clasificación">
-                                    <Grid item xs={12} md={4}>
+                                    <Grid xs={12} md={4}>
                                         <FormControl fullWidth error={!!errors.seasonId} required>
                                             <InputLabel>Temporada</InputLabel>
                                             <Select name="seasonId" value={formData.seasonId} onChange={handleChange} label="Temporada">
@@ -671,7 +671,7 @@ const TourPackageAddEdit = () => {
                                         </FormControl>
                                     </Grid>
 
-                                    <Grid item xs={12} md={4}>
+                                    <Grid xs={12} md={4}>
                                         <FormControl fullWidth error={!!errors.categoryId} required>
                                             <InputLabel>Categoría</InputLabel>
                                             <Select name="categoryId" value={formData.categoryId} onChange={handleChange} label="Categoría">
@@ -683,7 +683,7 @@ const TourPackageAddEdit = () => {
                                         </FormControl>
                                     </Grid>
 
-                                    <Grid item xs={12} md={4}>
+                                    <Grid xs={12} md={4}>
                                         <FormControl fullWidth error={!!errors.travelTypeId} required>
                                             <InputLabel>Tipo de Viaje</InputLabel>
                                             <Select name="travelTypeId" value={formData.travelTypeId} onChange={handleChange} label="Tipo de Viaje">
@@ -698,7 +698,7 @@ const TourPackageAddEdit = () => {
 
                                 {/* Precios y Fechas */}
                                 <FormSection icon={MoneyIcon} title="Precios y Fechas">
-                                    <Grid item xs={12} md={3}>
+                                    <Grid xs={12} md={3}>
                                         <TextField
                                             fullWidth
                                             label="Precio"
@@ -715,7 +715,7 @@ const TourPackageAddEdit = () => {
                                         />
                                     </Grid>
 
-                                    <Grid item xs={12} md={3}>
+                                    <Grid xs={12} md={3}>
                                         <TextField
                                             fullWidth
                                             label="Cupos totales"
@@ -733,7 +733,7 @@ const TourPackageAddEdit = () => {
                                         />
                                     </Grid>
 
-                                    <Grid item xs={12} md={3}>
+                                    <Grid xs={12} md={3}>
                                         <TextField
                                             fullWidth
                                             label="Fecha de inicio"
@@ -758,7 +758,7 @@ const TourPackageAddEdit = () => {
                                         />
                                     </Grid>
 
-                                    <Grid item xs={12} md={3}>
+                                    <Grid xs={12} md={3}>
                                         <TextField
                                             fullWidth
                                             label="Fecha de fin"
@@ -777,7 +777,7 @@ const TourPackageAddEdit = () => {
 
                                 {/* Estado y Calificación */}
                                 <FormSection icon={StarIcon} title="Estado y Calificación">
-                                    <Grid item xs={12} md={6}>
+                                    <Grid xs={12} md={6}>
                                         <FormControl fullWidth>
                                             <InputLabel>Estado del paquete</InputLabel>
                                             <Select
@@ -794,7 +794,7 @@ const TourPackageAddEdit = () => {
                                         </FormControl>
                                     </Grid>
 
-                                    <Grid item xs={12} md={6}>
+                                    <Grid xs={12} md={6}>
                                         <TextField
                                             fullWidth
                                             label="Calificación (0-5 estrellas)"
@@ -813,7 +813,7 @@ const TourPackageAddEdit = () => {
                                     </Grid>
 
                                     {formData.status === "AGOTADO" && (
-                                        <Grid item xs={12}>
+                                        <Grid xs={12}>
                                             <Alert severity="warning" sx={{ mt: 1 }}>
                                                 <Typography variant="caption">
                                                     ⚠️ Este paquete está agotado. Se actualizará automáticamente cuando haya cupos disponibles.
@@ -823,7 +823,7 @@ const TourPackageAddEdit = () => {
                                     )}
 
                                     {formData.status === "NO_VIGENTE" && (
-                                        <Grid item xs={12}>
+                                        <Grid xs={12}>
                                             <Alert severity="info" sx={{ mt: 1 }}>
                                                 <Typography variant="caption">
                                                     📅 Este paquete no está vigente porque la fecha de finalización ya pasó.
@@ -833,7 +833,7 @@ const TourPackageAddEdit = () => {
                                     )}
 
                                     {formData.status === "CANCELADO" && (
-                                        <Grid item xs={12}>
+                                        <Grid xs={12}>
                                             <Alert severity="error" sx={{ mt: 1 }}>
                                                 <Typography variant="caption">
                                                     ❌ Este paquete está cancelado. No se actualizará automáticamente.
@@ -844,7 +844,7 @@ const TourPackageAddEdit = () => {
                                 </FormSection>
 
                                 {/* Servicios */}
-                                <Grid item xs={12}>
+                                <Grid xs={12}>
                                     <Box sx={{ mt: 3, mb: 2 }}>
                                         <Typography variant="h6" fontWeight="600" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                             <ServiceIcon sx={{ color: 'var(--primary)' }} />
@@ -867,7 +867,7 @@ const TourPackageAddEdit = () => {
                                 </Grid>
 
                                 {/* Condiciones */}
-                                <Grid item xs={12}>
+                                <Grid xs={12}>
                                     <ProfessionalSelector
                                         title="Condiciones"
                                         items={conditions}
@@ -882,7 +882,7 @@ const TourPackageAddEdit = () => {
                                 </Grid>
 
                                 {/* Restricciones */}
-                                <Grid item xs={12}>
+                                <Grid xs={12}>
                                     <ProfessionalSelector
                                         title="Restricciones"
                                         items={restrictions}
@@ -898,7 +898,7 @@ const TourPackageAddEdit = () => {
 
                                 {/* Contenido Adicional */}
                                 <FormSection icon={ImageIcon} title="Contenido Adicional">
-                                    <Grid item xs={12}>
+                                    <Grid xs={12}>
                                         <TextField
                                             fullWidth
                                             label="URL de la imagen principal"
