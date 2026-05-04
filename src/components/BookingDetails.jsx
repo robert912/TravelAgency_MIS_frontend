@@ -783,7 +783,7 @@ const BookingDetails = () => {
             </Dialog>
 
             {/* Estilos para impresión */}
-            <style jsx global>{`
+            <style>{`
                 @media print {
                     .no-print {
                         display: none !important;

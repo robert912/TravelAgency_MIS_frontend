@@ -849,7 +849,7 @@ const ReservationAddEdit = () => {
                     </DialogActions>
                 </Dialog>
 
-                <style jsx global>{`
+                <style>{`
                     @media print {
                         .no-print { display: none !important; }
                         body { background: white; margin: 0; padding: 0; }
