@@ -178,18 +178,6 @@ export default function Navbar() {
                                             Mis Reservas
                                         </MenuItem>
 
-                                        {isAdmin && (
-                                            <>
-                                                <Divider />
-                                                <MenuItem onClick={goToAdmin}>
-                                                    <ListItemIcon>
-                                                        <AdminPanelSettingsIcon fontSize="small" sx={{ color: 'var(--primary)' }} />
-                                                    </ListItemIcon>
-                                                    Administración
-                                                </MenuItem>
-                                            </>
-                                        )}
-
                                         <Divider />
 
                                         <MenuItem onClick={handleLogout} sx={{ color: '#d32f2f' }}>
