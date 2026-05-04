@@ -33,11 +33,6 @@ const personService = {
         return httpClient.delete(`${API_URL}/${id}`);
     },
 
-    // // Buscar personas por filtros
-    // search: (filters) => {
-    //     return httpClient.get(`${API_URL}/search`, { params: filters });
-    // },
-
     // Buscar persona por identificación o correo
     searchPerson: (query) => {
         return httpClient.get(`${API_URL}/search`, { params: { query: query } });

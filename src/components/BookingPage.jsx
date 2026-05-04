@@ -88,11 +88,6 @@ const BookingPage = () => {
         }
     }, [formData.passengers, packageData]);
 
-    useEffect(() => {
-        if (packageData?.id) {
-            checkAvailability();
-        }
-    }, [packageData?.id]); // Re-ejecutar cuando cambia el ID del paquete
 
     const loadPackageData = async () => {
         setLoading(true);

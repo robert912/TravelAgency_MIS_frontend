@@ -3,25 +3,27 @@ import Box from "@mui/material/Box";
 import Drawer from "@mui/material/Drawer";
 import List from "@mui/material/List";
 import Divider from "@mui/material/Divider";
+import Typography from "@mui/material/Typography";
 import ListItemButton from "@mui/material/ListItemButton";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
-import PeopleAltIcon from "@mui/icons-material/PeopleAlt";
-import PaidIcon from "@mui/icons-material/Paid";
-import CalculateIcon from "@mui/icons-material/Calculate";
-import AnalyticsIcon from "@mui/icons-material/Analytics";
-import DiscountIcon from "@mui/icons-material/Discount";
-import HailIcon from "@mui/icons-material/Hail";
-import MedicationLiquidIcon from "@mui/icons-material/MedicationLiquid";
-import MoreTimeIcon from "@mui/icons-material/MoreTime";
-import HomeIcon from "@mui/icons-material/Home";
-import TourIcon from '@mui/icons-material/Tour';
-import FreeCancellationIcon from '@mui/icons-material/FreeCancellation';
-import CategoryIcon from '@mui/icons-material/Category';
-import ReservationIcon from '@mui/icons-material/AssignmentTurnedIn';
 import { useNavigate } from "react-router-dom";
-
 import { useKeycloak } from "@react-keycloak/web";
+
+// Iconos
+import HomeIcon from "@mui/icons-material/Home";
+import PeopleAltIcon from "@mui/icons-material/PeopleAlt";
+import CardTravelIcon from "@mui/icons-material/CardTravel";
+import ReceiptIcon from "@mui/icons-material/Receipt";
+import FlightIcon from "@mui/icons-material/Flight";
+import BeachAccessIcon from "@mui/icons-material/BeachAccess";
+import CategoryIcon from "@mui/icons-material/Category";
+import DescriptionIcon from "@mui/icons-material/Description";
+import WarningIcon from "@mui/icons-material/Warning";
+import InventoryIcon from "@mui/icons-material/Inventory";
+import PersonIcon from "@mui/icons-material/Person";
+import LogoutIcon from "@mui/icons-material/Logout";
+import LoginIcon from "@mui/icons-material/Login";
 
 export default function Sidemenu({ open, toggleDrawer }) {
     const navigate = useNavigate();
@@ -31,81 +33,153 @@ export default function Sidemenu({ open, toggleDrawer }) {
     const isAdmin = roles.includes('Admin');
     const isAuthenticated = keycloak?.authenticated;
 
+    const handleNavigation = (path) => {
+        navigate(path);
+        toggleDrawer(false)();
+    };
+
+    const handleLogout = () => {
+        toggleDrawer(false)();
+        keycloak.logout({ redirectUri: window.location.origin });
+    };
+
+    const handleLogin = () => {
+        toggleDrawer(false)();
+        keycloak.login();
+    };
+
     const listOptions = () => (
         <Box
             role="presentation"
-            onClick={toggleDrawer(false)}
+            sx={{ width: 280 }}
         >
+            {/* Header del menú */}
+            <Box sx={{
+                p: 2,
+                bgcolor: 'var(--primary)',
+                color: 'white',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1
+            }}>
+                <CardTravelIcon />
+                <Typography variant="h6" fontWeight="bold">
+                    TravelApp
+                </Typography>
+            </Box>
+
             <List>
-                <ListItemButton onClick={() => navigate("/")}>
+                {/* Inicio */}
+                <ListItemButton onClick={() => handleNavigation("/")}>
                     <ListItemIcon>
                         <HomeIcon />
                     </ListItemIcon>
-                    <ListItemText primary="Home" />
+                    <ListItemText primary="Inicio" />
                 </ListItemButton>
+
+                {isAuthenticated && (
+                    <>
+                        <Divider />
+
+                        {/* Mis Reservas */}
+                        <ListItemButton onClick={() => handleNavigation("/my-reservations")}>
+                            <ListItemIcon>
+                                <ReceiptIcon />
+                            </ListItemIcon>
+                            <ListItemText primary="Mis Reservas" />
+                        </ListItemButton>
+
+                        {/* Mi Perfil */}
+                        <ListItemButton onClick={() => handleNavigation("/profile")}>
+                            <ListItemIcon>
+                                <PersonIcon />
+                            </ListItemIcon>
+                            <ListItemText primary="Mi Perfil" />
+                        </ListItemButton>
+                    </>
+                )}
 
                 {isAdmin && (
                     <>
                         <Divider />
-                        <ListItemButton onClick={() => navigate("/admin/persons")}>
+
+                        {/* Administración - Título */}
+                        <Box sx={{ px: 2, py: 1 }}>
+                            <Typography variant="caption" color="text.secondary">
+                                ADMINISTRACIÓN
+                            </Typography>
+                        </Box>
+
+                        {/* Personas */}
+                        <ListItemButton onClick={() => handleNavigation("/admin/persons")}>
                             <ListItemIcon>
                                 <PeopleAltIcon />
                             </ListItemIcon>
                             <ListItemText primary="Personas" />
                         </ListItemButton>
 
-                        <ListItemButton onClick={() => navigate("/admin/packages")}>
+                        {/* Paquetes Turísticos */}
+                        <ListItemButton onClick={() => handleNavigation("/admin/packages")}>
                             <ListItemIcon>
-                                <PaidIcon />
+                                <CardTravelIcon />
                             </ListItemIcon>
-                            <ListItemText primary="Paquetes Turísticos" />
+                            <ListItemText primary="Paquetes" />
                         </ListItemButton>
 
-                        <ListItemButton onClick={() => navigate("/admin/reservations")}>
+                        {/* Reservas */}
+                        <ListItemButton onClick={() => handleNavigation("/admin/reservations")}>
                             <ListItemIcon>
-                                <ReservationIcon />
+                                <ReceiptIcon />
                             </ListItemIcon>
                             <ListItemText primary="Reservas" />
                         </ListItemButton>
 
-                        <ListItemButton onClick={() => navigate("/admin/travel-types")}>
+                        <Divider />
+
+                        {/* Tipos de Viajes */}
+                        <ListItemButton onClick={() => handleNavigation("/admin/travel-types")}>
                             <ListItemIcon>
-                                <TourIcon />
+                                <FlightIcon />
                             </ListItemIcon>
                             <ListItemText primary="Tipos de Viajes" />
                         </ListItemButton>
 
-                        <ListItemButton onClick={() => navigate("/admin/seasons")}>
+                        {/* Temporadas */}
+                        <ListItemButton onClick={() => handleNavigation("/admin/seasons")}>
                             <ListItemIcon>
-                                <FreeCancellationIcon />
+                                <BeachAccessIcon />
                             </ListItemIcon>
                             <ListItemText primary="Temporadas" />
                         </ListItemButton>
 
-                        <ListItemButton onClick={() => navigate("/admin/categories")}>
+                        {/* Categorías */}
+                        <ListItemButton onClick={() => handleNavigation("/admin/categories")}>
                             <ListItemIcon>
                                 <CategoryIcon />
                             </ListItemIcon>
                             <ListItemText primary="Categorías" />
                         </ListItemButton>
 
-                        <ListItemButton onClick={() => navigate("/admin/conditions")}>
+                        {/* Condiciones */}
+                        <ListItemButton onClick={() => handleNavigation("/admin/conditions")}>
                             <ListItemIcon>
-                                <CalculateIcon />
+                                <DescriptionIcon />
                             </ListItemIcon>
                             <ListItemText primary="Condiciones" />
                         </ListItemButton>
 
-                        <ListItemButton onClick={() => navigate("/admin/restrictions")}>
+                        {/* Restricciones */}
+                        <ListItemButton onClick={() => handleNavigation("/admin/restrictions")}>
                             <ListItemIcon>
-                                <CalculateIcon />
+                                <WarningIcon />
                             </ListItemIcon>
                             <ListItemText primary="Restricciones" />
                         </ListItemButton>
 
-                        <ListItemButton onClick={() => navigate("/admin/services")}>
+                        {/* Servicios */}
+                        <ListItemButton onClick={() => handleNavigation("/admin/services")}>
                             <ListItemIcon>
-                                <CalculateIcon />
+                                <InventoryIcon />
                             </ListItemIcon>
                             <ListItemText primary="Servicios" />
                         </ListItemButton>
@@ -113,27 +187,32 @@ export default function Sidemenu({ open, toggleDrawer }) {
                 )}
             </List>
 
-            {isAuthenticated && (
-                <>
-                    <Divider />
-                    <List>
-                        <ListItemButton onClick={() => navigate("/my-reservations")}>
-                            <ListItemIcon>
-                                <DiscountIcon />
-                            </ListItemIcon>
-                            <ListItemText primary="Mis reservas" />
-                        </ListItemButton>
-                    </List>
-                </>
-            )}
+            <Divider />
+
+            {/* Login / Logout */}
+            <List>
+                {isAuthenticated ? (
+                    <ListItemButton onClick={handleLogout}>
+                        <ListItemIcon>
+                            <LogoutIcon sx={{ color: '#d32f2f' }} />
+                        </ListItemIcon>
+                        <ListItemText primary="Cerrar Sesión" sx={{ color: '#d32f2f' }} />
+                    </ListItemButton>
+                ) : (
+                    <ListItemButton onClick={handleLogin}>
+                        <ListItemIcon>
+                            <LoginIcon color="primary" />
+                        </ListItemIcon>
+                        <ListItemText primary="Iniciar Sesión" />
+                    </ListItemButton>
+                )}
+            </List>
         </Box>
     );
 
     return (
-        <div>
-            <Drawer anchor={"left"} open={open} onClose={toggleDrawer(false)}>
-                {listOptions()}
-            </Drawer>
-        </div>
+        <Drawer anchor="left" open={open} onClose={toggleDrawer(false)}>
+            {listOptions()}
+        </Drawer>
     );
 }
