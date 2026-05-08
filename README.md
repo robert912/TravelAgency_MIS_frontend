@@ -57,6 +57,11 @@ npm install sweetalert2 #alertas personalizadas
 ```bash
     ./kc.bat start-dev --http-port=9090
 ```
+
+```bash
+..\KeyCloak\keycloak-26.6.1\bin\kc.bat start-dev --http-port=9090
+```
+
 Activar Email como username:
 Realm settings -> Login -> Check Email as username
 

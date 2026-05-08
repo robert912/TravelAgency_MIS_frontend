@@ -304,11 +304,6 @@ const ReportsPage = () => {
                 {generated && (
                     <>
                         <Divider />
-                        <Box sx={{ p: 2 }}>
-                            <Typography variant="caption" color="text.secondary">
-                                El ranking se ordena por cantidad de reservas, luego pasajeros y finalmente nombre del paquete.
-                            </Typography>
-                        </Box>
                     </>
                 )}
             </Paper>
