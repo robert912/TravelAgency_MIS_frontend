@@ -27,6 +27,7 @@ import BookingDetails from './components/BookingDetails';
 import PaymentPage from './components/PaymentPage';
 import MyProfile from './components/MyProfile';
 import AuthSync from './components/AuthSync';
+import ReportsPage from './components/ReportsPage';
 import { useKeycloak } from "@react-keycloak/web";
 
 
@@ -95,6 +96,7 @@ function App() {
                 <Route path="/admin/reservations/new" element={<PrivateRoute element={<ReservationAddEdit />} rolesAllowed={['Admin']} />} />
                 <Route path="/admin/reservations/edit/:id" element={<PrivateRoute element={<ReservationAddEdit />} rolesAllowed={['Admin']} />} />
                 <Route path="/admin/reservations/view/:id" element={<PrivateRoute element={<ReservationAddEdit />} rolesAllowed={['Admin']} />} />
+                <Route path="/admin/reports" element={<PrivateRoute element={<ReportsPage />} rolesAllowed={['Admin']} />} />
 
 
                 <Route path="*" element={<NotFound />} />

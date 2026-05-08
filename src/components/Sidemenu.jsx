@@ -24,6 +24,7 @@ import InventoryIcon from "@mui/icons-material/Inventory";
 import PersonIcon from "@mui/icons-material/Person";
 import LogoutIcon from "@mui/icons-material/Logout";
 import LoginIcon from "@mui/icons-material/Login";
+import AssessmentIcon from "@mui/icons-material/Assessment";
 
 export default function Sidemenu({ open, toggleDrawer }) {
     const navigate = useNavigate();
@@ -132,6 +133,14 @@ export default function Sidemenu({ open, toggleDrawer }) {
                                 <ReceiptIcon />
                             </ListItemIcon>
                             <ListItemText primary="Reservas" />
+                        </ListItemButton>
+
+                        {/* Reportes */}
+                        <ListItemButton onClick={() => handleNavigation("/admin/reports")}>
+                            <ListItemIcon>
+                                <AssessmentIcon />
+                            </ListItemIcon>
+                            <ListItemText primary="Reportes" />
                         </ListItemButton>
 
                         <Divider />
