@@ -57,7 +57,7 @@ npm install sweetalert2 #alertas personalizadas
 ```bash
     ./kc.bat start-dev --http-port=9090
 ```
-
+o
 ```bash
 ..\KeyCloak\keycloak-26.6.1\bin\kc.bat start-dev --http-port=9090
 ```
@@ -82,3 +82,16 @@ Realm settings -> Security defense -> Brute force detection -> Activar y configu
 
 Password mas seguras:
 Authentication -> Policies -> Password Policy -> (Minimum Length: 8, Uppercase Characters: 1, Lowercase Characters:1)
+
+## 🐳 Docker (Frontend)
+
+Para crear la imagen de docker:
+**Imagen**:
+```bash
+docker build -t robert912/tourpackage-frontend:latest .
+```
+
+**Contenedor**:
+```bash
+docker run -d -p 5173:80 --name tour-frontend robert912/tourpackage-frontend
+```
