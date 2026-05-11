@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  backend:
+    container_name: tour-backend
+    image: robert912/tourpackage-backend:latest
+    ports:
+      - "8090:8090"
+    environment:
+      DB_HOST: host.docker.internal
+      DB_PORT: 3306
+      DB_NAME: dbtravel
+      DB_USER: root
+      DB_PASSWORD: 12345678
+      KEYCLOAK_HOST: host.docker.internal
+    deploy:
+      restart_policy: 
+        condition: on-failure
+
+  frontend:
+    container_name: tour-frontend
+    image: robert912/tourpackage-frontend:latest
+    ports:
+      - "5173:80"
+    deploy:
+      restart_policy: 
+        condition: on-failure
+    depends_on:
+      - backend
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:latest
+    container_name: tour-keycloak
+    command: start-dev --import-realm
+    environment:
+      KC_DB: dev-file
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+    ports:
+      - "9090:8080"
+    volumes:
+      - ./keycloak/travel-realm-realm.json:/opt/keycloak/data/import/travel-realm-realm.json
+      - ./keycloak/travelapp:/opt/keycloak/themes/travelapp
+    restart: unless-stopped
