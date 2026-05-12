@@ -1,44 +1,70 @@
-version: '3.8'
-
 services:
-  backend:
-    container_name: tour-backend
-    image: robert912/tourpackage-backend:latest
-    ports:
-      - "8090:8090"
+  mysql:
+    image: mysql:8.0
+    container_name: tour-mysql
     environment:
-      DB_HOST: host.docker.internal
-      DB_PORT: 3306
-      DB_NAME: dbtravel
-      DB_USER: root
-      DB_PASSWORD: 12345678
-      KEYCLOAK_HOST: host.docker.internal
-    deploy:
-      restart_policy: 
-        condition: on-failure
-
-  frontend:
-    container_name: tour-frontend
-    image: robert912/tourpackage-frontend:latest
-    ports:
-      - "5173:80"
-    deploy:
-      restart_policy: 
-        condition: on-failure
-    depends_on:
-      - backend
+      MYSQL_DATABASE: dbtravel
+      MYSQL_ROOT_PASSWORD: 12345678
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - tour-network
+    restart: unless-stopped
 
   keycloak:
     image: quay.io/keycloak/keycloak:latest
     container_name: tour-keycloak
-    command: start-dev --import-realm
+    command: start-dev --import-realm --http-port=9090
     environment:
       KC_DB: dev-file
       KEYCLOAK_ADMIN: admin
       KEYCLOAK_ADMIN_PASSWORD: admin
-    ports:
-      - "9090:8080"
+      KC_HOSTNAME_URL: http://localhost:9090
+      KC_HOSTNAME_ADMIN_URL: http://localhost:9090
     volumes:
       - ./keycloak/travel-realm-realm.json:/opt/keycloak/data/import/travel-realm-realm.json
       - ./keycloak/travelapp:/opt/keycloak/themes/travelapp
+    ports:
+      - "9090:9090"
+    networks:
+      - tour-network
     restart: unless-stopped
+
+  backend:
+    image: robert912/tourpackage-backend:latest
+    container_name: tour-backend
+    environment:
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_NAME: dbtravel
+      DB_USER: root
+      DB_PASSWORD: 12345678
+      KEYCLOAK_HOST: keycloak
+      KEYCLOAK_PORT: 9090
+    depends_on:
+      - mysql
+      - keycloak
+    ports:
+      - "8090:8090"
+    networks:
+      - tour-network
+    restart: unless-stopped
+
+  frontend:
+    image: robert912/tourpackage-frontend:latest
+    container_name: tour-frontend
+    depends_on:
+      - backend
+      - keycloak
+    ports:
+      - "5173:80"
+    networks:
+      - tour-network
+    restart: unless-stopped
+
+volumes:
+  mysql_data:
+
+networks:
+  tour-network:
+    driver: bridge
