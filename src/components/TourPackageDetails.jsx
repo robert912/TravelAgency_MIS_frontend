@@ -168,7 +168,7 @@ const TourPackageDetails = () => {
                             className={`tab-btn ${activeTab === "services" ? "active" : ""}`}
                             onClick={() => setActiveTab("services")}
                         >
-                            Servicios Incluidos
+                            Servicios
                         </button>
                         <button
                             className={`tab-btn ${activeTab === "conditions" ? "active" : ""}`}

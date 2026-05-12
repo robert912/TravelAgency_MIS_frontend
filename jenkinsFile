@@ -1,0 +1,80 @@
+pipeline {
+    agent any
+
+    tools {
+        maven 'maven_3_8_1'
+    }
+
+    stages {
+        stage('Clonar backend') {
+            steps {
+                dir('backend') {
+                    checkout scmGit(
+                        branches: [[name: '*/master']],
+                        extensions: [],
+                        userRemoteConfigs: [[url: 'https://github.com/robert912/TravelAgency_MIS_backend']]
+                    )
+                }
+            }
+        }
+
+        stage('Clonar frontend') {
+            steps {
+                dir('frontend') {
+                    checkout scmGit(
+                        branches: [[name: '*/master']],
+                        extensions: [],
+                        userRemoteConfigs: [[url: 'https://github.com/robert912/TravelAgency_MIS_frontend']]
+                    )
+                }
+            }
+        }
+
+        stage('Build Maven backend') {
+            steps {
+                dir('backend') {
+                    bat 'mvn clean package'
+                }
+            }
+        }
+
+        stage('Unit Tests backend') {
+            steps {
+                dir('backend') {
+                    bat 'mvn test'
+                }
+            }
+        }
+
+        stage('Build frontend') {
+            steps {
+                dir('frontend') {
+                    bat 'npm install'
+                    bat 'npm run build'
+                }
+            }
+        }
+
+        stage('Build Docker images') {
+            steps {
+                script {
+                    bat 'docker build -t robert912/tourpackage-backend:latest ./backend'
+                    bat 'docker build -t robert912/tourpackage-frontend:latest ./frontend'
+                }
+            }
+        }
+
+        stage('Push images to Docker Hub') {
+            steps {
+                script {
+                    withCredentials([string(credentialsId: 'dhpswid', variable: 'dhpsw')]) {
+                        bat 'docker login -u robert912 -p %dhpsw%'
+                    }
+
+                    bat 'docker push robert912/tourpackage-backend:latest'
+                    bat 'docker push robert912/tourpackage-frontend:latest'
+                }
+            }
+        }
+    }
+}
