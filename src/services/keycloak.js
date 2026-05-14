@@ -1,9 +1,9 @@
 import Keycloak from "keycloak-js";
 
 const keycloak = new Keycloak({
-  url: `http://${import.meta.env.VITE_BACKEND_SERVER}:${import.meta.env.VITE_KEYCLOAK_PORT}`,
-  realm: "travel-realm",
-  clientId: "travel-frontend",
+  url: import.meta.env.VITE_KEYCLOAK_URL,
+  realm: import.meta.env.VITE_KEYCLOAK_REALM,
+  clientId: import.meta.env.VITE_KEYCLOAK_CLIENT_ID,
 });
 
 export default keycloak;
