@@ -30,10 +30,15 @@ const toggleActive = data => {
     return httpClient.put('/api/tour-packages/', data);
 }
 
+
+const getAvailability = (packageId) => {
+    return httpClient.get(`/api/tour-packages/${packageId}/availability`);
+}
+
 const checkAvailabilityForQuantity = (packageId, quantity) => {
     return httpClient.get(`/api/tour-packages/${packageId}/availability/check`, {
         params: { quantity }
     });
 }
 
-export default { getAll, getAllActive, searchFilter, create, get, update, toggleActive, checkAvailabilityForQuantity };
+export default { getAll, getAllActive, searchFilter, create, get, update, toggleActive, getAvailability, checkAvailabilityForQuantity };
