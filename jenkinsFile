@@ -58,8 +58,8 @@ pipeline {
         stage('Build Docker images') {
             steps {
                 script {
-                    bat 'docker build -t robert912/tourpackage-backend:latest ./backend'
-                    bat 'docker build -t robert912/tourpackage-frontend:latest ./frontend'
+                    bat 'docker build -t robert912/travelagency-backend:latest ./backend'
+                    bat 'docker build -t robert912/travelagency-frontend:latest ./frontend'
                 }
             }
         }
@@ -71,8 +71,8 @@ pipeline {
                         bat 'docker login -u robert912 -p %dhpsw%'
                     }
 
-                    bat 'docker push robert912/tourpackage-backend:latest'
-                    bat 'docker push robert912/tourpackage-frontend:latest'
+                    bat 'docker push robert912/travelagency-backend:latest'
+                    bat 'docker push robert912/travelagency-frontend:latest'
                 }
             }
         }

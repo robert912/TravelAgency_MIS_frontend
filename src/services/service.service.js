@@ -6,4 +6,4 @@ const get = id => httpClient.get(`/api/services/${id}`);
 const create = data => httpClient.post("/api/services/", data);
 const update = data => httpClient.put('/api/services/', data);
 
-export default { getAll, getAllActive, get, create, update, remove };
+export default { getAll, getAllActive, get, create, update };
