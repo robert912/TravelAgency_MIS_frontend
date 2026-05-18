@@ -577,13 +577,8 @@ const BookingPage = () => {
                 }));
 
                 const reservationData = {
-                    // Datos de la persona principal
+                    // ID del usuario creador de la reserva
                     personId: currentUserId || mainPassengerData.personId || null,
-                    identification: mainPassengerData.identification,
-                    fullName: mainPassengerData.fullName,
-                    email: mainPassengerData.email,
-                    phone: mainPassengerData.phone || "",
-                    nationality: mainPassengerData.nationality || "",
                     // Datos de la reserva
                     tourPackageId: Number(id),
                     passengers: formData.passengers,
