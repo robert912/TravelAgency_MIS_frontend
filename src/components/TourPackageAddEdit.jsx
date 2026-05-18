@@ -310,7 +310,7 @@ const TourPackageAddEdit = () => {
 
                 // Verificar si hay reservas usando el endpoint de disponibilidad
                 try {
-                    const availRes = await reservationService.checkAvailability(id);
+                    const availRes = await tourPackageService.getAvailability(id);
                     const availData = availRes.data?.data || availRes.data;
                     const total = availData.totalSlots || 0;
                     const available = availData.availableSlots || 0;

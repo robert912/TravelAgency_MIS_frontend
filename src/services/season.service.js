@@ -1,26 +1,27 @@
 import httpClient from "../http-common";
 
-const getAll = () => {
-    return httpClient.get('/api/seasons/');
-}
+const API_URL = "/api/seasons";
 
-const getAllActive = () => {
-    return httpClient.get('/api/seasons/active');
-}
+const seasonService = {
+    // Obtener todas las temporadas
+    getAll: () =>
+        httpClient.get(`${API_URL}/`),
 
-const create = data => {
-    return httpClient.post("/api/seasons/", data);
-}
+    // Obtener solo temporadas activas
+    getAllActive: () =>
+        httpClient.get(`${API_URL}/active`),
 
-const get = id => {
-    return httpClient.get(`/api/seasons/${id}`);
-}
+    // Obtener temporada por ID
+    get: (id) =>
+        httpClient.get(`${API_URL}/${id}`),
 
-const update = data => {
-    return httpClient.put('/api/seasons/', data);
-}
+    // Crear nueva temporada
+    create: (data) =>
+        httpClient.post(`${API_URL}/`, data),
 
-const remove = id => {
-    return httpClient.delete(`/api/seasons/${id}`);
-}
-export default { getAll, getAllActive, create, get, update, remove };
+    // Actualizar temporada
+    update: (data) =>
+        httpClient.put(`${API_URL}/`, data),
+};
+
+export default seasonService;

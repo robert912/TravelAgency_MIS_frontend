@@ -1,23 +1,27 @@
 import httpClient from "../http-common";
 
-const getAll = () => {
-    return httpClient.get('/api/travel-types/');
-}
+const API_URL = "/api/travel-types";
 
-const getAllActive = () => {
-    return httpClient.get('/api/travel-types/active');
-}
+const travelTypeService = {
+    // Obtener todos los tipos de viaje
+    getAll: () =>
+        httpClient.get(`${API_URL}/`),
 
-const get = id => {
-    return httpClient.get(`/api/travel-types/${id}`);
-}
+    // Obtener solo tipos de viaje activos
+    getAllActive: () =>
+        httpClient.get(`${API_URL}/active`),
 
-const create = data => {
-    return httpClient.post("/api/travel-types/", data);
-}
+    // Obtener tipo de viaje por ID
+    get: (id) =>
+        httpClient.get(`${API_URL}/${id}`),
 
-const update = data => {
-    return httpClient.put('/api/travel-types/', data);
-}
+    // Crear nuevo tipo de viaje
+    create: (data) =>
+        httpClient.post(`${API_URL}/`, data),
 
-export default { getAll, getAllActive, create, get, update };
+    // Actualizar tipo de viaje
+    update: (data) =>
+        httpClient.put(`${API_URL}/`, data),
+};
+
+export default travelTypeService;

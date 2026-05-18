@@ -1,9 +1,27 @@
 import httpClient from "../http-common";
 
-const getAll = () => httpClient.get('/api/services/');
-const getAllActive = () => httpClient.get('/api/services/active');
-const get = id => httpClient.get(`/api/services/${id}`);
-const create = data => httpClient.post("/api/services/", data);
-const update = data => httpClient.put('/api/services/', data);
+const API_URL = "/api/services";
 
-export default { getAll, getAllActive, get, create, update };
+const serviceService = {
+    // Obtener todos los servicios
+    getAll: () =>
+        httpClient.get(`${API_URL}/`),
+
+    // Obtener solo servicios activos
+    getAllActive: () =>
+        httpClient.get(`${API_URL}/active`),
+
+    // Obtener servicio por ID
+    get: (id) =>
+        httpClient.get(`${API_URL}/${id}`),
+
+    // Crear nuevo servicio
+    create: (data) =>
+        httpClient.post(`${API_URL}/`, data),
+
+    // Actualizar servicio
+    update: (data) =>
+        httpClient.put(`${API_URL}/`, data),
+};
+
+export default serviceService;

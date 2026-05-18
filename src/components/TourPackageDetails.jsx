@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import tourPackageService from "../services/tourPackage.service";
-import reservationService from "../services/reservation.service";
 import '../css/TourPackageDetails.css';
 
 const TourPackageDetails = () => {
@@ -35,7 +34,7 @@ const TourPackageDetails = () => {
             });
 
         // Cargar cupos disponibles
-        reservationService.checkAvailability(id)
+        tourPackageService.getAvailability(id)
             .then(res => {
                 const data = res.data?.data || res.data;
                 setAvailableSlots(data.availableSlots || 0);

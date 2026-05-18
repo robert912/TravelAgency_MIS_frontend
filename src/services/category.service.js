@@ -1,26 +1,27 @@
 import httpClient from "../http-common";
 
-const getAll = () => {
-    return httpClient.get('/api/categories/');
-}
+const API_URL = "/api/categories";
 
-const getAllActive = () => {
-    return httpClient.get('/api/categories/active');
-}
+const categoryService = {
+    // Obtener todas las categorías
+    getAll: () =>
+        httpClient.get(`${API_URL}/`),
 
-const create = data => {
-    return httpClient.post("/api/categories/", data);
-}
+    // Obtener solo categorías activas
+    getAllActive: () =>
+        httpClient.get(`${API_URL}/active`),
 
-const get = id => {
-    return httpClient.get(`/api/categories/${id}`);
-}
+    // Obtener categoría por ID
+    get: (id) =>
+        httpClient.get(`${API_URL}/${id}`),
 
-const update = data => {
-    return httpClient.put('/api/categories/', data);
-}
+    // Crear nueva categoría
+    create: (data) =>
+        httpClient.post(`${API_URL}/`, data),
 
-const remove = id => {
-    return httpClient.delete(`/api/categories/${id}`);
-}
-export default { getAll, getAllActive, create, get, update, remove };
+    // Actualizar categoría
+    update: (data) =>
+        httpClient.put(`${API_URL}/`, data),
+};
+
+export default categoryService;

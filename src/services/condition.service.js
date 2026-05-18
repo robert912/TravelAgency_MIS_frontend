@@ -1,27 +1,27 @@
 import httpClient from "../http-common";
 
-const getAll = () => {
-    return httpClient.get('/api/conditions/');
-}
+const API_URL = "/api/conditions";
 
-const getAllActive = () => {
-    return httpClient.get('/api/conditions/active');
-}
+const conditionService = {
+    // Obtener todas las condiciones
+    getAll: () =>
+        httpClient.get(`${API_URL}/`),
 
-const create = data => {
-    return httpClient.post("/api/conditions/", data);
-}
+    // Obtener solo condiciones activas
+    getAllActive: () =>
+        httpClient.get(`${API_URL}/active`),
 
-const get = id => {
-    return httpClient.get(`/api/conditions/${id}`);
-}
+    // Obtener condición por ID
+    get: (id) =>
+        httpClient.get(`${API_URL}/${id}`),
 
-const update = data => {
-    return httpClient.put('/api/conditions/', data);
-}
+    // Crear nueva condición
+    create: (data) =>
+        httpClient.post(`${API_URL}/`, data),
 
-const remove = id => {
-    return httpClient.delete(`/api/conditions/${id}`);
-}
+    // Actualizar condición
+    update: (data) =>
+        httpClient.put(`${API_URL}/`, data),
+};
 
-export default { getAll, getAllActive, create, get, update, remove };
+export default conditionService;

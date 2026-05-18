@@ -1,11 +1,17 @@
 import httpClient from "../http-common";
 
-/* Sincronizar condiciones (Envía Map<String, List<Long>>) */
-const syncConditions = (packageId, conditionIds, userId = 1) => {
-    return httpClient.put(`/api/tour-package-conditions/package/${packageId}/sync`,
-        { conditionIds },
-        { params: { userId } }
-    );
-}
+const API_URL = "/api/tour-package-conditions";
 
-export default { syncConditions };
+const tourPackageConditionService = {
+    // Sincronizar condiciones del paquete turístico
+    syncConditions: (packageId, conditionIds, userId = 1) =>
+        httpClient.put(
+            `${API_URL}/package/${packageId}/sync`,
+            { conditionIds },
+            {
+                params: { userId },
+            }
+        ),
+};
+
+export default tourPackageConditionService;

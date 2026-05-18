@@ -1,44 +1,47 @@
 import httpClient from "../http-common";
 
-const getAll = () => {
-    return httpClient.get('/api/tour-packages/');
-}
+const API_URL = "/api/tour-packages";
 
-const getAllActive = () => {
-    return httpClient.get('/api/tour-packages/active');
-}
+const tourPackageService = {
+    // Obtener todos los paquetes turísticos
+    getAll: () =>
+        httpClient.get(`${API_URL}/`),
 
-const searchFilter = (filters) => {
-    return httpClient.get('/api/tour-packages/search', {
-        params: filters
-    });
-}
+    // Obtener solo paquetes activos
+    getAllActive: () =>
+        httpClient.get(`${API_URL}/active`),
 
-const create = data => {
-    return httpClient.post('/api/tour-packages/', data);
-}
+    // Buscar paquetes con filtros
+    searchFilter: (filters) =>
+        httpClient.get(`${API_URL}/search`, {
+            params: filters,
+        }),
 
-const get = id => {
-    return httpClient.get(`/api/tour-packages/${id}`);
-}
+    // Crear nuevo paquete turístico
+    create: (data) =>
+        httpClient.post(`${API_URL}/`, data),
 
-const update = data => {
-    return httpClient.put('/api/tour-packages/', data);
-}
+    // Obtener paquete por ID
+    get: (id) =>
+        httpClient.get(`${API_URL}/${id}`),
 
-const toggleActive = data => {
-    return httpClient.put('/api/tour-packages/', data);
-}
+    // Actualizar paquete turístico
+    update: (data) =>
+        httpClient.put(`${API_URL}/`, data),
 
+    // Activar o desactivar paquete turístico
+    toggleActive: (data) =>
+        httpClient.put(`${API_URL}/`, data),
 
-const getAvailability = (packageId) => {
-    return httpClient.get(`/api/tour-packages/${packageId}/availability`);
-}
+    // Obtener disponibilidad del paquete
+    getAvailability: (packageId) =>
+        httpClient.get(`${API_URL}/${packageId}/availability`),
 
-const checkAvailabilityForQuantity = (packageId, quantity) => {
-    return httpClient.get(`/api/tour-packages/${packageId}/availability/check`, {
-        params: { quantity }
-    });
-}
+    // Verificar disponibilidad para una cantidad específica
+    checkAvailabilityForQuantity: (packageId, quantity) =>
+        httpClient.get(`${API_URL}/${packageId}/availability/check`, {
+            params: { quantity },
+        }),
+};
 
-export default { getAll, getAllActive, searchFilter, create, get, update, toggleActive, getAvailability, checkAvailabilityForQuantity };
+export default tourPackageService;

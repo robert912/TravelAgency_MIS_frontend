@@ -1,27 +1,27 @@
 import httpClient from "../http-common";
 
-const getAll = () => {
-    return httpClient.get('/api/restrictions/');
+const API_URL = "/api/restrictions";
+
+const restrictionService = {
+    // Obtener todas las restricciones
+    getAll: () =>
+        httpClient.get(`${API_URL}/`),
+
+    // Obtener solo restricciones activas
+    getAllActive: () =>
+        httpClient.get(`${API_URL}/active`),
+
+    // Obtener restricción por ID
+    get: (id) =>
+        httpClient.get(`${API_URL}/${id}`),
+
+    // Crear nueva restricción
+    create: (data) =>
+        httpClient.post(`${API_URL}/`, data),
+
+    // Actualizar restricción
+    update: (data) =>
+        httpClient.put(`${API_URL}/`, data),
 };
 
-const getAllActive = () => {
-    return httpClient.get('/api/restrictions/active');
-};
-
-const get = id => {
-    return httpClient.get(`/api/restrictions/${id}`);
-};
-
-const create = data => {
-    return httpClient.post("/api/restrictions/", data);
-};
-
-const update = data => {
-    return httpClient.put('/api/restrictions/', data);
-};
-
-const remove = id => {
-    return httpClient.delete(`/api/restrictions/${id}`);
-};
-
-export default { getAll, getAllActive, get, create, update, remove };
+export default restrictionService;

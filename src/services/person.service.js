@@ -4,39 +4,30 @@ const API_URL = "/api/persons";
 
 const personService = {
     // Obtener todas las personas
-    getAll: () => {
-        return httpClient.get(`${API_URL}/`);
-    },
+    getAll: () =>
+        httpClient.get(`${API_URL}/`),
 
     // Obtener solo personas activas
-    getAllActive: () => {
-        return httpClient.get(`${API_URL}/active`);
-    },
+    getAllActive: () =>
+        httpClient.get(`${API_URL}/active`),
 
     // Obtener persona por ID
-    get: (id) => {
-        return httpClient.get(`${API_URL}/${id}`);
-    },
+    get: (id) =>
+        httpClient.get(`${API_URL}/${id}`),
 
     // Crear nueva persona
-    create: (data) => {
-        return httpClient.post(`${API_URL}/`, data);
-    },
+    create: (data) =>
+        httpClient.post(`${API_URL}/`, data),
 
     // Actualizar persona
-    update: (data) => {
-        return httpClient.put(`${API_URL}/`, data);
-    },
-
-    // Desactivar persona (borrado lógico)
-    delete: (id) => {
-        return httpClient.delete(`${API_URL}/${id}`);
-    },
+    update: (data) =>
+        httpClient.put(`${API_URL}/`, data),
 
     // Buscar persona por identificación o correo
-    searchPerson: (query) => {
-        return httpClient.get(`${API_URL}/search`, { params: { query: query } });
-    }
+    searchPerson: (query) =>
+        httpClient.get(`${API_URL}/search`, {
+            params: { query },
+        }),
 };
 
 export default personService;
