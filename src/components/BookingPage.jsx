@@ -136,6 +136,12 @@ const BookingPage = () => {
             return;
         }
 
+        const isDuplicate = formData.passengersInfo.some((p, i) => i !== index && p.identification === identification.trim());
+        if (isDuplicate) {
+            Swal.fire('Atención', 'Este pasajero ya ha sido ingresado en esta reserva', 'warning');
+            return;
+        }
+
         setSearchingPassenger(prev => ({ ...prev, [index]: true }));
 
         try {
@@ -197,6 +203,13 @@ const BookingPage = () => {
 
     const handleSavePassenger = async (index) => {
         const passenger = formData.passengersInfo[index];
+
+        // Validar que no esté duplicado
+        const isDuplicate = formData.passengersInfo.some((p, i) => i !== index && p.identification === passenger.identification.trim());
+        if (isDuplicate) {
+            Swal.fire('Error', 'Este pasajero ya ha sido ingresado en esta reserva', 'error');
+            return;
+        }
 
         // Validar datos requeridos
         if (!passenger.fullName.trim()) {
@@ -421,8 +434,19 @@ const BookingPage = () => {
     };
 
     const validatePassengers = () => {
+        const identifications = new Set();
         for (let i = 0; i < formData.passengersInfo.length; i++) {
             const passenger = formData.passengersInfo[i];
+
+            if (passenger.identification?.trim()) {
+                if (identifications.has(passenger.identification.trim())) {
+                    Swal.fire('Error', `El pasajero ${i + 1} tiene una identificación duplicada`, 'error');
+                    setExpandedPassenger(i);
+                    return false;
+                }
+                identifications.add(passenger.identification.trim());
+            }
+
             if (!passenger.fullName?.trim()) {
                 Swal.fire('Error', `Ingrese el nombre del pasajero ${i + 1}`, 'error');
                 setExpandedPassenger(i);
