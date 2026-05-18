@@ -226,62 +226,49 @@ const BookingPage = () => {
         }
 
         if (!passenger.existsInDb && !passenger.personId) {
-            // Es un pasajero nuevo, preguntar si desea registrarlo
-            const result = await Swal.fire({
-                title: 'Registrar nuevo pasajero',
-                text: `¿Deseas registrar a "${passenger.fullName}" en el sistema para futuras reservas?`,
-                icon: 'question',
-                showCancelButton: true,
-                confirmButtonText: 'Sí, registrar',
-                cancelButtonText: 'Solo esta vez'
-            });
+            // Es un pasajero nuevo, registrarlo automáticamente
+            setLoading(true);
+            try {
+                const newPerson = {
+                    fullName: passenger.fullName,
+                    identification: passenger.identification,
+                    email: passenger.email,
+                    phone: passenger.phone || "",
+                    nationality: passenger.nationality || "",
+                    active: 1,
+                    createdByUserId: currentUserId || 1,
+                    updatedByUserId: currentUserId || 1
+                };
 
-            if (result.isConfirmed) {
-                setLoading(true);
-                try {
-                    const newPerson = {
-                        fullName: passenger.fullName,
-                        identification: passenger.identification,
-                        email: passenger.email,
-                        phone: passenger.phone || "",
-                        nationality: passenger.nationality || "",
-                        active: 1,
-                        createdByUserId: currentUserId || 1,
-                        updatedByUserId: currentUserId || 1
-                    };
+                const response = await personService.create(newPerson);
+                const createdPerson = response.data?.data || response.data;
 
-                    const response = await personService.create(newPerson);
-                    const createdPerson = response.data?.data || response.data;
+                if (createdPerson) {
+                    setFormData(prev => ({
+                        ...prev,
+                        passengersInfo: prev.passengersInfo.map((p, i) =>
+                            i === index ? {
+                                ...p,
+                                personId: createdPerson.id,
+                                existsInDb: true,
+                                isEditing: false
+                            } : p
+                        )
+                    }));
 
-                    if (createdPerson) {
-                        setFormData(prev => ({
-                            ...prev,
-                            passengersInfo: prev.passengersInfo.map((p, i) =>
-                                i === index ? {
-                                    ...p,
-                                    personId: createdPerson.id,
-                                    existsInDb: true,
-                                    isEditing: false
-                                } : p
-                            )
-                        }));
-
-                        Swal.fire('¡Registrado!', 'El pasajero ha sido registrado exitosamente', 'success');
-                    }
-                } catch (error) {
-                    console.error("Error registrando pasajero:", error);
-                    Swal.fire('Error', 'No se pudo registrar el pasajero', 'error');
-                } finally {
-                    setLoading(false);
+                    Swal.fire({
+                        title: '¡Registrado!',
+                        text: 'El pasajero ha sido registrado exitosamente',
+                        icon: 'success',
+                        timer: 1500,
+                        showConfirmButton: false
+                    });
                 }
-            } else {
-                // Guardar solo para esta reserva
-                setFormData(prev => ({
-                    ...prev,
-                    passengersInfo: prev.passengersInfo.map((p, i) =>
-                        i === index ? { ...p, isEditing: false, existsInDb: false } : p
-                    )
-                }));
+            } catch (error) {
+                console.error("Error registrando pasajero:", error);
+                Swal.fire('Error', 'No se pudo registrar el pasajero', 'error');
+            } finally {
+                setLoading(false);
             }
         } else {
             // Pasajero existente, solo cerrar edición
