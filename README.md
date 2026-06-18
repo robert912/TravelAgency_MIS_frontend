@@ -95,3 +95,25 @@ docker build -t robert912/tourpackage-frontend:latest .
 ```bash
 docker run -d -p 5173:80 --name tour-frontend robert912/tourpackage-frontend
 ```
+
+## 🐳 Docker (Frontend para Kubernete)
+
+Instalar dependencias (si no lo has hecho antes)
+```bash
+npm install
+```
+
+Compilar con las nuevas URLs
+```bash
+npm run build
+```
+Para crear la imagen de docker:
+**Imagen**:
+```bash
+docker build -t robert912/travelmicro-frontend:latest .
+```
+
+Subir a Docker Hub
+```bash
+docker push robert912/travelmicro-frontend:latest
+```
