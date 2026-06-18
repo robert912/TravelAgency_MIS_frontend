@@ -345,13 +345,13 @@ const BookingPage = () => {
 
         setCheckingAvailability(true);
         try {
-            // 🔥 Usar el endpoint correcto
+            // Usar el endpoint correcto
             const response = await tourPackageService.checkAvailabilityForQuantity(
                 packageData.id,
                 formData.passengers
             );
 
-            // Dependiendo de cómo retorne tu backend
+            
             const data = response.data;
 
             console.log("Disponibilidad desde backend:", data); // Debug
@@ -361,8 +361,8 @@ const BookingPage = () => {
                 availableSlots: data.availableSlots,
                 totalSlots: data.totalSlots,
                 message: data.isAvailable
-                    ? `✅ ${data.availableSlots} cupos disponibles de ${data.totalSlots}`
-                    : `❌ ${data.message}`
+                    ? ` ${data.availableSlots} cupos disponibles de ${data.totalSlots}`
+                    : ` ${data.message}`
             });
         } catch (error) {
             console.error("Error verificando disponibilidad:", error);
