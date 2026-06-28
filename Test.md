@@ -176,30 +176,31 @@ Scenario: Los cupos se descuentan correctamente al confirmar una reserva
 **Archivo:** `tests/e2e/epica5-payments.spec.js`
 
 ```gherkin
-Scenario: Pago exitoso de una reserva pendiente
-  Given  un usuario autenticado con una reserva en estado PENDIENTE
-  When   el usuario navega a la página de pago de esa reserva
-    And  verifica el resumen de la reserva (paquete, pasajeros, monto)
+Scenario: Pago exitoso de una reserva pendiente desde Mis Reservas
+  Given  un usuario autenticado navega a "Mis Reservas"
+    And  existe al menos una reserva en estado Pendiente
+  When   el usuario hace clic en "Completar pago" de esa reserva
+    And  verifica el resumen de la reserva y avanza
     And  ingresa datos de tarjeta de crédito válidos (16 dígitos, fecha, CVV)
     And  confirma el pago en el paso de confirmación
-  Then   el sistema registra el pago como aprobado
-    And  muestra un diálogo de confirmación con el número de transacción
+  Then   el sistema muestra un diálogo de pago exitoso
     And  redirige al usuario a "Mis Reservas"
+    And  la reserva que estaba Pendiente aparece ahora como Pagada
 ```
 
 **Datos de tarjeta usados en el test:**
 
 | Campo | Valor de prueba |
 |-------|----------------|
-| Número de tarjeta | `4111 1111 1111 1111` (16 dígitos) |
-| Nombre del titular | `Juan Playwright Tester` |
-| Fecha de expiración | `12/28` |
-| CVV | `123` |
+| Número de tarjeta | `1111 1111 1111 1111` (16 dígitos) |
+| Nombre del titular | `Roberto Orellana` |
+| Fecha de expiración | `11/11` |
+| CVV | `111` |
 
 **Aserciones (Then) automatizadas:**
-- El diálogo SweetAlert2 muestra el título `¡Pago exitoso!`
-- El contenido incluye el ID de transacción `TXN-PLAYWRIGHT-2026`
+- `.swal2-title` contiene `exitoso` (insensible a mayúsculas)
 - La URL cambia a `/my-reservations`
+- La tarjeta con `Reserva #N` muestra texto que coincide con `/pagad/i`
 
 ---
 
@@ -234,23 +235,24 @@ Scenario: Validación de datos de tarjeta incorrectos
 
 ---
 
-#### CA-EP5-03: Reserva cancelada no puede ser pagada
+#### CA-EP5-03: Reserva cancelada no muestra opción de pago
 
 **Archivo:** `tests/e2e/epica5-payments.spec.js`
 
 ```gherkin
-Scenario: Intento de pago de una reserva cancelada
-  Given  un usuario autenticado con una reserva en estado CANCELADA
-  When   el usuario navega a la página de pago de esa reserva
-  Then   el sistema muestra un mensaje informando que la reserva está cancelada
-    And  redirige automáticamente al usuario a "Mis Reservas"
-    And  no permite ingresar datos de pago
+Scenario: El sistema no permite pagar una reserva cancelada
+  Given  un usuario autenticado en "Mis Reservas" con una reserva en estado Pendiente
+  When   el usuario hace clic en "Cancelar reserva" de esa reserva
+    And  confirma la cancelación en el diálogo
+  Then   la reserva aparece con estado Cancelada
+    And  el botón "Completar pago" ya no está disponible para esa reserva
+    And  solo el botón "Detalles" está disponible
 ```
 
 **Aserciones (Then) automatizadas:**
-- El diálogo SweetAlert2 muestra un título que contiene `cancelada`
-- Al confirmar el diálogo, la URL cambia a `/my-reservations`
-- Los campos `Número de tarjeta` y `CVV` no son visibles en la página de destino
+- La tarjeta `Reserva #N` muestra el chip `Cancelada`
+- `getByRole('button', { name: 'Completar pago' })` no es visible en esa tarjeta
+- `getByRole('button', { name: 'Detalles' })` es visible en esa tarjeta
 
 ---
 

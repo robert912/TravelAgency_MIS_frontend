@@ -40,8 +40,9 @@ export default defineConfig({
     },
 
     // Proyecto 1: Épica 4 — usa la sesión guardada por setup
-    // Con storageState activo el navegador arranca autenticado: no hay redirect a Keycloak
-    // y los tests navegan directamente a /booking/:id sin pasos de login.
+    // Con storageState activo el navegador arranca autenticado: no hay redirect a Keycloak.
+    // CA-EP4-01 navega desde la página principal (Ver Detalle → Reservar Ahora).
+    // CA-EP4-02 y CA-EP4-03 navegan directamente a /booking/:id.
     {
       name: 'epica4-reservas',
       testMatch: /epica4-reservas\.spec\.js/,
@@ -52,8 +53,9 @@ export default defineConfig({
     },
 
     // Proyecto 2: Épica 5 — usa la sesión guardada por setup
-    // Los tests de pagos mockean las llamadas API pero no manejan el flujo de Keycloak,
-    // por lo que necesitan la sesión precargada para que la ruta /payment/:id sea accesible.
+    // Todos los tests navegan por la UI real sin mocks de API.
+    // CA-EP5-01 y CA-EP5-02 acceden al flujo de pago desde "Mis Reservas" → "Completar pago".
+    // CA-EP5-03 cancela una reserva desde "Mis Reservas" y verifica que desaparece el botón de pago.
     {
       name: 'epica5-pagos',
       testMatch: /epica5-payments\.spec\.js/,

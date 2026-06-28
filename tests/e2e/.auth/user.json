@@ -2,7 +2,7 @@
   "cookies": [
     {
       "name": "AUTH_SESSION_ID",
-      "value": "NGtUSWhkWkVONEhUN1J0dHBLSFp4eWtLLnFRcmhnazI2c04xX1hLdTNPM2xNc0hjN0VXX1JidmxBNXlieGxnblRsUU5IOXJ0QWxpLWhIeGIwTk5XbXlPTEZLSXNmdl9FZzFmUkJHUFliT2ZzdU9R",
+      "value": "MFN4SXhGWVhvOXVJeWM3c2Z6TjdaSW9TLjZZR1RUOGxVYlZ1SG5OSGExSnpBWVhSOUd5QjhtNURtbExoWkZIekZZNk9xdVEyV2s5dHFKQVNrSEVJdy1nWDFKX3hGU1oxV3BxRlFjWFNXa1VDTml3",
       "domain": "localhost",
       "path": "/realms/travel-realm/",
       "expires": -1,
@@ -12,17 +12,17 @@
     },
     {
       "name": "KC_AUTH_SESSION_HASH",
-      "value": "\"d+fqG3Kwwna3yeeHfGTbYtDX/BCaVpiJl0Inz3hAhHY\"",
+      "value": "\"6+5NZvKIt2znEl6HvYccgA/tK3k6Prwo0/zPwkSayaM\"",
       "domain": "localhost",
       "path": "/realms/travel-realm/",
-      "expires": 1782684623.485859,
+      "expires": 1782686486.143525,
       "httpOnly": false,
       "secure": true,
       "sameSite": "None"
     },
     {
       "name": "KEYCLOAK_IDENTITY",
-      "value": "eyJhbGciOiJIUzUxMiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICIxMDBiMjQ4OC02NTg4LTRkOTMtYTQxOS0xYjg2ZDEwNGYxYTcifQ.eyJleHAiOjE3ODI3MjA1NjUsImlhdCI6MTc4MjY4NDU2NSwianRpIjoiOWM2MTRlZDgtZDhiYy05MmY5LTI0ZjAtOWY3ZTQ0YjQ1YjRhIiwiaXNzIjoiaHR0cDovL2xvY2FsaG9zdDo5MDkwL3JlYWxtcy90cmF2ZWwtcmVhbG0iLCJzdWIiOiIyMDAyOWFhYS01MzljLTQ4MzctYTlmYy00ZmVmODc0OGI5NzMiLCJ0eXAiOiJTZXJpYWxpemVkLUlEIiwic2lkIjoiNGtUSWhkWkVONEhUN1J0dHBLSFp4eWtLIiwic3RhdGVfY2hlY2tlciI6Ikg1TzRjc000NDVzci04YnptMXlxOWRaRi1ScVl3WmJpczEyWHZfbjdxbk0ifQ.Xw9AsgFiA8Q5AcC-P15BvLtaf3pkk7fTk2ag-K2EQKL_NiKD1TlmYkgwsmk5mVTmT4KPigqCwQUTNsfrkgxrDA",
+      "value": "eyJhbGciOiJIUzUxMiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICIxMDBiMjQ4OC02NTg4LTRkOTMtYTQxOS0xYjg2ZDEwNGYxYTcifQ.eyJleHAiOjE3ODI3MjI0MjcsImlhdCI6MTc4MjY4NjQyNywianRpIjoiZjk1OWU4NDctYzNjYS02OTgzLTEyNTItNmNiY2Y3MjBmZjViIiwiaXNzIjoiaHR0cDovL2xvY2FsaG9zdDo5MDkwL3JlYWxtcy90cmF2ZWwtcmVhbG0iLCJzdWIiOiIyMDAyOWFhYS01MzljLTQ4MzctYTlmYy00ZmVmODc0OGI5NzMiLCJ0eXAiOiJTZXJpYWxpemVkLUlEIiwic2lkIjoiMFN4SXhGWVhvOXVJeWM3c2Z6TjdaSW9TIiwic3RhdGVfY2hlY2tlciI6IndMNlNnaktROGxkQ2FkT1pQWDZPZGxSR0VHVXFzdWY3cTRITkd2cFMyRUEifQ.Lp0zpHubyXiuX2jIQWGUS_ROrGRzvv4m_CTONeR4gqiPbi3t4Zmi1h1W24yHgMSRopmD9Oia1d7innxetoUXKQ",
       "domain": "localhost",
       "path": "/realms/travel-realm/",
       "expires": -1,
@@ -32,10 +32,10 @@
     },
     {
       "name": "KEYCLOAK_SESSION",
-      "value": "d-fqG3Kwwna3yeeHfGTbYtDX_BCaVpiJl0Inz3hAhHY",
+      "value": "6-5NZvKIt2znEl6HvYccgA_tK3k6Prwo0_zPwkSayaM",
       "domain": "localhost",
       "path": "/realms/travel-realm/",
-      "expires": 1782720565.060919,
+      "expires": 1782722427.677479,
       "httpOnly": false,
       "secure": true,
       "sameSite": "None"
