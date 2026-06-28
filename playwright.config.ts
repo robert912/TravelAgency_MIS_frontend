@@ -43,7 +43,7 @@ export default defineConfig({
     // nunca ocurre y el test falla por timeout.
     {
       name: 'epica4-reservas',
-      testMatch: /ep4-ca\d+\.spec\.js/,
+      testMatch: /epica4-reservas\.spec\.js/,
     },
 
     // Proyecto 2: Épica 5 — usa la sesión guardada por setup
