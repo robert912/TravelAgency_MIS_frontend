@@ -143,50 +143,66 @@ test('CA-EP5-02: Sistema valida y rechaza datos de tarjeta inválidos', async ({
 
 
 // ─────────────────────────────────────────────────────────────
-// CA-EP5-03: Reserva cancelada no puede ser pagada
+// CA-EP5-03: Reserva cancelada no muestra opción de pago
 // ─────────────────────────────────────────────────────────────
 /**
- * Scenario: Intento de pago de una reserva cancelada
- *   Given  un usuario autenticado con una reserva en estado CANCELADA
- *   When   el usuario navega a la página de pago de esa reserva
- *   Then   el sistema muestra un mensaje informando que la reserva está cancelada
- *     And  redirige automáticamente al usuario a "Mis Reservas"
- *     And  no permite ingresar datos de pago
+ * Scenario: El sistema no permite pagar una reserva cancelada
+ *   Given  un usuario autenticado en "Mis Reservas" con una reserva PENDIENTE
+ *   When   el usuario cancela esa reserva mediante el botón "Cancelar reserva"
+ *     And  confirma la cancelación en el diálogo
+ *   Then   la reserva aparece con estado "Cancelada"
+ *     And  el botón "Completar pago" ya no está disponible para esa reserva
+ *     And  solo el botón "Detalles" está disponible
  */
-test('CA-EP5-03: Reserva cancelada no puede ser pagada y redirige al usuario', async ({ page }) => {
+test('CA-EP5-03: Reserva cancelada no muestra opción de pago', async ({ page }) => {
 
-  await test.step('Given: Existe una reserva en estado CANCELADA', async () => {
-    // Interceptar la carga de la reserva para devolver estado CANCELADA
-    await page.route(`**/api/reservations/${MOCK_CANCELLED_RESERVATION.id}`, async route => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ data: MOCK_CANCELLED_RESERVATION }),
-      });
+  let reservationId;
+
+  await test.step('Given: Usuario autenticado en Mis Reservas con una reserva PENDIENTE', async () => {
+    await page.goto('/my-reservations');
+    await expect(page).toHaveURL(/my-reservations/, { timeout: 15000 });
+    const pendingCard = page.locator('.MuiCard-root').filter({ hasText: 'Pendiente' }).first();
+    await expect(pendingCard).toBeVisible({ timeout: 10000 });
+    const headingText = await pendingCard.getByRole('heading').first().textContent();
+    reservationId = headingText.match(/#(\d+)/)?.[1];
+    expect(reservationId).toBeTruthy();
+    console.log(`Reserva a cancelar: #${reservationId}`);
+  });
+
+  await test.step('When: El usuario cancela la reserva', async () => {
+    const pendingCard = page.locator('.MuiCard-root').filter({
+      has: page.getByRole('heading', { name: `Reserva #${reservationId}` }),
     });
+    await pendingCard.getByRole('button', { name: 'Cancelar' }).click();
   });
 
-  await test.step('When: El usuario navega a la página de pago de esa reserva', async () => {
-    await page.goto(`/payment/${MOCK_CANCELLED_RESERVATION.id}`);
-  });
-
-  await test.step('Then: El sistema muestra diálogo informando que la reserva está cancelada', async () => {
-    // SweetAlert2 debe aparecer con el mensaje de cancelación
-    await expect(page.locator('.swal2-popup')).toBeVisible({ timeout: 15000 });
-    await expect(page.locator('.swal2-title')).toContainText('cancelada', { ignoreCase: true });
-  });
-
-  await test.step('Then: Al confirmar el diálogo, el usuario es redirigido a Mis Reservas', async () => {
-    // Confirmar el diálogo
+  await test.step('When: Confirma la cancelación en el diálogo', async () => {
+    await expect(page.locator('.swal2-popup')).toBeVisible({ timeout: 8000 });
     await page.locator('.swal2-confirm').click();
-
-    // Verificar redirección
-    await expect(page).toHaveURL(/my-reservations/, { timeout: 10000 });
+    // Esperar el diálogo de éxito y cerrarlo
+    await expect(page.locator('.swal2-popup')).toBeVisible({ timeout: 8000 });
+    await page.locator('.swal2-confirm').click();
   });
 
-  await test.step('Then: El formulario de pago no es accesible', async () => {
-    // En la página de Mis Reservas no debe estar el formulario de tarjeta
-    await expect(page.getByLabel('Número de tarjeta')).not.toBeVisible();
-    await expect(page.getByLabel('CVV')).not.toBeVisible();
+  await test.step('Then: La reserva aparece con estado Cancelada', async () => {
+    const cancelledCard = page.locator('.MuiCard-root').filter({
+      has: page.getByRole('heading', { name: `Reserva #${reservationId}` }),
+    });
+    await expect(cancelledCard).toBeVisible({ timeout: 10000 });
+    await expect(cancelledCard.getByText('Cancelada')).toBeVisible({ timeout: 5000 });
+  });
+
+  await test.step('Then: El botón "Completar pago" no está disponible para esa reserva', async () => {
+    const cancelledCard = page.locator('.MuiCard-root').filter({
+      has: page.getByRole('heading', { name: `Reserva #${reservationId}` }),
+    });
+    await expect(cancelledCard.getByRole('button', { name: 'Completar pago' })).not.toBeVisible();
+  });
+
+  await test.step('Then: Solo el botón "Detalles" está disponible', async () => {
+    const cancelledCard = page.locator('.MuiCard-root').filter({
+      has: page.getByRole('heading', { name: `Reserva #${reservationId}` }),
+    });
+    await expect(cancelledCard.getByRole('button', { name: 'Detalles' })).toBeVisible();
   });
 });
