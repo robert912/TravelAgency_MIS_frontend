@@ -24,7 +24,7 @@ setup('Autenticar usuario de prueba en Keycloak', async ({ page }) => {
   // 'commit' devuelve el control en cuanto llega el primer byte de respuesta,
   // antes de que keycloak-js ejecute su redirect — evita "page has been closed"
   await page.goto('/', { waitUntil: 'commit' });
-
+  await page.getByRole('button', { name: 'Iniciar Sesión' }).click();
   // Esperar redirección a Keycloak
   await page.waitForURL(/localhost:9090/, { timeout: 20000 });
 

@@ -27,15 +27,15 @@
 
 ```
 TravelAgency_MIS_frontend/
-├── playwright.config.js                  <- Configuración global de Playwright
+├── playwright.config.ts                  <- Configuración global de Playwright
 ├── Test.md                               <- Este archivo
 ├── tests/
 │   ├── e2e/
 │   │   ├── .auth/
-│   │   │   └── user.json                 <- Sesión guardada (generada automáticamente)
-│   │   ├── auth.setup.js                 <- Login en Keycloak (se ejecuta antes de los tests)
-│   │   ├── epica4-reservations.spec.js   <- 3 criterios de aceptación Épica 4
-│   │   └── epica5-payments.spec.js       <- 3 criterios de aceptación Épica 5
+│   │   │   └── user.json                 <- Sesión guardada (generada por auth.setup.js)
+│   │   ├── auth.setup.js                 <- Login en Keycloak (se ejecuta antes de Épica 4 y 5)
+│   │   ├── epica4-reservas.spec.js       <- CA-EP4-01, CA-EP4-02, CA-EP4-03
+│   │   └── epica5-payments.spec.js       <- CA-EP5-01, CA-EP5-02, CA-EP5-03
 │   └── k6/
 │       ├── load-test.js                  <- Load testing (10/50/100/200 usuarios)
 │       ├── stress-test.js                <- Stress testing (rampa hasta punto de quiebre)
@@ -84,82 +84,88 @@ npx playwright install chromium
 Crear el archivo `.env.test` en la raíz del frontend:
 
 ```env
-TEST_USER=testuser
-TEST_PASSWORD=password123
+TEST_USER=roberto.orellana.t@usach.cl
+TEST_PASSWORD=Admin1234
 TEST_PACKAGE_ID=1
 BASE_URL=http://localhost:5173
+API_BASE_URL=http://localhost:8090
 ```
 
-> `TEST_USER` y `TEST_PASSWORD` deben ser credenciales de un usuario real en Keycloak (realm `travel-realm`).
+> `TEST_USER` y `TEST_PASSWORD` son las credenciales del usuario en Keycloak que usa `auth.setup.js` para guardar la sesión en `.auth/user.json`.
 > `TEST_PACKAGE_ID` debe ser el ID de un paquete turístico con cupos disponibles en la BD.
+> `API_BASE_URL` es usado en CA-EP4-03 para consultar `GET /api/tour-packages/{id}/availability`.
 
 ---
 
 ### 3.2 Criterios de aceptación — Épica 4: Proceso de reserva en línea
 
+> **Nota:** Los tres tests de Épica 4 usan la sesión guardada por `auth.setup.js` (`storageState`). El navegador arranca autenticado y navega directamente a `/booking/:id`, sin pasar por Keycloak.
+
 #### CA-EP4-01: Reserva exitosa con datos de pasajero válidos
 
-**Archivo:** `tests/e2e/epica4-reservations.spec.js`
+**Archivo:** `tests/e2e/epica4-reservas.spec.js`
 
 ```gherkin
-Scenario: Reserva exitosa con un pasajero
-  Given  un usuario autenticado en el sistema
-    And  existe un paquete turístico disponible con cupos
-  When   el usuario navega a la página de reserva del paquete
-    And  ingresa la cantidad de pasajeros como 1
-    And  completa los datos del pasajero (identificación, nombre, email)
-    And  guarda los datos del pasajero
-    And  confirma la reserva en el paso de resumen
+Scenario: Reserva exitosa con un pasajero registrado
+  Given  el usuario está autenticado (sesión precargada) en el formulario de reserva
+    And  existe el paquete turístico con cupos disponibles
+  When   indica 1 pasajero y avanza al paso de datos
+    And  ingresa el RUT del pasajero (autocompletado desde BD)
+    And  avanza al resumen y confirma la reserva
   Then   el sistema crea la reserva con estado PENDIENTE
-    And  muestra un diálogo con el número de reserva asignado
-    And  redirige al usuario a la página "Mis Reservas"
+    And  muestra el diálogo "¡Reserva confirmada!" con el número de reserva asignado
+    And  redirige a "Mis Reservas" donde la reserva aparece en la lista
 ```
 
 **Aserciones (Then) automatizadas:**
-- El diálogo SweetAlert2 contiene el texto `Reserva confirmada`
-- El contenido del diálogo incluye un símbolo `#` (número de reserva asignado)
+- `.swal2-title` contiene `¡Reserva confirmada!`
+- `.swal2-html-container` contiene `Número de reserva:` y un `#N`
 - La URL cambia a `/my-reservations`
+- `heading` con `Reserva #N` es visible en la lista
 
 ---
 
-#### CA-EP4-02: Sistema bloquea la reserva cuando no hay cupos disponibles
+#### CA-EP4-02: El sistema aplica 10% de descuento al seleccionar 4 o más pasajeros
 
-**Archivo:** `tests/e2e/epica4-reservations.spec.js`
+**Archivo:** `tests/e2e/epica4-reservas.spec.js`
 
 ```gherkin
-Scenario: Intento de reserva con cupos insuficientes
-  Given  un usuario autenticado en el sistema
-    And  el sistema reporta que no hay cupos disponibles para el paquete
-  When   el usuario navega a la página de reserva
-  Then   el campo de disponibilidad muestra un mensaje de error
-    And  el botón "Continuar" está deshabilitado
+Scenario: Reserva grupal con descuento del 10% y 4 pasajeros
+  Given  el usuario está autenticado en el formulario de reserva
+  When   selecciona 4 pasajeros en el campo "Número de pasajeros"
+  Then   el sistema muestra una alerta "Descuento por grupo aplicado (10%)"
+  When   completa los datos de los 4 pasajeros (autocompletado BD o manual)
+    And  avanza al resumen y confirma la reserva
+  Then   el diálogo de pre-confirmación lista "Descuento Verano" bajo "Descuentos aplicados:"
+    And  el sistema confirma la reserva con el número asignado
+    And  el detalle de la reserva muestra "Descuento Verano" con su monto
 ```
 
 **Aserciones (Then) automatizadas:**
-- El helper text del campo de pasajeros contiene `No hay cupos disponibles`
-- El botón `Continuar` tiene el atributo `disabled`
-
-> **Técnica usada:** `page.route()` intercepta la llamada a la API de disponibilidad y devuelve `availableSlots: 0`, garantizando el escenario sin depender de datos específicos en la BD.
+- `.MuiAlert-root` contiene `Descuento por grupo aplicado` y `10%`
+- `.swal2-html-container` (pre-confirmación) contiene `Descuentos aplicados:` y `Descuento Verano`
+- En `/reservation-details/:id`: texto `Descuentos aplicados:` y `Descuento Verano` visibles
 
 ---
 
-#### CA-EP4-03: Descuento de grupo del 10% se aplica al seleccionar 4+ pasajeros
+#### CA-EP4-03: El sistema descuenta los cupos disponibles al confirmar una reserva
 
-**Archivo:** `tests/e2e/epica4-reservations.spec.js`
+**Archivo:** `tests/e2e/epica4-reservas.spec.js`
 
 ```gherkin
-Scenario: Descuento de grupo al seleccionar 4 o más pasajeros
-  Given  un usuario autenticado navega a la página de reserva de un paquete disponible
-  When   el usuario selecciona 4 pasajeros en el formulario
-  Then   el sistema muestra una alerta de "Descuento por grupo aplicado"
-    And  el resumen de precios refleja un descuento del 10% sobre el subtotal
+Scenario: Los cupos se descuentan correctamente al confirmar una reserva
+  Given  el usuario está autenticado en el formulario de reserva
+    And  el paquete registra X cupos disponibles (GET /api/tour-packages/{id}/availability)
+  When   selecciona 2 pasajeros y confirma la reserva
+  Then   el sistema registra la reserva exitosamente
+    And  al consultar nuevamente la disponibilidad via API los cupos son X − 2
 ```
 
 **Aserciones (Then) automatizadas:**
-- El componente `Alert` de MUI muestra el texto `Descuento por grupo aplicado`
-- La alerta contiene el texto `10%`
-- La sección `Descuentos aplicados` es visible en el panel lateral de precios
-- El texto `Descuento por grupo` aparece en el desglose
+- `.swal2-title` contiene `¡Reserva confirmada!`
+- `GET /api/tour-packages/{id}/availability` → `availableSlots === initialSlots - 2`
+
+> **Técnica usada:** `page.request.get()` consulta la API directamente antes y después de la reserva, sin depender del DOM ni de navegación adicional.
 
 ---
 
@@ -281,20 +287,20 @@ npx playwright test --headed=false
 npx playwright test --reporter=list
 ```
 
-**Resultado esperado al pasar los 6 tests:**
+**Resultado esperado al pasar los 7 tests:**
 
 ```
-Running 6 tests using 1 worker
+Running 7 tests using 1 worker
 
-  ✓ [setup]          auth.setup.js > Autenticar usuario de prueba en Keycloak
-  ✓ [epica4-reservas] epica4-reservations.spec.js > CA-EP4-01: Reserva exitosa con datos de pasajero válidos
-  ✓ [epica4-reservas] epica4-reservations.spec.js > CA-EP4-02: Sistema bloquea la reserva cuando no hay cupos disponibles
-  ✓ [epica4-reservas] epica4-reservations.spec.js > CA-EP4-03: Descuento de grupo del 10% se aplica al seleccionar 4+ pasajeros
-  ✓ [epica5-pagos]   epica5-payments.spec.js > CA-EP5-01: Pago exitoso con datos de tarjeta de crédito válidos
-  ✓ [epica5-pagos]   epica5-payments.spec.js > CA-EP5-02: Sistema valida y rechaza datos de tarjeta inválidos
-  ✓ [epica5-pagos]   epica5-payments.spec.js > CA-EP5-03: Reserva cancelada no puede ser pagada y redirige al usuario
+  ✓ [setup]           auth.setup.js > Autenticar usuario de prueba en Keycloak
+  ✓ [epica4-reservas] epica4-reservas.spec.js > CA-EP4-01: Reserva exitosa con datos de pasajero válidos
+  ✓ [epica4-reservas] epica4-reservas.spec.js > CA-EP4-02: El sistema aplica 10% de descuento al seleccionar 4 o más pasajeros
+  ✓ [epica4-reservas] epica4-reservas.spec.js > CA-EP4-03: El sistema descuenta 2 cupos al confirmar una reserva
+  ✓ [epica5-pagos]    epica5-payments.spec.js > CA-EP5-01: Pago exitoso con datos de tarjeta de crédito válidos
+  ✓ [epica5-pagos]    epica5-payments.spec.js > CA-EP5-02: Sistema valida y rechaza datos de tarjeta inválidos
+  ✓ [epica5-pagos]    epica5-payments.spec.js > CA-EP5-03: Reserva cancelada no puede ser pagada y redirige al usuario
 
-  6 passed (3m)
+  7 passed (3m)
 ```
 
 ---
@@ -515,18 +521,20 @@ k6 run ^
 ### Playwright — archivo `.env.test` en la raíz del frontend
 
 ```env
-TEST_USER=testuser
-TEST_PASSWORD=password123
+TEST_USER=roberto.orellana.t@usach.cl
+TEST_PASSWORD=Admin1234
 TEST_PACKAGE_ID=1
 BASE_URL=http://localhost:5173
+API_BASE_URL=http://localhost:8090
 ```
 
 | Variable | Descripción | Default |
 |----------|-------------|---------|
-| `TEST_USER` | Usuario en Keycloak para los tests E2E | `testuser` |
-| `TEST_PASSWORD` | Contraseña del usuario de tests | `password123` |
+| `TEST_USER` | Usuario en Keycloak (usado por `auth.setup.js`) | `roberto.orellana.t@usach.cl` |
+| `TEST_PASSWORD` | Contraseña del usuario (usado por `auth.setup.js`) | `Admin1234` |
 | `TEST_PACKAGE_ID` | ID de paquete turístico con cupos disponibles | `1` |
 | `BASE_URL` | URL del frontend | `http://localhost:5173` |
+| `API_BASE_URL` | URL base del backend (usado en CA-EP4-03) | `http://localhost:8090` |
 
 ### K6 — pasar con flag `-e` en el comando
 

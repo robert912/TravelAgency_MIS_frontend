@@ -25,10 +25,8 @@
 import { test, expect } from '@playwright/test';
 
 // ── Constantes ─────────────────────────────────────────────────────────────────
-const PACKAGE_ID = process.env.TEST_PACKAGE_ID  || '1';
-const TEST_USER  = process.env.TEST_USER        || 'roberto.orellana.t@usach.cl';
-const TEST_PASS  = process.env.TEST_PASSWORD    || 'Admin1234';
-const API_BASE   = process.env.API_BASE_URL     || 'http://localhost:8090';
+const PACKAGE_ID = process.env.TEST_PACKAGE_ID || '1';
+const API_BASE   = process.env.API_BASE_URL    || 'http://localhost:8090';
 
 // Datos de los 4 pasajeros para CA-EP4-02
 const PASSENGERS = [
@@ -41,22 +39,15 @@ const PASSENGERS = [
 // ── Helpers compartidos ────────────────────────────────────────────────────────
 
 /**
- * Autentica al usuario vía UI:
- * home → "Ver Detalle" → "Reservar Ahora" → Keycloak → frontend.
- * La home page es pública; el redirect a Keycloak ocurre al intentar reservar.
- * Tras el login, el navegador queda en el formulario de reserva del paquete clickeado.
+ * Navega al formulario de reserva del paquete.
+ * La sesión ya está cargada desde storageState (auth.setup.js),
+ * por lo que no hay redirect a Keycloak.
  */
-async function loginViaUI(page) {
-  await page.goto('/');
-  await expect(page.getByRole('button', { name: 'Ver Detalle' }).first())
-    .toBeVisible({ timeout: 15000 });
-  await page.getByRole('button', { name: 'Ver Detalle' }).first().click();
-  await page.getByRole('button', { name: 'Reservar Ahora' }).click();
-  await page.waitForURL(/localhost:9090/, { timeout: 20000 });
-  await page.locator('#username').fill(TEST_USER);
-  await page.locator('#password').fill(TEST_PASS);
-  await page.locator('#kc-login').click();
-  await page.waitForURL(/localhost:5173/, { timeout: 20000 });
+async function goToBooking(page) {
+  await page.goto(`/booking/${PACKAGE_ID}`);
+  await expect(
+    page.getByRole('heading', { name: 'Datos del viaje' })
+  ).toBeVisible({ timeout: 15000 });
 }
 
 /**
@@ -117,12 +108,10 @@ async function readSlotsFromApi(page) {
 // ─────────────────────────────────────────────────────────────
 /**
  * Scenario: Reserva exitosa con un pasajero registrado
- *   Given  el usuario no está autenticado y navega a la página principal
- *     And  existe al menos un paquete turístico disponible
- *   When   el usuario selecciona el primer paquete disponible y hace clic en "Reservar Ahora"
- *     And  inicia sesión con sus credenciales de Keycloak
- *     And  indica 1 pasajero y avanza al paso de datos
- *     And  ingresa el RUT del pasajero y espera el autocompletado
+ *   Given  el usuario está autenticado (sesión precargada) y navega al formulario de reserva
+ *     And  existe el paquete turístico con ID = PACKAGE_ID disponible
+ *   When   indica 1 pasajero y avanza al paso de datos
+ *     And  ingresa el RUT del pasajero y espera el autocompletado desde la BD
  *     And  avanza al resumen y confirma la reserva
  *   Then   el sistema muestra un diálogo "¡Reserva confirmada!" con el número de reserva
  *     And  al cerrar el diálogo redirige a "Mis Reservas"
@@ -130,8 +119,12 @@ async function readSlotsFromApi(page) {
  */
 test('CA-EP4-01: Reserva exitosa con datos de pasajero válidos', async ({ page }) => {
 
-  await test.step('Given: Usuario no autenticado en la página principal con paquetes disponibles', async () => {
-    await loginViaUI(page);
+  await test.step(`Given: Usuario autenticado en el formulario de reserva del paquete #${PACKAGE_ID}`, async () => {
+    await page.goto('/');
+    await expect(page.getByRole('button', { name: 'Ver Detalle' }).first()).toBeVisible({ timeout: 15000 });
+    await page.getByRole('button', { name: 'Ver Detalle' }).first().click();
+    await page.getByRole('button', { name: 'Reservar Ahora' }).click();
+    await expect(page).toHaveURL(/booking/);
   });
 
   await test.step('When: Selecciona 1 pasajero y avanza al paso de datos', async () => {
@@ -181,7 +174,7 @@ test('CA-EP4-01: Reserva exitosa con datos de pasajero válidos', async ({ page 
 // ─────────────────────────────────────────────────────────────
 /**
  * Scenario: Reserva grupal con descuento del 10% y 4 pasajeros
- *   Given  que el usuario está autenticado en la plataforma
+ *   Given  dado que el usuario se encuentra reservando un paquete turístico
  *     And  existe un paquete turístico con al menos 4 cupos disponibles
  *   When   el usuario selecciona 4 pasajeros en el campo "Número de pasajeros"
  *   Then   el sistema muestra inmediatamente una alerta de descuento grupal del 10%
@@ -192,8 +185,8 @@ test('CA-EP4-01: Reserva exitosa con datos de pasajero válidos', async ({ page 
  */
 test('CA-EP4-02: El sistema aplica 10% de descuento al seleccionar 4 o más pasajeros', async ({ page }) => {
 
-  await test.step('Given: Usuario autenticado en la plataforma', async () => {
-    await loginViaUI(page);
+  await test.step(`Given: Usuario autenticado en el formulario de reserva del paquete #${PACKAGE_ID}`, async () => {
+    await goToBooking(page);
   });
 
   await test.step('When: El usuario selecciona 4 pasajeros en el campo "Número de pasajeros"', async () => {
@@ -294,7 +287,7 @@ test('CA-EP4-02: El sistema aplica 10% de descuento al seleccionar 4 o más pasa
 // ─────────────────────────────────────────────────────────────
 /**
  * Scenario: El sistema descuenta los cupos disponibles al confirmar una reserva
- *   Given  que el usuario está autenticado en la plataforma
+ *   Given  dado que el usuario se encuentra reservando un paquete turístico
  *     And  el paquete tiene X cupos disponibles (consultados via API antes de reservar)
  *   When   el usuario ingresa 2 pasajeros y confirma la reserva
  *   Then   el sistema registra la reserva exitosamente
@@ -302,8 +295,8 @@ test('CA-EP4-02: El sistema aplica 10% de descuento al seleccionar 4 o más pasa
  */
 test('CA-EP4-03: El sistema descuenta 2 cupos al confirmar una reserva', async ({ page }) => {
 
-  await test.step('Given: Usuario autenticado en la plataforma', async () => {
-    await loginViaUI(page);
+  await test.step(`Given: Usuario autenticado en el formulario de reserva del paquete #${PACKAGE_ID}`, async () => {
+    await goToBooking(page);
   });
 
   let initialSlots;
