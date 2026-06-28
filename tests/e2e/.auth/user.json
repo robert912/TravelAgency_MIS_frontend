@@ -1,0 +1,45 @@
+{
+  "cookies": [
+    {
+      "name": "AUTH_SESSION_ID",
+      "value": "V2szSUVnc1dXX2lnbUpiWFNLS243bmZoLjlrQmVsNGRld014d1d1anNKVFVVVG1nWlh2cERQRXZvc2pLNzFfMVBnVXhHM3VmRllMVFNSSm9DTi1ieWdGSXlkQWZTd1BDNDJmNHFNMjBaNnkzVjZ3",
+      "domain": "localhost",
+      "path": "/realms/travel-realm/",
+      "expires": -1,
+      "httpOnly": true,
+      "secure": true,
+      "sameSite": "None"
+    },
+    {
+      "name": "KC_AUTH_SESSION_HASH",
+      "value": "\"tce8/SdGeE9Ci6/GdL4Z5F+YaowqtbWI/SkIGlvzRJ0\"",
+      "domain": "localhost",
+      "path": "/realms/travel-realm/",
+      "expires": 1782612108.747881,
+      "httpOnly": false,
+      "secure": true,
+      "sameSite": "None"
+    },
+    {
+      "name": "KEYCLOAK_IDENTITY",
+      "value": "eyJhbGciOiJIUzUxMiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICIxMDBiMjQ4OC02NTg4LTRkOTMtYTQxOS0xYjg2ZDEwNGYxYTcifQ.eyJleHAiOjE3ODI2NDgwNDksImlhdCI6MTc4MjYxMjA0OSwianRpIjoiMzJmYjg1OTYtYTdhNC1lMWU2LWNmMGUtMjM5OWViYWIxN2M1IiwiaXNzIjoiaHR0cDovL2xvY2FsaG9zdDo5MDkwL3JlYWxtcy90cmF2ZWwtcmVhbG0iLCJzdWIiOiIyMDAyOWFhYS01MzljLTQ4MzctYTlmYy00ZmVmODc0OGI5NzMiLCJ0eXAiOiJTZXJpYWxpemVkLUlEIiwic2lkIjoiV2szSUVnc1dXX2lnbUpiWFNLS243bmZoIiwic3RhdGVfY2hlY2tlciI6ImpYRGxtcGlVMENyUDR6Z2FRbEw2OGtHUjBrd3JGbU56NWFVSEEtN3pXU1kifQ.qLvbmr4fhd-TSru2rQpNliblJTLKA6daBoD7OZwR6Gtv9dXHSU6tlaKKXeYsW40hRAm2RhnL7T4hRKaRJWDXBA",
+      "domain": "localhost",
+      "path": "/realms/travel-realm/",
+      "expires": -1,
+      "httpOnly": true,
+      "secure": true,
+      "sameSite": "None"
+    },
+    {
+      "name": "KEYCLOAK_SESSION",
+      "value": "tce8_SdGeE9Ci6_GdL4Z5F-YaowqtbWI_SkIGlvzRJ0",
+      "domain": "localhost",
+      "path": "/realms/travel-realm/",
+      "expires": 1782648049.886715,
+      "httpOnly": false,
+      "secure": true,
+      "sameSite": "None"
+    }
+  ],
+  "origins": []
+}
