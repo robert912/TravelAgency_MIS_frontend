@@ -463,6 +463,9 @@ k6 run -e ADMIN_USER=admin -e ADMIN_PASSWORD=admin123 tests/k6/load-test.js
 # Exportar resultados a CSV (para tabla comparativa en Excel)
 k6 run -e ADMIN_USER=admin -e ADMIN_PASSWORD=admin123 tests/k6/load-test.js --out csv=resultados/load-results.csv
 
+# Para ver el dashboard integrado que trae k6
+$env:K6_WEB_DASHBOARD="true"; $env:K6_WEB_DASHBOARD_EXPORT="report.html"; k6 run .\load-test.js
+
 
 # ── STRESS TESTING ────────────────────────────────────────────────────────────
 

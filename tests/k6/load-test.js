@@ -35,15 +35,15 @@ import { check, sleep } from 'k6';
 import { Counter, Rate, Trend } from 'k6/metrics';
 
 // ── Configuración ──────────────────────────────────────────────────────────────
-const BASE_URL   = __ENV.BACKEND_URL || 'http://localhost:8090';
-const KC_URL     = __ENV.KEYCLOAK_URL || 'http://localhost:9090';
-const KC_REALM   = __ENV.KC_REALM    || 'travel-realm';
-const KC_CLIENT  = __ENV.KC_CLIENT   || 'travel-frontend';
-const ADMIN_USER = __ENV.ADMIN_USER  || 'admin';
-const ADMIN_PASS = __ENV.ADMIN_PASSWORD || 'admin123';
+const BASE_URL   = __ENV.BACKEND_URL    || 'http://localhost:8090';
+const KC_URL     = __ENV.KEYCLOAK_URL   || 'http://localhost:9090';
+const KC_REALM   = __ENV.KC_REALM       || 'travel-realm';
+const KC_CLIENT  = __ENV.KC_CLIENT      || 'travel-frontend';
+const ADMIN_USER = __ENV.ADMIN_USER     || 'roberto.orellana.t@usach.cl';
+const ADMIN_PASS = __ENV.ADMIN_PASSWORD || 'Admin1234';
 
 // Período de reporte a consultar
-const START_DATE = '2024-01-01';
+const START_DATE = '2026-01-01';
 const END_DATE   = '2026-12-31';
 
 // ── Métricas personalizadas ───────────────────────────────────────────────────
@@ -67,21 +67,21 @@ export const options = {
       executor: 'constant-vus',
       vus: 50,
       duration: '30s',
-      startTime: '40s',
+      startTime: '35s',
       tags: { scenario: '50_usuarios' },
     },
     carga_100_usuarios: {
       executor: 'constant-vus',
       vus: 100,
       duration: '30s',
-      startTime: '80s',
+      startTime: '70s',
       tags: { scenario: '100_usuarios' },
     },
     carga_200_usuarios: {
       executor: 'constant-vus',
       vus: 200,
       duration: '30s',
-      startTime: '120s',
+      startTime: '105s',
       tags: { scenario: '200_usuarios' },
     },
   },

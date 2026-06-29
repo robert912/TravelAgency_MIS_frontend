@@ -30,10 +30,10 @@ const BASE_URL   = __ENV.BACKEND_URL    || 'http://localhost:8090';
 const KC_URL     = __ENV.KEYCLOAK_URL   || 'http://localhost:9090';
 const KC_REALM   = __ENV.KC_REALM      || 'travel-realm';
 const KC_CLIENT  = __ENV.KC_CLIENT     || 'travel-frontend';
-const ADMIN_USER = __ENV.ADMIN_USER    || 'admin';
-const ADMIN_PASS = __ENV.ADMIN_PASSWORD || 'admin123';
+const ADMIN_USER = __ENV.ADMIN_USER     || 'roberto.orellana.t@usach.cl';
+const ADMIN_PASS = __ENV.ADMIN_PASSWORD || 'Admin1234';
 
-const START_DATE = '2024-01-01';
+const START_DATE = '2026-01-01';
 const END_DATE   = '2026-12-31';
 
 // ── Métricas personalizadas ───────────────────────────────────────────────────
