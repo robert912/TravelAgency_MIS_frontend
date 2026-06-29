@@ -45,21 +45,21 @@ const rankingLatency = new Trend('stress_ranking_latency', true);
 // ── Configuración de rampa creciente ─────────────────────────────────────────
 export const options = {
   stages: [
-    { duration: '30s', target: 10  },   // Calentamiento: 10 usuarios
-    { duration: '30s', target: 50  },   // Carga normal: 50 usuarios
-    { duration: '30s', target: 100 },   // Carga moderada: 100 usuarios
-    { duration: '30s', target: 200 },   // Carga alta: 200 usuarios
-    { duration: '30s', target: 300 },   // Carga elevada: 300 usuarios
-    { duration: '30s', target: 500 },   // Estrés: 500 usuarios
-    { duration: '30s', target: 700 },   // Sobre-estrés: 700 usuarios (buscando quiebre)
-    { duration: '30s', target: 0   },   // Rampa de descenso
+    { duration: '30s', target: 50  },   // Calentamiento: 50 usuarios
+    { duration: '30s', target: 100  },   // Carga normal: 100 usuarios
+    { duration: '30s', target: 300 },   // Carga moderada: 300 usuarios
+    { duration: '30s', target: 500 },   // Carga alta: 500 usuarios
+    { duration: '30s', target: 800 },   // Carga elevada: 800 usuarios
+    { duration: '30s', target: 1000 },   // Estrés: 1000 usuarios
+    { duration: '30s', target: 1200 },   // Sobre-estrés: 1200 usuarios (buscando quiebre)
+    { duration: '30s', target: 0   },    // Rampa de descenso
   ],
   // Umbrales para determinar el punto de quiebre
   thresholds: {
-    // Si p95 supera 10s → el sistema está en punto de quiebre
-    'http_req_duration': ['p(95)<10000'],
-    // Si tasa de error supera 10% → falla del sistema
-    'stress_error_rate': ['rate<0.10'],
+    // Si p95 supera 5s → el sistema está en punto de quiebre
+    'http_req_duration': ['p(95)<5000'],
+    // Si tasa de error supera 5% → falla del sistema
+    'stress_error_rate': ['rate<0.05'],
   },
 };
 
@@ -145,7 +145,7 @@ export default function (data) {
 // ── Teardown ──────────────────────────────────────────────────────────────────
 export function teardown() {
   console.log('\n=== RESUMEN STRESS TESTING — ÉPICA 7 ===');
-  console.log('Rampa: 10 → 50 → 100 → 200 → 300 → 500 → 700 usuarios');
-  console.log('Punto de quiebre: revisar en el gráfico cuándo error_rate > 10% o p95 > 10s');
+  console.log('Rampa: 50 → 100 → 300 → 500 → 800 → 1000 → 1200 usuarios');
+  console.log('Punto de quiebre: revisar en el gráfico cuándo error_rate > 5% o p95 > 5s');
   console.log('Exportar datos: agregar --out csv=stress-results.csv al comando k6');
 }

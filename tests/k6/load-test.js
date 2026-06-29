@@ -86,10 +86,10 @@ export const options = {
     },
   },
   thresholds: {
-    // 95% de las peticiones deben responder en menos de 3 segundos
-    'http_req_duration': ['p(95)<3000'],
-    // Tasa de error menor al 5%
-    'error_rate': ['rate<0.05'],
+    // 95% de las peticiones deben responder en menos de 0.5 segundos
+    'http_req_duration': ['p(95)<500'],
+    // Tasa de error menor al 1%
+    'error_rate': ['rate<0.01'],
   },
 };
 
