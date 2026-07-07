@@ -8,7 +8,6 @@ import {
     DialogActions, Stack
 } from "@mui/material";
 import {
-    ArrowBack as ArrowBackIcon,
     PersonAdd as PersonIcon,
     AttachMoney as MoneyIcon,
     CheckCircle as CheckIcon,
@@ -31,6 +30,8 @@ import reservationService from "../services/reservation.service";
 import personService from "../services/person.service";
 import dayjs from 'dayjs';
 import { useKeycloak } from '@react-keycloak/web';
+import BackButton from "./common/BackButton";
+import TripSummaryCard from "./common/TripSummaryCard";
 
 const steps = ['Datos del viaje', 'Información de pasajeros', 'Resumen y pago'];
 
@@ -643,24 +644,24 @@ const BookingPage = () => {
     return (
         <Box sx={{ py: 4 }}>
             <Container maxWidth="lg">
-                <Button
-                    startIcon={<ArrowBackIcon />}
-                    onClick={() => navigate(-1)}
-                    sx={{ mb: 3 }}
+                <BackButton onClick={() => navigate(-1)}>Volver al paquete</BackButton>
+
+                <TripSummaryCard
+                    name={packageData?.name}
+                    destination={packageData?.destination}
+                    extra={[packageData?.category?.name, packageData?.travelType?.name].filter(Boolean).join(' • ')}
+                />
+
+                <Stepper
+                    activeStep={activeStep}
+                    sx={{
+                        mb: 3,
+                        p: 1.5,
+                        bgcolor: 'var(--card-bg)',
+                        borderRadius: 3,
+                        boxShadow: 'var(--shadow-sm)'
+                    }}
                 >
-                    Volver al paquete
-                </Button>
-
-                <Paper sx={{ p: 3, mb: 3, borderRadius: 3 }}>
-                    <Typography variant="h5" fontWeight="bold" gutterBottom>
-                        {packageData?.name}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                        {packageData?.destination} • {packageData?.category?.name} • {packageData?.travelType?.name}
-                    </Typography>
-                </Paper>
-
-                <Stepper activeStep={activeStep} sx={{ mb: 4 }}>
                     {steps.map((label) => (
                         <Step key={label}>
                             <StepLabel>{label}</StepLabel>
@@ -669,7 +670,7 @@ const BookingPage = () => {
                 </Stepper>
 
                 <Grid container spacing={3}>
-                    <Grid xs={12} md={8}>
+                    <Grid size={{ xs: 12, md: 8 }}>
                         <Paper sx={{ p: 3, borderRadius: 3 }}>
                             {activeStep === 0 && (
                                 <Box>
@@ -679,7 +680,7 @@ const BookingPage = () => {
                                     <Divider sx={{ mb: 3 }} />
 
                                     <Grid container spacing={3}>
-                                        <Grid xs={12} sm={6}>
+                                        <Grid size={{ xs: 12, sm: 6 }}>
                                             <TextField
                                                 fullWidth
                                                 label="Número de pasajeros"
@@ -760,7 +761,7 @@ const BookingPage = () => {
                                             />
                                         </Grid>
 
-                                        <Grid xs={12}>
+                                        <Grid size={{ xs: 12 }}>
                                             <TextField
                                                 fullWidth
                                                 label="Solicitudes especiales (opcional)"
@@ -874,7 +875,7 @@ const BookingPage = () => {
                                                     <Box sx={{ mt: 2 }}>
                                                         {passenger.isEditing ? (
                                                             <Grid container spacing={2}>
-                                                                <Grid xs={12}>
+                                                                <Grid size={{ xs: 12 }}>
                                                                     <TextField
                                                                         fullWidth
                                                                         label="Número de identificación (RUT/DNI/Pasaporte)"
@@ -905,7 +906,7 @@ const BookingPage = () => {
                                                                         helperText="Ingresa RUT/DNI para buscar automáticamente"
                                                                     />
                                                                 </Grid>
-                                                                <Grid xs={12}>
+                                                                <Grid size={{ xs: 12 }}>
                                                                     <TextField
                                                                         fullWidth
                                                                         label="Nombre completo"
@@ -914,7 +915,7 @@ const BookingPage = () => {
                                                                         required
                                                                     />
                                                                 </Grid>
-                                                                <Grid xs={12} sm={6}>
+                                                                <Grid size={{ xs: 12, sm: 6 }}>
                                                                     <TextField
                                                                         fullWidth
                                                                         label="Correo electrónico"
@@ -924,7 +925,7 @@ const BookingPage = () => {
                                                                         required
                                                                     />
                                                                 </Grid>
-                                                                <Grid xs={12} sm={6}>
+                                                                <Grid size={{ xs: 12, sm: 6 }}>
                                                                     <TextField
                                                                         fullWidth
                                                                         label="Teléfono"
@@ -932,7 +933,7 @@ const BookingPage = () => {
                                                                         onChange={(e) => handlePassengerFieldChange(index, 'phone', e.target.value)}
                                                                     />
                                                                 </Grid>
-                                                                <Grid xs={12}>
+                                                                <Grid size={{ xs: 12 }}>
                                                                     <TextField
                                                                         fullWidth
                                                                         label="Nacionalidad"
@@ -940,12 +941,13 @@ const BookingPage = () => {
                                                                         onChange={(e) => handlePassengerFieldChange(index, 'nationality', e.target.value)}
                                                                     />
                                                                 </Grid>
-                                                                <Grid xs={12}>
+                                                                <Grid size={{ xs: 12 }}>
                                                                     <Button
                                                                         variant="contained"
                                                                         onClick={() => handleSavePassenger(index)}
                                                                         startIcon={<CheckIcon />}
                                                                         fullWidth
+                                                                        sx={{ bgcolor: 'var(--primary)', '&:hover': { bgcolor: 'var(--primary-hover)' } }}
                                                                     >
                                                                         Guardar datos
                                                                     </Button>
@@ -954,23 +956,23 @@ const BookingPage = () => {
                                                         ) : (
                                                             <Box sx={{ p: 1 }}>
                                                                 <Grid container spacing={2}>
-                                                                    <Grid xs={12} sm={6}>
+                                                                    <Grid size={{ xs: 12, sm: 6 }}>
                                                                         <Typography variant="caption" color="text.secondary">Nombre completo</Typography>
                                                                         <Typography variant="body2">{passenger.fullName}</Typography>
                                                                     </Grid>
-                                                                    <Grid xs={12} sm={6}>
+                                                                    <Grid size={{ xs: 12, sm: 6 }}>
                                                                         <Typography variant="caption" color="text.secondary">Identificación</Typography>
                                                                         <Typography variant="body2">{passenger.identification}</Typography>
                                                                     </Grid>
-                                                                    <Grid xs={12} sm={6}>
+                                                                    <Grid size={{ xs: 12, sm: 6 }}>
                                                                         <Typography variant="caption" color="text.secondary">Email</Typography>
                                                                         <Typography variant="body2">{passenger.email}</Typography>
                                                                     </Grid>
-                                                                    <Grid xs={12} sm={6}>
+                                                                    <Grid size={{ xs: 12, sm: 6 }}>
                                                                         <Typography variant="caption" color="text.secondary">Teléfono</Typography>
                                                                         <Typography variant="body2">{passenger.phone || 'No especificado'}</Typography>
                                                                     </Grid>
-                                                                    <Grid xs={12}>
+                                                                    <Grid size={{ xs: 12 }}>
                                                                         <Typography variant="caption" color="text.secondary">Nacionalidad</Typography>
                                                                         <Typography variant="body2">{passenger.nationality || 'No especificada'}</Typography>
                                                                     </Grid>
@@ -996,19 +998,19 @@ const BookingPage = () => {
                                         Detalles del viaje
                                     </Typography>
                                     <Grid container spacing={2} sx={{ mb: 3 }}>
-                                        <Grid xs={6}>
+                                        <Grid size={{ xs: 6 }}>
                                             <Typography variant="body2" color="text.secondary">Paquete:</Typography>
                                             <Typography variant="body1">{packageData?.name}</Typography>
                                         </Grid>
-                                        <Grid xs={6}>
+                                        <Grid size={{ xs: 6 }}>
                                             <Typography variant="body2" color="text.secondary">Destino:</Typography>
                                             <Typography variant="body1">{packageData?.destination}</Typography>
                                         </Grid>
-                                        <Grid xs={6}>
+                                        <Grid size={{ xs: 6 }}>
                                             <Typography variant="body2" color="text.secondary">Fecha inicio:</Typography>
                                             <Typography variant="body1">{packageData?.startDate}</Typography>
                                         </Grid>
-                                        <Grid xs={6}>
+                                        <Grid size={{ xs: 6 }}>
                                             <Typography variant="body2" color="text.secondary">Pasajeros:</Typography>
                                             <Typography variant="body1">{formData.passengers} personas</Typography>
                                         </Grid>
@@ -1019,7 +1021,7 @@ const BookingPage = () => {
                                     </Typography>
                                     {formData.passengersInfo.map((passenger, index) => (
                                         <Box key={index} sx={{ mb: 2, p: 2, bgcolor: '#f8fafc', borderRadius: 2 }}>
-                                            <Typography variant="subtitle2" color="primary">
+                                            <Typography variant="subtitle2" sx={{ color: 'var(--primary)' }}>
                                                 Pasajero {index + 1}
                                             </Typography>
                                             <Typography variant="body2">
@@ -1067,6 +1069,7 @@ const BookingPage = () => {
                                         variant="contained"
                                         onClick={handleNext}
                                         disabled={(activeStep === 0 && !availability.available)}
+                                        sx={{ bgcolor: 'var(--primary)', '&:hover': { bgcolor: 'var(--primary-hover)' } }}
                                     >
                                         Continuar
                                     </Button>
@@ -1075,7 +1078,7 @@ const BookingPage = () => {
                         </Paper>
                     </Grid>
 
-                    <Grid xs={12} md={4}>
+                    <Grid size={{ xs: 12, md: 4 }}>
                         <Paper sx={{ p: 3, borderRadius: 3, position: 'sticky', top: 20 }}>
                             <Typography variant="h6" gutterBottom>
                                 Resumen de precios
@@ -1131,7 +1134,7 @@ const BookingPage = () => {
                                 <Typography variant="subtitle1" fontWeight="bold">
                                     Total a pagar
                                 </Typography>
-                                <Typography variant="h4" color="primary" fontWeight="bold">
+                                <Typography variant="h4" fontWeight="bold" sx={{ color: 'var(--primary)' }}>
                                     ${priceCalculation.total.toLocaleString()}
                                 </Typography>
                             </Box>

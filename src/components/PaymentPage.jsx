@@ -4,21 +4,23 @@ import {
     Box, Container, Paper, Typography, TextField, Button, Grid,
     Divider, CircularProgress, Stepper, Step, StepLabel,
     Card, CardContent, Alert, InputAdornment, IconButton,
-    FormControl, FormLabel, RadioGroup, FormControlLabel, Radio
+    FormControl, FormLabel, RadioGroup, FormControlLabel, Radio, Chip
 } from "@mui/material";
 import {
-    ArrowBack as ArrowBackIcon,
     CreditCard as CreditCardIcon,
     Payment as PaymentIcon,
     CheckCircle as CheckCircleIcon,
     Visibility as VisibilityIcon,
-    VisibilityOff as VisibilityOffIcon
+    VisibilityOff as VisibilityOffIcon,
+    Schedule as ScheduleIcon
 } from "@mui/icons-material";
 import Swal from 'sweetalert2';
 import reservationService from "../services/reservation.service";
 import paymentService from "../services/payment.service";
 import dayjs from 'dayjs';
 import { useKeycloak } from '@react-keycloak/web';
+import BackButton from "./common/BackButton";
+import TripSummaryCard from "./common/TripSummaryCard";
 
 const steps = ['Verificar reserva', 'Datos de pago', 'Confirmación'];
 
@@ -242,19 +244,26 @@ const PaymentPage = () => {
     return (
         <Box sx={{ py: 4 }}>
             <Container maxWidth="md">
-                <Button
-                    startIcon={<ArrowBackIcon />}
-                    onClick={() => navigate('/my-reservations')}
-                    sx={{ mb: 3 }}
-                >
-                    Volver a mis reservas
-                </Button>
+                <BackButton onClick={() => navigate('/my-reservations')}>Volver a mis reservas</BackButton>
+
+                <TripSummaryCard
+                    reservationId={reservation.id}
+                    name={reservation.tourPackage?.name}
+                    destination={reservation.tourPackage?.destination}
+                    statusChip={
+                        <Chip
+                            icon={<ScheduleIcon sx={{ color: '#fff !important' }} />}
+                            label="Pendiente de pago"
+                            sx={{ bgcolor: 'rgba(255,255,255,0.2)', color: '#fff', fontWeight: 600 }}
+                        />
+                    }
+                />
 
                 <Paper sx={{ p: 4, borderRadius: 3 }}>
-                    <Typography variant="h4" fontWeight="bold" gutterBottom align="center">
+                    <Typography variant="h5" fontWeight="bold" gutterBottom>
                         Pago de Reserva
                     </Typography>
-                    <Typography variant="body2" color="text.secondary" align="center" sx={{ mb: 4 }}>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
                         Completa el pago de tu reserva de forma segura
                     </Typography>
 
@@ -279,31 +288,7 @@ const PaymentPage = () => {
                                         Detalles de la reserva
                                     </Typography>
                                     <Grid container spacing={2}>
-                                        <Grid xs={12} sm={6}>
-                                            <Typography variant="caption" color="text.secondary">
-                                                Número de reserva
-                                            </Typography>
-                                            <Typography variant="body1" fontWeight="bold">
-                                                #{reservation.id}
-                                            </Typography>
-                                        </Grid>
-                                        <Grid xs={12} sm={6}>
-                                            <Typography variant="caption" color="text.secondary">
-                                                Estado
-                                            </Typography>
-                                            <Typography variant="body1">
-                                                {reservation.status}
-                                            </Typography>
-                                        </Grid>
-                                        <Grid xs={12}>
-                                            <Typography variant="caption" color="text.secondary">
-                                                Paquete
-                                            </Typography>
-                                            <Typography variant="body1">
-                                                {reservation.tourPackage?.name}
-                                            </Typography>
-                                        </Grid>
-                                        <Grid xs={12}>
+                                        <Grid size={{ xs: 12 }}>
                                             <Typography variant="caption" color="text.secondary">
                                                 Pasajeros
                                             </Typography>
@@ -314,7 +299,7 @@ const PaymentPage = () => {
 
                                         {/* Mostrar descuentos si existen */}
                                         {discountDetails.length > 0 && (
-                                            <Grid xs={12}>
+                                            <Grid size={{ xs: 12 }}>
                                                 <Divider sx={{ my: 1 }} />
                                                 <Typography variant="subtitle2" gutterBottom>
                                                     Descuentos aplicados
@@ -330,7 +315,7 @@ const PaymentPage = () => {
                                             </Grid>
                                         )}
 
-                                        <Grid xs={12}>
+                                        <Grid size={{ xs: 12 }}>
                                             <Divider sx={{ my: 1 }} />
                                             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                                 <Typography variant="subtitle1" fontWeight="bold">
@@ -351,10 +336,10 @@ const PaymentPage = () => {
                                                 </Box>
                                             )}
                                             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 2 }}>
-                                                <Typography variant="subtitle1" fontWeight="bold" color="primary">
+                                                <Typography variant="subtitle1" fontWeight="bold" sx={{ color: 'var(--primary)' }}>
                                                     Total a pagar
                                                 </Typography>
-                                                <Typography variant="h5" color="primary" fontWeight="bold">
+                                                <Typography variant="h5" fontWeight="bold" sx={{ color: 'var(--primary)' }}>
                                                     ${(reservation.totalAmount || getTotalAmount()).toLocaleString()}
                                                 </Typography>
                                             </Box>
@@ -373,7 +358,7 @@ const PaymentPage = () => {
                             <Divider sx={{ mb: 3 }} />
 
                             <Grid container spacing={3}>
-                                <Grid xs={12}>
+                                <Grid size={{ xs: 12 }}>
                                     <FormControl component="fieldset">
                                         <FormLabel component="legend">Método de pago</FormLabel>
                                         <RadioGroup
@@ -396,7 +381,7 @@ const PaymentPage = () => {
                                     </FormControl>
                                 </Grid>
 
-                                <Grid xs={12}>
+                                <Grid size={{ xs: 12 }}>
                                     <TextField
                                         fullWidth
                                         label="Número de tarjeta"
@@ -414,7 +399,7 @@ const PaymentPage = () => {
                                     />
                                 </Grid>
 
-                                <Grid xs={12}>
+                                <Grid size={{ xs: 12 }}>
                                     <TextField
                                         fullWidth
                                         label="Nombre del titular"
@@ -427,7 +412,7 @@ const PaymentPage = () => {
                                     />
                                 </Grid>
 
-                                <Grid xs={12} sm={6}>
+                                <Grid size={{ xs: 12, sm: 6 }}>
                                     <TextField
                                         fullWidth
                                         label="Fecha de expiración"
@@ -439,7 +424,7 @@ const PaymentPage = () => {
                                     />
                                 </Grid>
 
-                                <Grid xs={12} sm={6}>
+                                <Grid size={{ xs: 12, sm: 6 }}>
                                     <TextField
                                         fullWidth
                                         label="CVV"
@@ -477,13 +462,13 @@ const PaymentPage = () => {
                                         Detalles de la transacción
                                     </Typography>
                                     <Grid container spacing={2}>
-                                        <Grid xs={6}>
+                                        <Grid size={{ xs: 6 }}>
                                             <Typography variant="caption" color="text.secondary">
                                                 Reserva
                                             </Typography>
                                             <Typography variant="body2">#{reservation.id}</Typography>
                                         </Grid>
-                                        <Grid xs={6}>
+                                        <Grid size={{ xs: 6 }}>
                                             <Typography variant="caption" color="text.secondary">
                                                 Método de pago
                                             </Typography>
@@ -491,7 +476,7 @@ const PaymentPage = () => {
                                                 {formData.paymentMethod === 'CREDIT_CARD' ? 'Tarjeta de Crédito' : 'Tarjeta de Débito'}
                                             </Typography>
                                         </Grid>
-                                        <Grid xs={6}>
+                                        <Grid size={{ xs: 6 }}>
                                             <Typography variant="caption" color="text.secondary">
                                                 Tarjeta
                                             </Typography>
@@ -499,7 +484,7 @@ const PaymentPage = () => {
                                                 **** {formData.cardNumber.slice(-4)}
                                             </Typography>
                                         </Grid>
-                                        <Grid xs={6}>
+                                        <Grid size={{ xs: 6 }}>
                                             <Typography variant="caption" color="text.secondary">
                                                 Titular
                                             </Typography>
@@ -507,13 +492,13 @@ const PaymentPage = () => {
                                                 {formData.cardHolderName}
                                             </Typography>
                                         </Grid>
-                                        <Grid xs={12}>
+                                        <Grid size={{ xs: 12 }}>
                                             <Divider sx={{ my: 1 }} />
                                             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                                 <Typography variant="subtitle1" fontWeight="bold">
                                                     Monto a pagar
                                                 </Typography>
-                                                <Typography variant="h5" color="primary" fontWeight="bold">
+                                                <Typography variant="h5" fontWeight="bold" sx={{ color: 'var(--primary)' }}>
                                                     ${(reservation?.totalAmount || getTotalAmount()).toLocaleString()}
                                                 </Typography>
                                             </Box>
