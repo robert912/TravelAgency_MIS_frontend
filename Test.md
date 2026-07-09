@@ -364,39 +364,32 @@ Ambos requieren token JWT con rol `Admin`, obtenido automáticamente de Keycloak
 
 **Objetivo:** Encontrar el punto de quiebre del sistema aumentando la carga progresivamente hasta que comience a fallar.
 
-**Rampa de usuarios:**
+**Rampa de usuarios (un escenario `constant-vus` por nivel, 30 s cada uno):**
 
-| Etapa | Usuarios | Duración | Propósito |
-|-------|----------|----------|-----------|
-| 1 | 10 VUs | 30 s | Calentamiento |
-| 2 | 50 VUs | 30 s | Carga normal |
-| 3 | 100 VUs | 30 s | Carga moderada |
-| 4 | 200 VUs | 30 s | Carga alta |
-| 5 | 300 VUs | 30 s | Carga elevada |
-| 6 | 500 VUs | 30 s | Estrés |
-| 7 | 700 VUs | 30 s | Sobre-estrés (zona de quiebre) |
-| 8 | 0 VUs | 30 s | Descenso gradual |
+| Etapa | Usuarios | Duración |
+|-------|----------|----------|
+| 1 | 50 VUs | 30 s |
+| 2 | 100 VUs | 30 s |
+| 3 | 150 VUs | 30 s |
+| 4 | 200 VUs | 30 s |
+| 5 | 250 VUs | 30 s |
+| 6 | 300 VUs | 30 s |
+| 7 | 400 VUs | 30 s |
+
+**Endpoints:** al igual que `load-test.js`, soporta `ENDPOINT=sales|ranking|all` (default `all`, corre ambos endpoints en cada nivel → 14 escenarios; `sales` o `ranking` corren solo ese endpoint → 7 escenarios).
 
 **Criterio de punto de quiebre:**
-- `p(95) > 10 000 ms` — timeouts generalizados, o
-- `stress_error_rate > 10%` — más del 10% de peticiones fallando
+- `p(95) > 5 000 ms`, o
+- `stress_error_rate > 5%`
+
+**Métricas personalizadas por nivel × endpoint:** `stress_duration_<N>_sales` / `stress_duration_<N>_ranking` (Trend) y `stress_error_rate_<N>_sales` / `stress_error_rate_<N>_ranking` (Rate), además de las globales `stress_sales_latency`, `stress_ranking_latency`, `stress_error_rate` y `stress_request_errors`.
 
 **Qué analizar en los resultados:**
-- En qué etapa comienzan a aparecer errores
+- En qué nivel comienzan a aparecer errores
 - Cuál es el tiempo de respuesta en el momento del quiebre
-- Si el sistema se recupera una vez que baja la carga
+- Si el quiebre cambia al aislar un solo endpoint (`ENDPOINT=sales` vs `ENDPOINT=ranking`)
 
-**Tabla comparativa de resultados (completar con valores reales):**
-
-| Usuarios | p50 (ms) | p95 (ms) | Errores | Estado del sistema |
-|----------|----------|----------|---------|-------------------|
-| 10 | ? | ? | ?% | Normal |
-| 50 | ? | ? | ?% | Normal |
-| 100 | ? | ? | ?% | Normal |
-| 200 | ? | ? | ?% | Normal / Degradado |
-| 300 | ? | ? | ?% | Degradado |
-| 500 | ? | ? | ?% | Crítico |
-| 700 | ? | ? | ?% | Quiebre |
+Ver resultados y análisis en la [sección 8.2](#82-stress-testing).
 
 ---
 
@@ -408,29 +401,26 @@ Ambos requieren token JWT con rol `Admin`, obtenido automáticamente de Keycloak
 
 **Estrategia:** Rangos de fechas progresivamente más amplios fuerzan a la BD a procesar más registros por consulta.
 
-**Escenarios:**
+**Escenarios (usuarios fijos, configurable en la constante `VUS` del script — default 50):**
 
-| Escenario | Rango de fechas | Registros aprox. | Usuarios | Duración |
-|-----------|----------------|-----------------|----------|----------|
-| Volumen bajo | 2026-06-01 → 2026-06-30 | ~500 registros | 20 VUs | 30 s |
-| Volumen medio | 2026-01-01 → 2026-06-30 | ~1 000 registros | 20 VUs | 30 s |
-| Volumen alto | 2025-01-01 → 2026-06-30 | ~5 000 registros | 20 VUs | 30 s |
-| Volumen muy alto | 2023-01-01 → 2026-06-30 | ~10 000 registros | 20 VUs | 30 s |
+| Escenario | Rango de fechas | Registros aprox. | Duración |
+|-----------|----------------|-----------------|----------|
+| Volumen bajo | 2026-06-01 → 2026-06-30 | ~500 registros | 30 s |
+| Volumen medio | 2026-01-01 → 2026-06-30 | ~1 000 registros | 30 s |
+| Volumen alto | 2025-01-01 → 2026-06-30 | ~5 000 registros | 30 s |
+| Volumen muy alto | 2023-01-01 → 2026-06-30 | ~10 000 registros | 30 s |
 
-> **Nota:** Para resultados representativos, poblar las tablas de la BD con registros en esos rangos de fechas antes de ejecutar (usar scripts SQL de inserción masiva).
+> **Nota:** Para resultados representativos, poblar las tablas de la BD con registros en esos rangos de fechas antes de ejecutar (ver `tests/k6/seed-volume-test.sql`).
+
+**Endpoints:** soporta `ENDPOINT=sales|ranking|all` (default `all`, corre ambos endpoints en cada volumen → 8 escenarios; `sales` o `ranking` corren solo ese endpoint → 4 escenarios).
 
 **Umbrales de aceptación:**
 - `p(95) < 5 000 ms` en todos los escenarios
 - `volume_error_rate < 5%`
 
-**Tabla comparativa de resultados (completar con valores reales):**
+**Métricas personalizadas por volumen × endpoint:** `volume_<N>_sales_latency` / `volume_<N>_ranking_latency` (Trend) y `volume_error_rate_<N>_sales` / `volume_error_rate_<N>_ranking` (Rate), además de las globales `volume_error_rate` y `volume_errors`.
 
-| Volumen BD | Usuarios | p50 (ms) | p90 (ms) | p95 (ms) | Errores |
-|------------|----------|----------|----------|----------|---------|
-| ~500 reg. | 20 | ? | ? | ? | ?% |
-| ~1 000 reg. | 20 | ? | ? | ? | ?% |
-| ~5 000 reg. | 20 | ? | ? | ? | ?% |
-| ~10 000 reg. | 20 | ? | ? | ? | ?% |
+Ver resultados y análisis en la [sección 8.3](#83-volume-testing-500--10-000-registros-a-distintos-niveles-de-concurrencia).
 
 ---
 
@@ -475,8 +465,14 @@ $env:K6_WEB_DASHBOARD="true"; $env:K6_WEB_DASHBOARD_EXPORT="report.html"; k6 run
 
 # ── STRESS TESTING ────────────────────────────────────────────────────────────
 
-# Ejecutar
+# Ejecutar (ambos endpoints, 14 escenarios: 50/100/150/200/250/300/400 x sales+ranking)
 k6 run -e ADMIN_USER=roberto.orellana.t@usach.cl -e ADMIN_PASSWORD=Admin1234 tests/k6/stress-test.js
+
+# Solo /api/reports/sales (7 escenarios)
+k6 run -e ADMIN_USER=roberto.orellana.t@usach.cl -e ADMIN_PASSWORD=Admin1234 -e ENDPOINT=sales tests/k6/stress-test.js
+
+# Solo /api/reports/package-ranking (7 escenarios)
+k6 run -e ADMIN_USER=roberto.orellana.t@usach.cl -e ADMIN_PASSWORD=Admin1234 -e ENDPOINT=ranking tests/k6/stress-test.js
 
 # Exportar resultados a CSV
 k6 run -e ADMIN_USER=roberto.orellana.t@usach.cl -e ADMIN_PASSWORD=Admin1234 tests/k6/stress-test.js --out csv=resultados/stress-results.csv
@@ -484,8 +480,14 @@ k6 run -e ADMIN_USER=roberto.orellana.t@usach.cl -e ADMIN_PASSWORD=Admin1234 tes
 
 # ── VOLUME TESTING ────────────────────────────────────────────────────────────
 
-# Ejecutar
+# Ejecutar (ambos endpoints, 8 escenarios: 500/1000/5000/10000 x sales+ranking)
 k6 run -e ADMIN_USER=roberto.orellana.t@usach.cl -e ADMIN_PASSWORD=Admin1234 tests/k6/volume-test.js
+
+# Solo /api/reports/sales (4 escenarios)
+k6 run -e ADMIN_USER=roberto.orellana.t@usach.cl -e ADMIN_PASSWORD=Admin1234 -e ENDPOINT=sales tests/k6/volume-test.js
+
+# Solo /api/reports/package-ranking (4 escenarios)
+k6 run -e ADMIN_USER=roberto.orellana.t@usach.cl -e ADMIN_PASSWORD=Admin1234 -e ENDPOINT=ranking tests/k6/volume-test.js
 
 # Exportar resultados a CSV
 k6 run -e ADMIN_USER=roberto.orellana.t@usach.cl -e ADMIN_PASSWORD=Admin1234 tests/k6/volume-test.js --out csv=resultados/volume-results.csv
@@ -632,6 +634,22 @@ Thresholds: `rate<0.01` → 0.00% ✓ | `p(95)<3000ms` → p(95)=2.71s ✓
 | 400 | 8.59 s   | 11.66 s  | 13.06 s   | 20.88% | Sí |
 
 Thresholds: `rate<0.05` → 5.11% ✗ | `p(95)<5000ms` → p(95)=9.88s ✗ | **Punto de quiebre: 250 usuarios concurrentes**
+
+**Aislando solo `/api/reports/sales`** (`-e ENDPOINT=sales`, sin ranking mezclado):
+
+| Usuarios | p50 | p90 | p95 | Error rate | ¿Quiebre? |
+|---|---|---|---|---|---|
+| 50  | 1.04 s  | 1.24 s  | 1.34 s  | 0.00%  | No |
+| 100 | 2.45 s  | 2.76 s  | 2.85 s  | 0.00%  | No |
+| 150 | 3.68 s  | 3.83 s  | 3.89 s  | 0.07%  | No |
+| 200 | 5.02 s  | 5.18 s  | 5.24 s  | 0.15%  | **Sí** (límite) |
+| 250 | 6.13 s  | 6.49 s  | 10.89 s | 5.36%  | Sí |
+| 300 | 7.37 s  | 7.87 s  | 12.19 s | 7.10%  | Sí |
+| 400 | 10.22 s | 11.03 s | 12.73 s | 76.19% | Sí |
+
+Thresholds: `rate<0.05` → 13.99% ✗ | `p(95)<5000ms` → p(95)=10.36s ✗ | **Punto de quiebre: 200 usuarios** (por p95; por error rate el quiebre "duro" es en 250)
+
+Al aislar solo `/sales` el quiebre ocurre un poco antes (200 vs. 250 en la corrida combinada) — sin las peticiones de `/ranking` intercaladas, todo el tráfico de cada VU se concentra en el endpoint más pesado (el que hace `JOIN` + `OR`/`BETWEEN` y trae más columnas), saturando el pool de conexiones un poco antes. El salto de error rate entre 300 (7.10%) y 400 usuarios (76.19%) también es mucho más abrupto que en la corrida combinada, evidenciando el colapso del pool de conexiones una vez agotada su capacidad de cola.
 
 ### 8.3 Volume Testing (500 → 10 000 registros, a distintos niveles de concurrencia)
 
