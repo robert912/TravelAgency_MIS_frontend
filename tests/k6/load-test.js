@@ -43,8 +43,8 @@ const ADMIN_USER = __ENV.ADMIN_USER     || 'roberto.orellana.t@usach.cl';
 const ADMIN_PASS = __ENV.ADMIN_PASSWORD || 'Admin1234';
 
 // Período de reporte a consultar
-const START_DATE = '2026-01-01';
-const END_DATE   = '2026-12-31';
+const START_DATE = '2026-06-01';
+const END_DATE   = '2026-06-30';
 
 // ── Métricas personalizadas ───────────────────────────────────────────────────
 const salesErrors        = new Counter('sales_report_errors');
