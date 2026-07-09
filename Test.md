@@ -458,31 +458,31 @@ k6 version
 # ── LOAD TESTING ──────────────────────────────────────────────────────────────
 
 # Ejecutar
-k6 run -e ADMIN_USER=admin -e ADMIN_PASSWORD=admin123 tests/k6/load-test.js
+k6 run -e ADMIN_USER=roberto.orellana.t@usach.cl -e ADMIN_PASSWORD=Admin1234 tests/k6/load-test.js
 
 # Exportar resultados a CSV (para tabla comparativa en Excel)
-k6 run -e ADMIN_USER=admin -e ADMIN_PASSWORD=admin123 tests/k6/load-test.js --out csv=resultados/load-results.csv
+k6 run -e ADMIN_USER=roberto.orellana.t@usach.cl -e ADMIN_PASSWORD=Admin1234 tests/k6/load-test.js --out csv=resultados/load-results.csv
 
 # Para ver el dashboard integrado que trae k6
-$env:K6_WEB_DASHBOARD="true"; $env:K6_WEB_DASHBOARD_EXPORT="report.html"; k6 run .\load-test.js
+$env:K6_WEB_DASHBOARD="true"; $env:K6_WEB_DASHBOARD_EXPORT="report.html"; k6 run .\tests/k6/load-test.js
 
 
 # ── STRESS TESTING ────────────────────────────────────────────────────────────
 
 # Ejecutar
-k6 run -e ADMIN_USER=admin -e ADMIN_PASSWORD=admin123 tests/k6/stress-test.js
+k6 run -e ADMIN_USER=roberto.orellana.t@usach.cl -e ADMIN_PASSWORD=Admin1234 tests/k6/stress-test.js
 
 # Exportar resultados a CSV
-k6 run -e ADMIN_USER=admin -e ADMIN_PASSWORD=admin123 tests/k6/stress-test.js --out csv=resultados/stress-results.csv
+k6 run -e ADMIN_USER=roberto.orellana.t@usach.cl -e ADMIN_PASSWORD=Admin1234 tests/k6/stress-test.js --out csv=resultados/stress-results.csv
 
 
 # ── VOLUME TESTING ────────────────────────────────────────────────────────────
 
 # Ejecutar
-k6 run -e ADMIN_USER=admin -e ADMIN_PASSWORD=admin123 tests/k6/volume-test.js
+k6 run -e ADMIN_USER=roberto.orellana.t@usach.cl -e ADMIN_PASSWORD=Admin1234 tests/k6/volume-test.js
 
 # Exportar resultados a CSV
-k6 run -e ADMIN_USER=admin -e ADMIN_PASSWORD=admin123 tests/k6/volume-test.js --out csv=resultados/volume-results.csv
+k6 run -e ADMIN_USER=roberto.orellana.t@usach.cl -e ADMIN_PASSWORD=Admin1234 tests/k6/volume-test.js --out csv=resultados/volume-results.csv
 
 
 # ── CON URLs PERSONALIZADAS ───────────────────────────────────────────────────
