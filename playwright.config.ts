@@ -21,14 +21,15 @@ export default defineConfig({
     ['list'],
   ],
   use: {
-    baseURL: process.env.BASE_URL || 'http://localhost:5173',
+    baseURL: 'http://localhost:5173',
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
-    headless: false,
-    launchOptions: {
-      slowMo: 400,
-    },
+    headless: true,
+    // headless: false,
+    // launchOptions: {
+    //   slowMo: 400,
+    // },
     actionTimeout: 20000,
     navigationTimeout: 30000,
   },
