@@ -335,7 +335,7 @@ Ambos requieren token JWT con rol `Admin`, obtenido automáticamente de Keycloak
 
 **Umbrales de aceptación definidos:**
 - `p(95) < 3 000 ms` — 95% de peticiones responden en menos de 3 segundos
-- `error_rate < 5%` — tasa de error menor al 5%
+- `error_rate < 1%` — tasa de error menor al 1%
 
 **Métricas personalizadas registradas:**
 
@@ -459,6 +459,12 @@ k6 version
 
 # Ejecutar
 k6 run -e ADMIN_USER=roberto.orellana.t@usach.cl -e ADMIN_PASSWORD=Admin1234 tests/k6/load-test.js
+
+# Solo /api/reports/sales (4 escenarios: 10/50/100/200 usuarios)
+k6 run -e ADMIN_USER=roberto.orellana.t@usach.cl -e ADMIN_PASSWORD=Admin1234 -e ENDPOINT=sales tests/k6/load-test.js
+
+# Solo /api/reports/package-ranking (4 escenarios: 10/50/100/200 usuarios)
+k6 run -e ADMIN_USER=roberto.orellana.t@usach.cl -e ADMIN_PASSWORD=Admin1234 -e ENDPOINT=ranking tests/k6/load-test.js
 
 # Exportar resultados a CSV (para tabla comparativa en Excel)
 k6 run -e ADMIN_USER=roberto.orellana.t@usach.cl -e ADMIN_PASSWORD=Admin1234 tests/k6/load-test.js --out csv=resultados/load-results.csv

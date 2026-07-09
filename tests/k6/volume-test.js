@@ -192,18 +192,3 @@ export default function (data) {
 
   sleep(0.5);
 }
-
-// ── Teardown ──────────────────────────────────────────────────────────────────
-export function teardown() {
-  console.log('\n=== RESUMEN VOLUME TESTING — ÉPICA 7 ===');
-  console.log('Escenarios: 500 / 1000 / 5000 / 10000 registros × 20 usuarios simultáneos');
-  console.log('Métricas clave: volume_500_latency, volume_1000_latency, volume_5000_latency, volume_10000_latency');
-  console.log('Exportar: agregar --out csv=volume-results.csv al comando k6');
-  console.log('\nTabla comparativa sugerida (completar con resultados reales):');
-  console.log('| Volumen BD | Usuarios | p50 (ms) | p90 (ms) | p95 (ms) | Errores |');
-  console.log('|------------|----------|----------|----------|----------|---------|');
-  console.log('| 500 reg.   |    20    |    ?     |    ?     |    ?     |   ?%    |');
-  console.log('| 1000 reg.  |    20    |    ?     |    ?     |    ?     |   ?%    |');
-  console.log('| 5000 reg.  |    20    |    ?     |    ?     |    ?     |   ?%    |');
-  console.log('| 10000 reg. |    20    |    ?     |    ?     |    ?     |   ?%    |');
-}

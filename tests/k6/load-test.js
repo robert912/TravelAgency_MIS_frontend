@@ -12,25 +12,20 @@
  * Endpoints bajo prueba:
  *   GET /api/reports/sales?startDate=...&endDate=...
  *   GET /api/reports/package-ranking?startDate=...&endDate=...
- *
+ * 
  * Cómo ejecutar:
- *   k6 run tests/k6/load-test.js
- *
- * Resultados:
- *   - http_req_duration: tiempo de respuesta (p90, p95, p99)
- *   - http_req_failed:   tasa de errores
- *   - iterations:        total de iteraciones completadas
+ *   k6 run tests/k6/load-test.js                       → corre AMBOS endpoints (8 escenarios)
+ *   k6 run -e ENDPOINT=sales tests/k6/load-test.js      → corre SOLO /sales (4 escenarios)
+ *   k6 run -e ENDPOINT=ranking tests/k6/load-test.js    → corre SOLO /package-ranking (4 escenarios)
  *
  * IMPORTANTE:
  *   Los reportes requieren rol "Admin" en Keycloak.
  *   Configurar KEYCLOAK_URL, ADMIN_USER y ADMIN_PASSWORD como
- *   variables de entorno K6 (-e FLAG=value) o usar el token hardcodeado.
- *
- *   Ejemplo:
- *     k6 run -e ADMIN_USER=admin -e ADMIN_PASSWORD=admin123 tests/k6/load-test.js
+ *   variables de entorno K6 (-e FLAG=value) o usar el valor por defecto.
  */
 
 import http from 'k6/http';
+import exec from 'k6/execution';
 import { check, sleep } from 'k6';
 import { Counter, Rate, Trend } from 'k6/metrics';
 
@@ -46,48 +41,80 @@ const ADMIN_PASS = __ENV.ADMIN_PASSWORD || 'Admin1234';
 const START_DATE = '2026-06-01';
 const END_DATE   = '2026-06-30';
 
-// ── Métricas personalizadas ───────────────────────────────────────────────────
+// Qué endpoint(s) correr: 'sales' | 'ranking' | 'all' (default)
+const ENDPOINT = (__ENV.ENDPOINT || 'all').toLowerCase();
+const RUN_SALES   = ENDPOINT === 'all' || ENDPOINT === 'sales';
+const RUN_RANKING = ENDPOINT === 'all' || ENDPOINT === 'ranking';
+
+// ── Métricas generales (agregado de todo el test) ─────────────────────────────
 const salesErrors        = new Counter('sales_report_errors');
 const rankingErrors      = new Counter('ranking_report_errors');
 const salesDuration      = new Trend('sales_report_duration', true);
 const rankingDuration    = new Trend('ranking_report_duration', true);
 const errorRate          = new Rate('error_rate');
 
-// ── Escenarios de carga ───────────────────────────────────────────────────────
+// ── Métricas por escenario (para el cuadro comparativo del informe) ───────────
+const durationByScenario = {
+  carga_10_sales:    new Trend('duration_10_sales', true),
+  carga_10_ranking:  new Trend('duration_10_ranking', true),
+  carga_50_sales:    new Trend('duration_50_sales', true),
+  carga_50_ranking:  new Trend('duration_50_ranking', true),
+  carga_100_sales:   new Trend('duration_100_sales', true),
+  carga_100_ranking: new Trend('duration_100_ranking', true),
+  carga_200_sales:   new Trend('duration_200_sales', true),
+  carga_200_ranking: new Trend('duration_200_ranking', true),
+};
+const errorRateByScenario = {
+  carga_10_sales:    new Rate('error_rate_10_sales'),
+  carga_10_ranking:  new Rate('error_rate_10_ranking'),
+  carga_50_sales:    new Rate('error_rate_50_sales'),
+  carga_50_ranking:  new Rate('error_rate_50_ranking'),
+  carga_100_sales:   new Rate('error_rate_100_sales'),
+  carga_100_ranking: new Rate('error_rate_100_ranking'),
+  carga_200_sales:   new Rate('error_rate_200_sales'),
+  carga_200_ranking: new Rate('error_rate_200_ranking'),
+};
+
+// ── Escenarios de carga: un escenario por (nivel × endpoint), secuenciales ────
+// Se arman dinámicamente según ENDPOINT para que, si solo corres uno de los
+// dos endpoints, no queden huecos de tiempo muerto entre escenarios.
+const LEVELS = [10, 50, 100, 200];
+const STEP_SECONDS = 35; // 30s de duración + 5s de margen
+
+function buildScenarios() {
+  const scenarios = {};
+  let t = 0;
+
+  for (const level of LEVELS) {
+    if (RUN_SALES) {
+      scenarios[`carga_${level}_sales`] = {
+        executor: 'constant-vus',
+        vus: level,
+        duration: '30s',
+        startTime: `${t}s`,
+        exec: 'testSales',
+      };
+      t += STEP_SECONDS;
+    }
+    if (RUN_RANKING) {
+      scenarios[`carga_${level}_ranking`] = {
+        executor: 'constant-vus',
+        vus: level,
+        duration: '30s',
+        startTime: `${t}s`,
+        exec: 'testRanking',
+      };
+      t += STEP_SECONDS;
+    }
+  }
+  return scenarios;
+}
+
 export const options = {
-  scenarios: {
-    carga_10_usuarios: {
-      executor: 'constant-vus',
-      vus: 10,
-      duration: '30s',
-      startTime: '0s',
-      tags: { scenario: '10_usuarios' },
-    },
-    carga_50_usuarios: {
-      executor: 'constant-vus',
-      vus: 50,
-      duration: '30s',
-      startTime: '35s',
-      tags: { scenario: '50_usuarios' },
-    },
-    carga_100_usuarios: {
-      executor: 'constant-vus',
-      vus: 100,
-      duration: '30s',
-      startTime: '70s',
-      tags: { scenario: '100_usuarios' },
-    },
-    carga_200_usuarios: {
-      executor: 'constant-vus',
-      vus: 200,
-      duration: '30s',
-      startTime: '105s',
-      tags: { scenario: '200_usuarios' },
-    },
-  },
+  scenarios: buildScenarios(),
   thresholds: {
-    // 95% de las peticiones deben responder en menos de 0.5 segundos
-    'http_req_duration': ['p(95)<500'],
+    // 95% de las peticiones deben responder en menos de 3 segundos
+    'http_req_duration': ['p(95)<3000'],
     // Tasa de error menor al 1%
     'error_rate': ['rate<0.01'],
   },
@@ -113,20 +140,21 @@ export function setup() {
   return { token: body.access_token };
 }
 
-// ── Función principal del test ────────────────────────────────────────────────
-export default function (data) {
+// ── Escenario: SOLO reporte de ventas ─────────────────────────────────────────
+export function testSales(data) {
   const headers = {
     'Authorization': `Bearer ${data.token}`,
     'Content-Type':  'application/json',
   };
+  const scenarioName = exec.scenario.name;
 
-  // ── Petición 1: Reporte de ventas por período ─────────────────────────────
   const salesRes = http.get(
     `${BASE_URL}/api/reports/sales?startDate=${START_DATE}&endDate=${END_DATE}`,
     { headers, tags: { endpoint: 'sales' } },
   );
 
   salesDuration.add(salesRes.timings.duration);
+  durationByScenario[scenarioName].add(salesRes.timings.duration);
 
   const salesOk = check(salesRes, {
     'sales: status 200': (r) => r.status === 200,
@@ -139,19 +167,30 @@ export default function (data) {
   if (!salesOk) {
     salesErrors.add(1);
     errorRate.add(1);
+    errorRateByScenario[scenarioName].add(1);
   } else {
     errorRate.add(0);
+    errorRateByScenario[scenarioName].add(0);
   }
 
   sleep(0.5);
+}
 
-  // ── Petición 2: Ranking de paquetes por período ───────────────────────────
+// ── Escenario: SOLO ranking de paquetes ───────────────────────────────────────
+export function testRanking(data) {
+  const headers = {
+    'Authorization': `Bearer ${data.token}`,
+    'Content-Type':  'application/json',
+  };
+  const scenarioName = exec.scenario.name;
+
   const rankingRes = http.get(
     `${BASE_URL}/api/reports/package-ranking?startDate=${START_DATE}&endDate=${END_DATE}`,
     { headers, tags: { endpoint: 'ranking' } },
   );
 
   rankingDuration.add(rankingRes.timings.duration);
+  durationByScenario[scenarioName].add(rankingRes.timings.duration);
 
   const rankingOk = check(rankingRes, {
     'ranking: status 200': (r) => r.status === 200,
@@ -164,17 +203,12 @@ export default function (data) {
   if (!rankingOk) {
     rankingErrors.add(1);
     errorRate.add(1);
+    errorRateByScenario[scenarioName].add(1);
   } else {
     errorRate.add(0);
+    errorRateByScenario[scenarioName].add(0);
   }
 
   sleep(0.5);
 }
 
-// ── Teardown: resumen final ───────────────────────────────────────────────────
-export function teardown() {
-  console.log('\n=== RESUMEN LOAD TESTING — ÉPICA 7 ===');
-  console.log('Escenarios ejecutados: 10, 50, 100, 200 usuarios concurrentes');
-  console.log('Endpoints: /api/reports/sales  y  /api/reports/package-ranking');
-  console.log('Ver resultados detallados en la salida de K6 o exportar con --out csv=resultado.csv');
-}
