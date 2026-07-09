@@ -590,3 +590,108 @@ Si no es posible modificar el cliente existente, crear uno dedicado para K6:
 ```env
 npm init playwright@latest
 ```
+
+---
+
+## 8. Resultados de rendimiento — Épica 7 (Reportes)
+
+### 8.1 Load Testing
+
+**`/api/reports/sales`**
+
+| Usuarios | Peticiones | p50 | p90 | p95 | Error rate |
+|---|---|---|---|---|---|
+| 10  | 481  | 110.94 ms | 159.11 ms | 181.34 ms | 0% |
+| 50  | 1299 | 393.45 ms | 840.56 ms | 974.12 ms | 0% |
+| 100 | 1319 | 1.10 s    | 2.63 s    | 3.25 s    | 0% |
+| 200 | 1250 | 1.80 s    | 5.65 s    | 7.36 s    | 0% |
+
+Thresholds: `rate<0.01` → 0.00% ✓ | `p(95)<3000ms` → p(95)=4.55s ✗
+
+**`/api/reports/package-ranking`**
+
+| Usuarios | Peticiones | p50 | p90 | p95 | Error rate |
+|---|---|---|---|---|---|
+| 10  | 517  | 74.47 ms  | 123.43 ms | 148.72 ms | 0% |
+| 50  | 1906 | 269.25 ms | 368.26 ms | 402.79 ms | 0% |
+| 100 | 1902 | 1.10 s    | 1.25 s    | 1.29 s    | 0% |
+| 200 | 2139 | 2.47 s    | 2.77 s    | 2.85 s    | 0% |
+
+Thresholds: `rate<0.01` → 0.00% ✓ | `p(95)<3000ms` → p(95)=2.71s ✓
+
+### 8.2 Stress Testing (50 → 400 usuarios)
+
+| Usuarios | p50 | p90 | p95 | Error rate | ¿Quiebre? |
+|---|---|---|---|---|---|
+| 50  | 745 ms   | 903 ms   | 955 ms    | 0.00%  | No |
+| 100 | 1.84 s   | 2.00 s   | 2.07 s    | 0.00%  | No |
+| 150 | 2.95 s   | 3.28 s   | 3.35 s    | 0.00%  | No |
+| 200 | 4.02 s   | 4.64 s   | 4.73 s    | 0.00%  | No |
+| 250 | 5.37 s   | 6.03 s   | 9.56 s    | 2.07%  | **Sí** |
+| 300 | 6.21 s   | 8.64 s   | 10.71 s   | 11.04% | Sí |
+| 400 | 8.59 s   | 11.66 s  | 13.06 s   | 20.88% | Sí |
+
+Thresholds: `rate<0.05` → 5.11% ✗ | `p(95)<5000ms` → p(95)=9.88s ✗ | **Punto de quiebre: 250 usuarios concurrentes**
+
+### 8.3 Volume Testing (500 → 10 000 registros, a distintos niveles de concurrencia)
+
+**20 usuarios concurrentes**
+
+| Volumen BD | p50 | p90 | p95 | Error rate | ¿Quiebre? |
+|---|---|---|---|---|---|
+| 500 reg.   | 288 ms | 541 ms | 1.42 s | 0% | No |
+| 1000 reg.  | 343 ms | 568 ms | 671 ms | 0% | No |
+| 5000 reg.  | 1.21 s | 1.68 s | 1.78 s | 0% | No |
+| 10000 reg. | 1.83 s | 2.30 s | 2.50 s | 0% | No |
+
+**50 usuarios concurrentes**
+
+| Volumen BD | p50 | p90 | p95 | Error rate | ¿Quiebre? |
+|---|---|---|---|---|---|
+| 500 reg.   | 608 ms | 1.28 s | 1.41 s | 0%             | No |
+| 1000 reg.  | 609 ms | 1.41 s | 1.59 s | 0%             | No |
+| 5000 reg.  | 1.53 s | 3.53 s | 3.90 s | 0.19% (1/260)  | No |
+| 10000 reg. | 2.30 s | 5.97 s | 7.37 s | 6.65% (23/173) | **Sí** |
+
+**100 usuarios concurrentes**
+
+| Volumen BD | p50 | p90 | p95 | Error rate | ¿Quiebre? |
+|---|---|---|---|---|---|
+| 500 reg.   | 1.36 s | 2.80 s  | 3.19 s  | 0%              | No |
+| 1000 reg.  | 1.56 s | 3.66 s  | 4.07 s  | 0.35% (4/578)   | No |
+| 5000 reg.  | 2.66 s | 10.61 s | 12.17 s | 16.5% (95/576)  | **Sí** |
+| 10000 reg. | 7.77 s | 14.59 s | 15.74 s | 59.6% (217/364) | Sí |
+
+**Punto de quiebre por nivel de concurrencia:**
+
+| Usuarios concurrentes | Punto de quiebre (volumen) |
+|---|---|
+| 20 VUs  | No rompe — aguanta hasta 10 000 registros |
+| 50 VUs  | Rompe en 10 000 registros |
+| 100 VUs | Rompe en 5 000 registros |
+
+### 8.4 Análisis desde ingeniería de software
+
+**a) Ambiente de un solo nodo.** Backend (Spring Boot/Tomcat), MySQL, Keycloak y el generador de carga (K6) corren en la misma máquina, compitiendo por el mismo CPU y la misma RAM. A diferencia de un ambiente productivo (nodos separados para app y BD), aquí cualquier aumento de concurrencia satura recursos compartidos del sistema operativo, no solo la lógica del backend.
+
+**b) Pool de conexiones a la base de datos como cuello de botella principal.** El backend usa HikariCP con el tamaño de pool por defecto (10 conexiones), sin configuración explícita en `application.properties`. Bajo baja concurrencia hay conexiones libres y la respuesta es lineal; al acercarse la tasa de llegada de requests a la capacidad del pool, el tiempo de espera en cola crece de forma no lineal (teoría de colas / Little's Law), lo que explica el salto abrupto observado en el stress test entre 200 usuarios (p95=4.73s, sin quiebre) y 250 usuarios (p95=9.56s, quiebre).
+
+**c) Diseño de la consulta de ventas.** `findSalesReportByPeriod` usa un `LEFT JOIN` con una condición `OR` entre dos rangos `BETWEEN` sobre columnas distintas (`reservation_date` y `payment.created_at`), patrón que dificulta el uso eficiente de índices por parte de MySQL. Además, el endpoint no pagina: devuelve el resultado completo en cada llamada. Esto explica el crecimiento casi proporcional de la latencia con el volumen de datos en el volume test (288 ms → 343 ms → 1.21 s → 1.83 s con 20 usuarios).
+
+**d) Efecto combinado volumen × concurrencia.** Cada consulta sobre un rango de fechas grande mantiene ocupada su conexión del pool por más tiempo. Con un pool de tamaño fijo, el throughput efectivo del sistema es aproximadamente `tamaño_del_pool / tiempo_promedio_de_ocupación_por_consulta`. Si el volumen de datos sube, el tiempo de ocupación sube, y por lo tanto baja la cantidad de usuarios concurrentes que el mismo pool puede sostener sin formar cola — exactamente lo que muestra la tabla de puntos de quiebre por concurrencia (8.3): a 20 VUs el sistema nunca rompe ni con 10 000 registros, pero a 100 VUs ya rompe con solo 5 000.
+
+**e) Presión de memoria y Garbage Collection.** Cada respuesta con miles de filas crea una cantidad proporcional de objetos Java (DTOs, `String`, `BigDecimal`) en el heap de la JVM. Bajo alta concurrencia con datasets grandes, esto incrementa la frecuencia y duración de las pausas del Garbage Collector, que afectan a **todos** los requests en curso (no solo al que las origina), aportando parte de la variabilidad observada entre corridas.
+
+**f) Qué aísla cada tipo de prueba:**
+
+| Tipo de prueba | Variable que aísla | Causa raíz de la degradación |
+|---|---|---|
+| Load Testing | Concurrencia, con dataset pequeño y fijo | Pool de conexiones y CPU compartido cerca de saturarse a partir de ~150-200 usuarios |
+| Stress Testing | Punto de quiebre bajo concurrencia extrema | Cola en el pool de conexiones crece exponencialmente tras el punto de saturación (~250 usuarios) |
+| Volume Testing | Tamaño del dataset, con concurrencia fija | Falta de índice eficiente y ausencia de paginación → cada consulta es proporcionalmente más lenta con más filas, lo que reduce el throughput efectivo del pool bajo carga |
+
+**Recomendaciones de mejora:**
+- Ajustar `spring.datasource.hikari.maximum-pool-size` según núcleos disponibles y `max_connections` de MySQL.
+- Agregar índices sobre `reservation.reservation_date`, `reservation.status` y `payment.created_at`, y revisar si el patrón `OR` entre `BETWEEN` puede reescribirse como `UNION` de dos consultas indexadas.
+- Paginar `/api/reports/sales` y `/api/reports/package-ranking` (`LIMIT`/`OFFSET` o keyset pagination) en vez de devolver el set completo.
+- Evaluar cacheo de reportes agregados para rangos históricos amplios en lugar de calcularlos on-the-fly en cada request.

@@ -61,7 +61,7 @@ export const options = {
     // Volumen pequeño: ~500 registros, 20 usuarios
     volumen_500_registros: {
       executor: 'constant-vus',
-      vus: 20,
+      vus: 50,
       duration: '30s',
       startTime: '0s',
       env: { VOLUMEN: '500' },
@@ -70,7 +70,7 @@ export const options = {
     // Volumen medio: ~1000 registros, 20 usuarios
     volumen_1000_registros: {
       executor: 'constant-vus',
-      vus: 20,
+      vus: 50,
       duration: '30s',
       startTime: '40s',
       env: { VOLUMEN: '1000' },
@@ -79,7 +79,7 @@ export const options = {
     // Volumen alto: ~5000 registros, 20 usuarios
     volumen_5000_registros: {
       executor: 'constant-vus',
-      vus: 20,
+      vus: 50,
       duration: '30s',
       startTime: '80s',
       env: { VOLUMEN: '5000' },
@@ -88,7 +88,7 @@ export const options = {
     // Volumen muy alto: ~10000 registros, 20 usuarios
     volumen_10000_registros: {
       executor: 'constant-vus',
-      vus: 20,
+      vus: 50,
       duration: '30s',
       startTime: '120s',
       env: { VOLUMEN: '10000' },
